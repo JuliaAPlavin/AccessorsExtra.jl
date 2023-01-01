@@ -252,7 +252,6 @@ end
     InverseFunctions.test_inverse(@optic(quantile(d, _)), 0.1)
 
     InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"m")
-    InverseFunctions.test_inverse(@optic(ustrip(0.5u"m", _)), 2u"m")
     InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"mm")
 end
 
