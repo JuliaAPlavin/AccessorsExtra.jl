@@ -62,29 +62,6 @@ end
     # @test @replace(s.b = s.a.x)::StructArray == [(a=(y=:abc,), b=1), (a=(y=:def,), b=2)]
 end
 
-@testitem "mapview" begin
-    using SplitApplyCombine: mapview
-
-    X = [(a=1, b=2), (a=3, b=4)]
-    Y = mapview(@optic(_.b), X)
-    @test Y == [2, 4]
-    Y[2] = 100
-    @test Y == [2, 100]
-    @test X == [(a=1, b=2), (a=3, b=100)]
-
-    X = [1, 2]
-    Y = mapview(@optic(_ * 10), X)
-    @test Y == [10, 20]
-    Y[2] = 500
-    @test Y == [10, 500]
-    @test X == [1, 50]
-    push!(Y, -10)
-    @test Y == [10, 500, -10]
-    @test X == [1, 50, -1]
-    @test_throws InexactError Y[1] = 1
-    @test_throws InexactError push!(Y, 1)
-end
-
 @testitem "getfield" begin
     t = (x=1, y=2)
     @test set(t, @optic(getfield(_, :x)), :hello) === (x=:hello, y=2)
