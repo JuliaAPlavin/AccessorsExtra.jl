@@ -35,6 +35,9 @@ function __init__()
         Accessors.set(x::KeyedArray, ::typeof(AxisKeys.named_axiskeys), v::NamedTuple) = KeyedArray(AxisKeys.keyless_unname(x); v...)
         Accessors.set(x::KeyedArray, ::typeof(AxisKeys.dimnames), v::Tuple{Vararg{Symbol}}) = KeyedArray(AxisKeys.keyless_unname(x); NamedTuple{v}(axiskeys(x))...)
 
+        Accessors.set(x::KeyedArray, f::Base.Fix2{typeof(AxisKeys.axiskeys)}, v) = @set axiskeys(x)[f.x] = v
+        Accessors.set(x::KeyedArray, f::Base.Fix2{typeof(AxisKeys.named_axiskeys)}, v) = @set named_axiskeys(x)[f.x] = v
+
         ConstructionBase.setproperties(x::KeyedArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), AxisKeys.named_axiskeys(x))
     end
 
