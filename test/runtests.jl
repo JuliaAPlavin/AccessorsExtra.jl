@@ -7,7 +7,7 @@ using SkyCoords; using SkyCoords: lat, lon
 using IntervalSets
 using Distributions
 using Dictionaries
-using StaticArrays
+using StaticArrays: SVector, MVector
 using InverseFunctions
 
 
@@ -27,8 +27,9 @@ end
 @testset "staticarrays" begin
     sv = SVector(1, 2)
     @test SVector(3.0, 2.0) === @set sv.x = 3.0
-    @test SVector(3.0, 5.0) === setproperties(sv, x = 3.0, y = 5.0)
+    @test SVector(3.0, 5.0) === @inferred setproperties(sv, x = 3.0, y = 5.0)
     @test SVector(-1.0, -2.0) === @set sv.data = (-1.0, -2)
+
     @test_throws "does not have properties (:z,)" @set sv.z = 3.0
 end
 
@@ -140,9 +141,16 @@ end
 
     @test A == @set axes(A)[1] = Base.OneTo(2)
     @test reshape(A, (2, 1, 3)) == @insert axes(A)[2] = Base.OneTo(1)
-    @test reshape(A, (2, 1, 3)) == @insert size(A)[2] = 1
+    B = @insert size(A)[2] = 1
+    @test reshape(A, (2, 1, 3)) == B
+    @test A == @delete size(B)[2]
     @test_throws Exception @set size(A)[1] = 1
     @test_throws Exception @insert size(A)[2] = 2
+
+    @inferred set(A, @optic(axes(_)[1]), Base.OneTo(2))
+    @inferred insert(A, @optic(axes(_)[2]), Base.OneTo(1))
+    @inferred insert(A, @optic(size(_)[2]), 1)
+    @inferred delete(B, @optic(size(_)[2]))
 
     B = @set vec(A) = 1:6
     @test B == [1 3 5; 2 4 6]
