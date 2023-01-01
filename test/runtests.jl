@@ -31,6 +31,12 @@ end
     @test X == [(a=1, b=2), (a=3, b=100)]
 end
 
+@testset "getfield" begin
+    t = (x=1, y=2)
+    @test set(t, @optic(getfield(_, :x)), :hello) === (x=:hello, y=2)
+    @test_throws Exception set(t, @optic(getfield(_, :z)), 3)
+end
+
 
 import CompatHelperLocal as CHL
 CHL.@check()

@@ -29,4 +29,8 @@ function __init__()
     end
 end
 
+
+# set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57
+Accessors.set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
+Accessors.set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
 end
