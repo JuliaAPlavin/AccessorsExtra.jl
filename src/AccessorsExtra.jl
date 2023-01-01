@@ -26,6 +26,16 @@ function __init__()
         # https://github.com/JuliaObjects/Accessors.jl/pull/53
         Base.setindex!(ma::MappedArray, val, ix) = parent(ma)[ix] = set(parent(ma)[ix], ma.f, val)
     end
+
+    @require AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5" begin
+        using .AxisKeys
+
+        Accessors.set(x::KeyedArray, ::typeof(AxisKeys.axiskeys), v::Tuple) = KeyedArray(AxisKeys.keyless(x), v)
+        Accessors.set(x::KeyedArray, ::typeof(AxisKeys.named_axiskeys), v::NamedTuple) = KeyedArray(AxisKeys.keyless_unname(x); v...)
+        Accessors.set(x::KeyedArray, ::typeof(AxisKeys.dimnames), v::Tuple{Vararg{Symbol}}) = KeyedArray(AxisKeys.keyless_unname(x); NamedTuple{v}(axiskeys(x))...)
+
+        ConstructionBase.setproperties(x::KeyedArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), AxisKeys.named_axiskeys(x))
+    end
 end
 
 

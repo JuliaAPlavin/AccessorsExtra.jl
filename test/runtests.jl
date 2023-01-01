@@ -2,6 +2,7 @@ using AccessorsExtra
 using Test
 using StructArrays
 using SplitApplyCombine
+using AxisKeys
 
 
 @testset "structarrays" begin
@@ -56,6 +57,59 @@ end
     @test axes(B) == (10:11, 1:3)
 
     @test_throws Exception @set axes(A)[1] = 10:12
+end
+
+@testset "axiskeys" begin
+    A = KeyedArray([1 2 3; 4 5 6], x=[:a, :b], y=11:13)
+
+    B = @set axiskeys(A)[1] = [:y, :z]
+    @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:x, :y)
+    @test named_axiskeys(B) == (x=[:y, :z], y=11:13)
+
+    B = @set named_axiskeys(A).y = [:y, :z, :w]
+    @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:x, :y)
+    @test named_axiskeys(B) == (x=[:a, :b], y=[:y, :z, :w])
+
+    B = @set named_axiskeys(A) = (a=[1, 2], b=[3, 2, 1])
+    @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:a, :b)
+    @test named_axiskeys(B) == (a=[1, 2], b=[3, 2, 1])
+
+    B = @set dimnames(A) = (:a, :b)
+    @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:a, :b)
+    @test named_axiskeys(B) == (a=[:a, :b], b=11:13)
+
+    B = @set A.x = 10:11
+    @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:x, :y)
+    @test named_axiskeys(B) == (x=10:11, y=11:13)
+
+
+    @test_throws ArgumentError @set axiskeys(A)[1] = 1:3
+    @test_throws ArgumentError @set named_axiskeys(A).x = 1:3
+    @test_throws Exception     @set axiskeys(A) = ()
+    @test_throws ArgumentError @set named_axiskeys(A) = (;)
+    @test_throws ArgumentError @set A.z = 10:11
+
+
+    A = KeyedArray([1 2 3; 4 5 6], ([:a, :b], 11:13))
+
+    B = @set axiskeys(A)[1] = [:y, :z]
+    @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:_, :_)
+
+    B = @set named_axiskeys(A) = (a=[1, 2], b=[3, 2, 1])
+    @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:a, :b)
+    @test named_axiskeys(B) == (a=[1, 2], b=[3, 2, 1])
+
+    B = @set dimnames(A) = (:a, :b)
+    @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:a, :b)
+    @test named_axiskeys(B) == (a=[:a, :b], b=11:13)
 end
 
 
