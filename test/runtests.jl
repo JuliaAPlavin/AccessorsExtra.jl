@@ -8,6 +8,13 @@ using Dictionaries
 using InverseFunctions
 
 
+@testset "replace" begin
+    nt = (a=1, b=:x)
+    @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (b=:x, c=1)
+    @test @replace(nt.c = nt.a) === (b=:x, c=1)
+    @test @replace(nt.c = _.a) === (b=:x, c=1)
+end
+
 @testset "structarrays" begin
     s = StructArray(a=[1, 2, 3])
     @test @insert(StructArrays.components(s).b = 10:12) == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]

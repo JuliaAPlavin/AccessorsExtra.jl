@@ -6,7 +6,7 @@ using ConstructionBase
 using InverseFunctions
 using Requires
 
-export ViewLens, Keys, Values
+export ViewLens, Keys, Values, @replace
 
 
 function __init__()
@@ -100,5 +100,33 @@ struct Values end
 Accessors.OpticStyle(::Type{Values}) = Accessors.ModifyBased()
 Accessors.modify(f, obj::Dict, ::Values) = Dict(k => f(v) for (k, v) in pairs(obj))
 Accessors.modify(f, obj::Union{AbstractArray, Tuple, NamedTuple}, ::Values) = map(f, obj)
+
+
+# replace()
+_replace(obj, (from, to)::Pair) = insert(delete(obj, from), to, from(obj))
+
+macro replace(ex)
+    if (ex.head != :(=)) || (length(ex.args) != 2)
+        msg = """
+        Expression for replace macro must be an assignment. Got:
+        $(ex)
+        """
+        throw(ArgumentError(msg))
+    end
+
+    to, from = Accessors.parse_obj_optic.(ex.args)
+    from_obj, from_optic = from
+    to_obj, to_optic = to
+    obj = if from_obj == to_obj
+        from_obj
+    elseif from_obj == esc(:_)
+        to_obj
+    elseif to_obj == esc(:_)
+        from_obj
+    else
+        throw(ArgumentError("replace requires that the from and to objects are the same; got from = $(from_obj) to = $(to_obj)"))
+    end
+    :($_replace($obj, $from_optic => $to_optic))
+end
 
 end
