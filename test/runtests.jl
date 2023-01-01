@@ -129,6 +129,12 @@ end
 
     @test_throws Exception @set axes(A)[1] = 10:12
 
+    @test A == @set axes(A)[1] = Base.OneTo(2)
+    @test reshape(A, (2, 1, 3)) == @insert axes(A)[2] = Base.OneTo(1)
+    @test reshape(A, (2, 1, 3)) == @insert size(A)[2] = 1
+    @test_throws Exception @set size(A)[1] = 1
+    @test_throws Exception @insert size(A)[2] = 2
+
     B = @set vec(A) = 1:6
     @test B == [1 3 5; 2 4 6]
 
