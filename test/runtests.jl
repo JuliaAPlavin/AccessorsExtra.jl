@@ -10,10 +10,13 @@ using InverseFunctions
 
 @testset "replace" begin
     nt = (a=1, b=:x)
-    @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (b=:x, c=1)
-    @test @replace(nt.c = nt.a) === (b=:x, c=1)
-    @test @replace(nt.c = _.a) === (b=:x, c=1)
-    @test @replace(_.c = nt.a) === (b=:x, c=1)
+    @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (c=1, b=:x)
+    @test AccessorsExtra._replace(nt, (@optic(_.a) => @optic(_.c)) ∘ identity) === (c=1, b=:x)
+    @test @replace(nt.c = nt.a) === (c=1, b=:x)
+    @test @replace(nt.c = _.a) === (c=1, b=:x)
+    @test @replace(_.c = nt.a) === (c=1, b=:x)
+    @test @replace(nt |> (_.c = _.a)) === (c=1, b=:x)
+
     @test_throws Exception eval(:(@replace(nt_1.c = nt_2.a)))
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
@@ -103,6 +106,11 @@ end
     @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
     @test dimnames(B) == (:x, :y)
     @test named_axiskeys(B) == (x=10:11, y=11:13)
+
+    B = @replace named_axiskeys(A) |> (_.z = _.x)
+    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
+    @test dimnames(B) == (:z, :y)
+    @test named_axiskeys(B) == (z=[:a, :b], y=11:13)
 
 
     @test_throws ArgumentError @set axiskeys(A)[1] = 1:3
