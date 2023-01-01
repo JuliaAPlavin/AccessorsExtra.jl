@@ -185,7 +185,7 @@ sa = StructArray(a=[1, 2, 3], b=[:x, :y, :z])
 
 # ╔═╡ 679a21cb-5365-4231-89f4-cb3c5a6b3d75
 md"""
-**`SplitApplyCombine` integration**: support `setindex!` for `mapview`.
+**`SplitApplyCombine.jl` integration**: support `setindex!` for `mapview`.
 """
 
 # ╔═╡ 8f38060d-9469-4b3c-82ea-b9430c1ec246
