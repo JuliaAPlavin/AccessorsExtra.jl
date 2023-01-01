@@ -3,6 +3,7 @@ using Test
 using StructArrays
 using SplitApplyCombine
 using AxisKeys
+using InverseFunctions
 
 
 @testset "structarrays" begin
@@ -110,6 +111,11 @@ end
     @test AxisKeys.keyless_unname(A) == AxisKeys.keyless_unname(B)
     @test dimnames(B) == (:a, :b)
     @test named_axiskeys(B) == (a=[:a, :b], b=11:13)
+end
+
+@testset "inverses" begin
+    InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
+    InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
 end
 
 

@@ -3,6 +3,7 @@ module AccessorsExtra
 using Reexport
 @reexport using Accessors
 using ConstructionBase
+using InverseFunctions
 using Requires
 
 export ViewLens
@@ -67,5 +68,9 @@ function Accessors.set(obj, ::typeof(axes), v::Tuple)
     @assert size(res) == size(obj)
     copyto!(res, obj)
 end
+
+# inverse getindex
+InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
+InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)
 
 end
