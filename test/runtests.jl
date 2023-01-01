@@ -13,6 +13,13 @@ using SplitApplyCombine
     @test @insert(s.b = 10:12) == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]
     @test @delete(@insert(s.b = 10:12).a) == StructArray(b=10:12)
     @test @delete(s.a) == NamedTuple{(), Tuple{}}[]
+
+    s = StructArray([(a=(x=1, y=:abc),), (a=(x=2, y=:def),)]; unwrap=T -> T <: NamedTuple)
+    @test @set(s.a = 10:12) == StructArray(a=10:12)
+    @test @set(s.a.x = 10:11) == [(a=(x=10, y=:abc),), (a=(x=11, y=:def),)]
+    @test @insert(s.b = 10:11) == [(a=(x=1, y=:abc), b=10), (a=(x=2, y=:def), b=11)]
+    @test @insert(s.a.z = 10:11) == [(a=(x=1, y=:abc, z=10),), (a=(x=2, y=:def, z=11),)]
+    @test @delete(s.a.y) == [(a=(x=1,),), (a=(x=2,),)]
 end
 
 @testset "mapview" begin
