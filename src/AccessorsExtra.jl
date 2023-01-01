@@ -14,9 +14,6 @@ function __init__()
 
         Accessors.set(x::StructArray, ::typeof(StructArrays.components), v) where {T} = StructArray(v)
 
-        # if only Accessors.set is needed, not full setproperties:
-        # Accessors.set(x::StructArray, o::Accessors.PropertyLens, v) = set(x, o ∘ StructArrays.components, v)
-        ConstructionBase.getproperties(x::StructArray) = StructArrays.components(x)
         ConstructionBase.setproperties(x::StructArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), StructArrays.components(x))
 
         Accessors.insert(x::StructArray, o::Accessors.PropertyLens, v) = insert(x, o ∘ StructArrays.components, v)
@@ -35,6 +32,7 @@ end
 # set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57
 Accessors.set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
 Accessors.set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
+
 
 # ViewLens: adapted from IndexLens
 struct ViewLens{I<:Tuple}
