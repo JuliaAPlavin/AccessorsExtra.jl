@@ -6,7 +6,7 @@ using ConstructionBase
 using InverseFunctions
 using Requires
 
-export ViewLens
+export ViewLens, Keys, Values
 
 
 function __init__()
@@ -47,6 +47,13 @@ function __init__()
         InverseFunctions.inverse(f::Base.Fix1{typeof(cdf)}) = Base.Fix1(quantile, f.x)
         InverseFunctions.inverse(f::Base.Fix1{typeof(quantile)}) = Base.Fix1(cdf, f.x)
     end
+
+    @require Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4" begin
+        using .Dictionaries
+
+        Accessors.modify(f, obj::AbstractDictionary, ::Keys) = constructorof(typeof(obj))(map(f, keys(obj)), values(obj))
+        Accessors.modify(f, obj::AbstractDictionary, ::Values) = map(f, obj)
+    end
 end
 
 
@@ -82,5 +89,16 @@ end
 # inverse getindex
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
 InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)
+
+# optics inspired by https://juliaobjects.github.io/Accessors.jl/stable/examples/custom_optics/
+struct Keys end
+Accessors.OpticStyle(::Type{Keys}) = Accessors.ModifyBased()
+Accessors.modify(f, obj::Dict, ::Keys) = Dict(f(k) => v for (k, v) in pairs(obj))
+Accessors.modify(f, obj::NamedTuple{NS}, ::Keys) where {NS} = NamedTuple{map(f, NS)}(values(obj))
+
+struct Values end
+Accessors.OpticStyle(::Type{Values}) = Accessors.ModifyBased()
+Accessors.modify(f, obj::Dict, ::Values) = Dict(k => f(v) for (k, v) in pairs(obj))
+Accessors.modify(f, obj::Union{AbstractArray, Tuple, NamedTuple}, ::Values) = map(f, obj)
 
 end

@@ -4,6 +4,7 @@ using StructArrays
 using SplitApplyCombine
 using AxisKeys
 using Distributions
+using Dictionaries
 using InverseFunctions
 
 
@@ -124,6 +125,25 @@ end
     d = Normal(2, 5)
     InverseFunctions.test_inverse(@optic(cdf(d, _)), 2)
     InverseFunctions.test_inverse(@optic(quantile(d, _)), 0.1)
+end
+
+@testset "other optics" begin
+    T = (4, 5, 6)
+    @test @modify(x -> 2x, T |> Values()) === (8, 10, 12)
+    T = (a=4, b=5, c=6)
+    @test @modify(x -> 2x, T |> Values()) === (a=8, b=10, c=12)
+    @test @modify(x -> Symbol(x, x), T |> Keys()) === (aa=4, bb=5, cc=6)
+    A = [4, 5, 6]
+    @test @modify(x -> 2x, A |> Values()) == [8, 10, 12]
+    D = Dict(4 => 5, 6 => 7)
+    @test @modify(x -> x+1, D |> Values()) == Dict(4 => 6, 6 => 8)
+    @test @modify(x -> x+1, D |> Keys()) == Dict(5 => 5, 7 => 7)
+    D = dictionary([4 => 5, 6 => 7])
+    @test @modify(x -> x+1, D |> Values()) == dictionary([4 => 6, 6 => 8])
+    @test @modify(x -> x+1, D |> Keys()) == dictionary([5 => 5, 7 => 7])
+    D = ArrayDictionary([4, 6], [5, 7])
+    @test @modify(x -> x+1, D |> Values()) == dictionary([4 => 6, 6 => 8])
+    @test @modify(x -> x+1, D |> Keys()) == dictionary([5 => 5, 7 => 7])
 end
 
 
