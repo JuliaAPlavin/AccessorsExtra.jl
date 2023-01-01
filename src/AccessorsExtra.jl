@@ -176,11 +176,10 @@ end |> NamedTuple{keys(obj)}
 _replace(obj, (from, to)::Pair) = insert(delete(obj, from), to, from(obj))
 _replace(obj::NamedTuple{NS}, (from, to)::Pair{PropertyLens{A}, PropertyLens{B}}) where {NS, A, B} = NamedTuple{replace(NS, A => B)}(values(obj))
 
-function _replace(obj, optic::ComposedFunction)
+_replace(obj, optic::ComposedFunction) =
     modify(obj, optic.inner) do inner_obj
         _replace(inner_obj, optic.outer)
     end
-end
 
 macro replace(ex)
     obj, fromto_optics, inner_optic = if ex.head == :(=)
