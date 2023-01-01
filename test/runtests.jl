@@ -80,17 +80,27 @@ end
 @testset "axiskeys" begin
     A = KeyedArray([1 2 3; 4 5 6], x=[:a, :b], y=11:13)
 
-    B = @set axiskeys(A)[1] = [:y, :z]
-    @test @set(A |> axiskeys(_, 1) = [:y, :z]) == B
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test dimnames(B) == (:x, :y)
-    @test named_axiskeys(B) == (x=[:y, :z], y=11:13)
+    for B in (
+        @set(axiskeys(A)[1] = [:y, :z]),
+        @set(named_axiskeys(A).x = [:y, :z]),
+        @set(A |> axiskeys(_, 1) = [:y, :z]),
+        @set(A |> axiskeys(_, :x) = [:y, :z]),
+    )
+        @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
+        @test dimnames(B) == (:x, :y)
+        @test named_axiskeys(B) == (x=[:y, :z], y=11:13)
+    end
 
-    B = @set named_axiskeys(A).y = [:y, :z, :w]
-    @test @set(A |> named_axiskeys(_, :y) = [:y, :z, :w]) == B
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test dimnames(B) == (:x, :y)
-    @test named_axiskeys(B) == (x=[:a, :b], y=[:y, :z, :w])
+    for B in (
+        @set(axiskeys(A)[2] = [:y, :z, :w]),
+        @set(named_axiskeys(A).y = [:y, :z, :w]),
+        @set(A |> axiskeys(_, 2) = [:y, :z, :w]),
+        @set(A |> axiskeys(_, :y) = [:y, :z, :w]),
+    )
+        @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
+        @test dimnames(B) == (:x, :y)
+        @test named_axiskeys(B) == (x=[:a, :b], y=[:y, :z, :w])
+    end
 
     B = @set named_axiskeys(A) = (a=[1, 2], b=[3, 2, 1])
     @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
