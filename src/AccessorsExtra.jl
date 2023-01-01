@@ -3,6 +3,7 @@ module AccessorsExtra
 using Reexport
 @reexport using Accessors
 using ConstructionBase
+using ConstructionBaseExtras
 using InverseFunctions
 using StaticArraysCore: SVector, MVector
 using Requires
@@ -67,7 +68,6 @@ function __init__()
     @require IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953" begin
         using .IntervalSets
 
-        ConstructionBase.constructorof(::Type{<:Interval{L, R}}) where {L, R} = Interval{L, R}
         Accessors.set(x::Interval, ::typeof(endpoints), v::NTuple{2}) = setproperties(x, left=first(v), right=last(v))
         Accessors.set(x::Interval, ::typeof(leftendpoint), v) = @set x.left = v
         Accessors.set(x::Interval, ::typeof(rightendpoint), v) = @set x.right = v
@@ -84,9 +84,6 @@ function __init__()
     end
 end
 
-
-ConstructionBase.constructorof(::Type{<:SVector}) = SVector
-ConstructionBase.constructorof(::Type{<:MVector}) = MVector
 
 @generated function ConstructionBase.setproperties(obj::Union{SVector{N}, MVector{N}}, patch::NamedTuple{KS}) where {N, KS}
     if KS == (:data,)
