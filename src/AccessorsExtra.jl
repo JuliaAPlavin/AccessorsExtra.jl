@@ -50,4 +50,12 @@ Base.@propagate_inbounds function Accessors.set(obj, lens::ViewLens, val)
     setindex!(obj, val, lens.indices...)
 end
 
+
+# set axes()
+function Accessors.set(obj, ::typeof(axes), v::Tuple)
+    res = similar(obj, v)
+    @assert size(res) == size(obj)
+    copyto!(res, obj)
+end
+
 end

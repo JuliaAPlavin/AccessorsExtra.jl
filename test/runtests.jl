@@ -48,6 +48,16 @@ end
     Accessors.test_getset_laws(@optic(_ |> ViewLens((1:2,))), A, [5, 6], [7, 8])
 end
 
+@testset "axes" begin
+    A = [1 2 3; 4 5 6]
+    
+    B = @set axes(A)[1] = 10:11
+    @test parent(B) == A
+    @test axes(B) == (10:11, 1:3)
+
+    @test_throws Exception @set axes(A)[1] = 10:12
+end
+
 
 import CompatHelperLocal as CHL
 CHL.@check()
