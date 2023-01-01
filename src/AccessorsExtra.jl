@@ -86,6 +86,15 @@ function Accessors.set(obj, ::typeof(axes), v::Tuple)
     copyto!(res, obj)
 end
 
+# set on ranges
+Accessors.set(r::AbstractRange, ::typeof(step), s) = range(first(r), last(r), step=s)
+Accessors.set(r::AbstractRange, ::typeof(length), l) = range(first(r), last(r), length=l)
+Accessors.set(r::AbstractRange, ::typeof(first), x) = range(x,  last(r), step=step(r))
+Accessors.set(r::AbstractRange, ::typeof(last),  x) = range(first(r), x, step=step(r))
+Accessors.set(r::AbstractUnitRange, ::typeof(first), x) = range(x,  last(r))
+Accessors.set(r::AbstractUnitRange, ::typeof(last),  x) = range(first(r), x)
+Accessors.set(r::Base.OneTo, ::typeof(last),  x) = Base.OneTo(x)
+
 # inverse getindex
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
 InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)

@@ -66,6 +66,26 @@ end
     Accessors.test_getset_laws(@optic(_ |> ViewLens((1:2,))), A, [5, 6], [7, 8])
 end
 
+@testset "ranges" begin
+    r = 1:10
+    @test 1:3:10 === @set step(r) = 3
+    @test 1:0.5:10 === @set length(r) = 19
+    @test -5:10 === @set first(r) = -5
+    @test 1:15 === @set last(r) = 15
+
+    r = range(1, 10, length=10)
+    @test 1:3.0:10 === @set step(r) = 3
+    @test 1:0.5:10 === @set length(r) = 19
+    @test -5:1.0:10 === @set first(r) = -5
+    @test 1:1.0:15 === @set last(r) = 15
+
+    r = Base.OneTo(10)
+    @test 1:3:10 === @set step(r) = 3
+    @test 1:0.5:10 === @set length(r) = 19
+    @test -5:10 === @set first(r) = -5
+    @test Base.OneTo(15) === @set last(r) = 15
+end
+
 @testset "axes" begin
     A = [1 2 3; 4 5 6]
     
