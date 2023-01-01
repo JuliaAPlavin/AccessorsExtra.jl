@@ -16,7 +16,7 @@ TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-Aqua = "0.5.5"
+Aqua = "0.6"
 AxisKeys = "0.2.4"
 CompatHelperLocal = "0.1.24"
 Dictionaries = "0.3.21"

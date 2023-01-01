@@ -301,5 +301,5 @@ end
     CHL.@check()
 
     using Aqua
-    Aqua.test_all(AccessorsExtra)
+    Aqua.test_all(AccessorsExtra, piracy=false)
 end
