@@ -100,7 +100,7 @@ end
     @test Base.OneTo(15) === @set last(r) = 15
 end
 
-@testset "axes" begin
+@testset "array sizes" begin
     A = [1 2 3; 4 5 6]
     
     B = @set axes(A)[1] = 10:11
@@ -109,6 +109,9 @@ end
     @test axes(B) == (10:11, 1:3)
 
     @test_throws Exception @set axes(A)[1] = 10:12
+
+    B = @set vec(A) = 1:6
+    @test B == [1 3 5; 2 4 6]
 end
 
 @testset "axiskeys" begin
@@ -156,6 +159,10 @@ end
     @test dimnames(B) == (:z, :y)
     @test named_axiskeys(B) == (z=[:a, :b], y=11:13)
 
+    B = @set AxisKeys.keyless_unname(A) = [6 5 4; 3 2 1]
+    @test named_axiskeys(B) == named_axiskeys(A)
+    @test AxisKeys.keyless_unname(B) == [6 5 4; 3 2 1]
+
 
     @test_throws ArgumentError @set axiskeys(A)[1] = 1:3
     @test_throws ArgumentError @set named_axiskeys(A).x = 1:3
@@ -180,6 +187,10 @@ end
     @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
     @test dimnames(B) == (:a, :b)
     @test named_axiskeys(B) == (a=[:a, :b], b=11:13)
+
+    # B = @set AxisKeys.keyless_unname(A) = [6 5 4; 3 2 1]
+    # @test named_axiskeys(B) == named_axiskeys(A)
+    # @test AxisKeys.keyless_unname(A) == [6 5 4; 3 2 1]
 end
 
 @testset "inverses" begin

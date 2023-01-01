@@ -40,6 +40,8 @@ function __init__()
         Accessors.set(x::KeyedArray, f::Base.Fix2{typeof(AxisKeys.axiskeys), Symbol}, v) = @set named_axiskeys(x)[f.x] = v
 
         ConstructionBase.setproperties(x::KeyedArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), AxisKeys.named_axiskeys(x))
+
+        Accessors.set(x::KeyedArray, ::typeof(AxisKeys.keyless_unname), v::AbstractArray) = KeyedArray(v; named_axiskeys(x)...)
     end
 
     @require Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f" begin
@@ -86,6 +88,9 @@ function Accessors.set(obj, ::typeof(axes), v::Tuple)
     @assert size(res) == size(obj)
     copyto!(res, obj)
 end
+
+# set vec() using reshape
+Accessors.set(x::AbstractArray, ::typeof(vec), v::AbstractVector) = reshape(v, size(x))
 
 # set on ranges
 Accessors.set(r::AbstractRange, ::typeof(step), s) = range(first(r), last(r), step=s)
