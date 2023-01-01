@@ -118,32 +118,11 @@ Base.@propagate_inbounds Accessors.set(obj, lens::ViewLens, val) = setindex!(obj
 Base.@propagate_inbounds Accessors.set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
 
 
-# set axes(), size()
+# set axes()
 function Accessors.set(obj, ::typeof(axes), v::Tuple)
     res = similar(obj, v)
     @assert length(res) == length(obj)
     copyto!(res, obj)
-end
-
-Accessors.set(obj, ::typeof(size), v::Tuple) = reshape(obj, v)
-
-# set vec() keeping array shape and type (not eltype)
-function Accessors.set(x::AbstractArray, ::typeof(vec), v::AbstractVector)
-    res = similar(x, eltype(v))
-    vec(res) .= v
-    res
-end
-
-function Accessors.set(x::AbstractVector, ::typeof(reverse), v::AbstractVector)
-    res = similar(x, eltype(v))
-    res .= v
-    reverse!(res)
-    res
-end
-
-function Accessors.set(x::TX, f::Base.Fix1{typeof(convert)}, v) where {TX}
-    @assert v isa f.x
-    convert(TX, v)
 end
 
 # set on ranges
