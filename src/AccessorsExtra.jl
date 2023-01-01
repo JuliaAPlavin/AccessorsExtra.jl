@@ -73,7 +73,7 @@ function __init__()
         Accessors.set(x::Interval, ::typeof(rightendpoint), v) = @set x.right = v
         Accessors.set(x::Interval, ::typeof(closedendpoints), v::NTuple{2, Bool}) = Interval{v[1] ? :closed : :open, v[2] ? :closed : :open}(endpoints(x)...)
 
-        Accessors.set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = @set x |> mod(_, width(f.x)) = v
+        Accessors.set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = @set x |> mod(_, width(f.x)) = v - leftendpoint(f.x)
     end
 
     @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" begin

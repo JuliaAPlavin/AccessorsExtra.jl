@@ -289,6 +289,10 @@ end
     @test 0 === @set 2 |> mod(_, 0..3) = 0
     @test 3 === @set 2 |> mod(_, 0..3) = 3
     @test 31 === @set 32 |> mod(_, 0..3) = 1
+    @test 1 === @set 2 |> mod(_, 20..23) = 21
+    @test 0 === @set 2 |> mod(_, 20..23) = 20
+    @test 3 === @set 2 |> mod(_, 20..23) = 23
+    @test 31 === @set 32 |> mod(_, 20..23) = 21
 end
 
 
