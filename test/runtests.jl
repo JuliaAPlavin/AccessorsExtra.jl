@@ -102,7 +102,7 @@ end
     @test Base.OneTo(15) === @set last(r) = 15
 end
 
-@testset "array sizes" begin
+@testset "arrays" begin
     A = [1 2 3; 4 5 6]
     
     B = @set axes(A)[1] = 10:11
@@ -114,6 +114,9 @@ end
 
     B = @set vec(A) = 1:6
     @test B == [1 3 5; 2 4 6]
+
+    B = @set reverse(vec(A)) = 1:6
+    @test B == [6 4 2; 5 3 1]
 end
 
 @testset "axiskeys" begin
@@ -235,6 +238,8 @@ end
         @test @set(lon(c) = 2.3) == T(2.3, -1)
         @test lon(@set(lon(c) = 2.3)) == 2.3
     end
+    c = ICRSCoords(0.5, -1)
+    @test @set(c |> convert(GalCoords, _) |> lon = 0) ≈ ICRSCoords(5.884005859354123, -0.69919820078915)
 end
 
 @testset "intervals" begin

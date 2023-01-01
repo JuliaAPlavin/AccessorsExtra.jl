@@ -118,6 +118,18 @@ function Accessors.set(x::AbstractArray, ::typeof(vec), v::AbstractVector)
     res
 end
 
+function Accessors.set(x::AbstractVector, ::typeof(reverse), v::AbstractVector)
+    res = similar(x, eltype(v))
+    res .= v
+    reverse!(res)
+    res
+end
+
+function Accessors.set(x::TX, f::Base.Fix1{typeof(convert)}, v) where {TX}
+    @assert v isa f.x
+    convert(TX, v)
+end
+
 # set on ranges
 Accessors.set(r::AbstractRange, ::typeof(step), s) = range(first(r), last(r), step=s)
 Accessors.set(r::AbstractRange, ::typeof(length), l) = range(first(r), last(r), length=l)
