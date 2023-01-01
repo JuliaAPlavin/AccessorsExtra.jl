@@ -4,6 +4,7 @@ using Reexport
 @reexport using Accessors
 using ConstructionBase
 using InverseFunctions
+using StaticArraysCore: SVector, MVector
 using Requires
 
 export ViewLens, Keys, Values, Pairs, @replace
@@ -79,6 +80,27 @@ function __init__()
         Accessors.set(x::Interval, ::typeof(leftendpoint), v) = @set x.left = v
         Accessors.set(x::Interval, ::typeof(rightendpoint), v) = @set x.right = v
         Accessors.set(x::Interval, ::typeof(closedendpoints), v::NTuple{2, Bool}) = Interval{v[1] ? :closed : :open, v[2] ? :closed : :open}(endpoints(x)...)
+
+        # use regular mod() setter here when added to Accessors
+        Accessors.set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = width(f.x) * fld(x, width(f.x)) + v
+    end
+end
+
+
+ConstructionBase.constructorof(::Type{<:SVector}) = SVector
+ConstructionBase.constructorof(::Type{<:MVector}) = MVector
+
+@generated function ConstructionBase.setproperties(obj::Union{SVector{N}, MVector{N}}, patch::NamedTuple{KS}) where {N, KS}
+    if KS == (:data,)
+        :( constructorof(typeof(obj))(only(patch)) )
+    else
+        propnames = (:x, :y, :z, :w)[1:N]
+        KS ⊆ propnames || error("type $obj does not have properties $KS")
+        field_exprs = map(enumerate(propnames)) do (i, p)
+            from = p ∈ KS ? :patch : :obj
+            :( $from.$p )
+        end
+        :( constructorof(typeof(obj))($(field_exprs...)) )
     end
 end
 
@@ -95,22 +117,21 @@ end
 
 ViewLens(indices::Integer...) = ViewLens(indices)
 
-Base.@propagate_inbounds function (lens::ViewLens)(obj)
-    v = view(obj, lens.indices...)
-    ndims(v) == 0 ? v[] : v
-end
+Base.@propagate_inbounds (lens::ViewLens{<:Tuple{Vararg{Integer}}})(obj) = obj[lens.indices...]
+Base.@propagate_inbounds (lens::ViewLens)(obj) = view(obj, lens.indices...)
 
-Base.@propagate_inbounds function Accessors.set(obj, lens::ViewLens, val)
-    setindex!(obj, val, lens.indices...)
-end
+Base.@propagate_inbounds Accessors.set(obj, lens::ViewLens, val) = setindex!(obj, val, lens.indices...)
+Base.@propagate_inbounds Accessors.set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
 
 
-# set axes()
+# set axes(), size()
 function Accessors.set(obj, ::typeof(axes), v::Tuple)
     res = similar(obj, v)
-    @assert size(res) == size(obj)
+    @assert length(res) == length(obj)
     copyto!(res, obj)
 end
+
+Accessors.set(obj, ::typeof(size), v::Tuple) = reshape(obj, v)
 
 # set vec() keeping array shape and type (not eltype)
 function Accessors.set(x::AbstractArray, ::typeof(vec), v::AbstractVector)
@@ -179,11 +200,10 @@ end |> NamedTuple{keys(obj)}
 _replace(obj, (from, to)::Pair) = insert(delete(obj, from), to, from(obj))
 _replace(obj::NamedTuple{NS}, (from, to)::Pair{PropertyLens{A}, PropertyLens{B}}) where {NS, A, B} = NamedTuple{replace(NS, A => B)}(values(obj))
 
-function _replace(obj, optic::ComposedFunction)
+_replace(obj, optic::ComposedFunction) =
     modify(obj, optic.inner) do inner_obj
         _replace(inner_obj, optic.outer)
     end
-end
 
 macro replace(ex)
     obj, fromto_optics, inner_optic = if ex.head == :(=)

@@ -4,6 +4,8 @@
 using Markdown
 using InteractiveUtils
 
+# ╔═╡ f21df0d4-cbb7-4016-8c04-5df623360803
+
 # ╔═╡ 37bce0f8-1dfd-11ed-27ea-5b820b6b7850
 using AccessorsExtra
 
@@ -30,6 +32,9 @@ using RectiGrids
 
 # ╔═╡ 1a4affaa-465d-4bdd-9f79-b9fc09e4ce21
 using PyPlotUtils
+
+# ╔═╡ e8983922-5f1c-4696-b3dc-b84135bb66b1
+using StaticArrays
 
 # ╔═╡ e003c366-a162-4575-97ab-9540c8b1b459
 md"""
@@ -90,6 +95,31 @@ ntup = (a=1, b=2, c=3)
 @replace ntup.d = _.b
 
 # ╔═╡ 290dfedd-ff44-495f-b25a-213372891cb5
+
+
+# ╔═╡ f2b4453c-6955-49c8-97ae-e45cd2788a0e
+md"""
+**`StaticArrays.jl` integration**:
+"""
+
+# ╔═╡ bd65eeb5-7c3f-4975-874d-948c938b7a56
+sv = SVector(1, 2, 3)
+
+# ╔═╡ 0db80bc0-bc94-4c80-8149-6b92d28ec5d1
+@set sv[1] = -123
+
+# ╔═╡ 8798f5ca-9b09-4251-9e5f-849bb6062891
+@set sv.data = (1., 2., 3)
+
+# ╔═╡ bd3b5f76-0d7f-4c1b-af7d-410f18f8fdf7
+@set sv.data = (1., 2.)
+
+# ╔═╡ c1208386-200b-4e5e-9f6f-3a43c28e7ae0
+@set sv.y = -123
+
+# ╔═╡ 4cd15ace-8418-4118-ba69-23f6c3bc7331
+
+# ╔═╡ b27270bd-63c3-41e2-a81c-06857f133282
 
 
 # ╔═╡ 3524e098-d91e-4d71-b730-19e0fb768f90
@@ -241,33 +271,37 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AccessorsExtra = "33016aad-b69d-45be-9359-82a41f556fd4"
 AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
+ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 DataPipes = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
 DisplayAs = "0b91fe84-8a4c-11e9-3e1d-67c38462b6d6"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 PyPlotUtils = "5384e752-6c47-47b3-86ac-9d091b110b31"
 RectiGrids = "8ac6971d-971d-971d-971d-971d5ab1a71a"
 SplitApplyCombine = "03a91e81-4c3e-53e1-a0a4-9c0c8f19dd66"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
-AccessorsExtra = "~0.1.8"
+AccessorsExtra = "~0.1.9"
 AxisKeys = "~0.2.7"
-DataPipes = "~0.2.16"
+ConstructionBase = "~1.4.1"
+DataPipes = "~0.2.17"
 DisplayAs = "~0.1.6"
-Distributions = "~0.25.67"
+Distributions = "~0.25.68"
 PyPlotUtils = "~0.1.15"
-RectiGrids = "~0.1.10"
+RectiGrids = "~0.1.12"
 SplitApplyCombine = "~1.2.2"
-StructArrays = "~0.6.11"
+StaticArrays = "~1.5.6"
+StructArrays = "~0.6.12"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.0-rc4"
+julia_version = "1.8.0"
 manifest_format = "2.0"
-project_hash = "ae3743e70ebfdaab5d9927ae28b6f7469657034d"
+project_hash = "e3b96de707b531e1eb6575438048875d3b8591a2"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -277,15 +311,15 @@ version = "1.2.1"
 
 [[deps.Accessors]]
 deps = ["Compat", "CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "LinearAlgebra", "MacroTools", "Requires", "Test"]
-git-tree-sha1 = "c877a35749324754d3c8fffb09fc1f9db144ff8f"
+git-tree-sha1 = "8557017cfc7b58baea05a43ed35538857e6d35b4"
 uuid = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
-version = "0.1.18"
+version = "0.1.19"
 
 [[deps.AccessorsExtra]]
 deps = ["Accessors", "ConstructionBase", "InverseFunctions", "Reexport", "Requires"]
-git-tree-sha1 = "103332ac75b20cc11f77da0c76c42de09831a00c"
+git-tree-sha1 = "ef45a3c71f3a7e98a107ec66222e04250185c7bb"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
-version = "0.1.8"
+version = "0.1.9"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra"]
@@ -341,9 +375,9 @@ version = "0.12.8"
 
 [[deps.Compat]]
 deps = ["Dates", "LinearAlgebra", "UUIDs"]
-git-tree-sha1 = "924cdca592bc16f14d2f7006754a621735280b74"
+git-tree-sha1 = "5856d3031cdb1f3b2b6340dfdc66b6d9a149a374"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.1.0"
+version = "4.2.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -368,9 +402,9 @@ version = "1.7.0"
 
 [[deps.ConstructionBase]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "59d00b3139a9de4eb961057eabb65ac6522be954"
+git-tree-sha1 = "fb21ddd70a051d882a1686a5a550990bbe371a95"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
-version = "1.4.0"
+version = "1.4.1"
 
 [[deps.CovarianceEstimation]]
 deps = ["LinearAlgebra", "Statistics", "StatsBase"]
@@ -385,9 +419,9 @@ version = "1.10.0"
 
 [[deps.DataPipes]]
 deps = ["Accessors", "SplitApplyCombine"]
-git-tree-sha1 = "16df65e133f714831c9a6fe1aa62dd1cd1d728ba"
+git-tree-sha1 = "ab6b5bf476e9111b0166cc3f8373638204d7fafd"
 uuid = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
-version = "0.2.16"
+version = "0.2.17"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -411,16 +445,16 @@ uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 version = "0.4.0"
 
 [[deps.Dictionaries]]
-deps = ["Indexing", "Random"]
-git-tree-sha1 = "aeae0d703e62b18aca622e972500077c64bc04e2"
+deps = ["Indexing", "Random", "Serialization"]
+git-tree-sha1 = "96dc5c5c8994be519ee3420953c931c55657a3f2"
 uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
-version = "0.3.23"
+version = "0.3.24"
 
 [[deps.DirectionalStatistics]]
 deps = ["AccessorsExtra", "IntervalSets", "InverseFunctions", "LinearAlgebra", "Statistics", "StatsBase"]
-git-tree-sha1 = "df71b207abc8a0fc4f5a3c1452f3f350a866a0e2"
+git-tree-sha1 = "156365de4369a6cf587d0d59ce52fe688f2b5f92"
 uuid = "e814f24e-44b0-11e9-2fd5-aba2b6113d95"
-version = "0.1.17"
+version = "0.1.19"
 
 [[deps.DisplayAs]]
 git-tree-sha1 = "43c017d5dd3a48d56486055973f443f8a39bb6d9"
@@ -433,9 +467,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[deps.Distributions]]
 deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "6180800cebb409d7eeef8b2a9a562107b9705be5"
+git-tree-sha1 = "334a5896c1534bb1aa7aa2a642d30ba7707357ef"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.67"
+version = "0.25.68"
 
 [[deps.DocStringExtensions]]
 deps = ["LibGit2"]
@@ -444,10 +478,10 @@ uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 version = "0.9.1"
 
 [[deps.DomainSets]]
-deps = ["CompositeTypes", "IntervalSets", "LinearAlgebra", "StaticArrays", "Statistics"]
-git-tree-sha1 = "ac425eea956013b51e7891bef3c33684b7d37029"
+deps = ["CompositeTypes", "IntervalSets", "LinearAlgebra", "Random", "StaticArrays", "Statistics"]
+git-tree-sha1 = "dc45fbbe91d6d17a8e187abad39fb45963d97388"
 uuid = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
-version = "0.5.11"
+version = "0.5.13"
 
 [[deps.Downloads]]
 deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
@@ -492,9 +526,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[deps.IntervalSets]]
 deps = ["Dates", "Random", "Statistics"]
-git-tree-sha1 = "57af5939800bce15980bddd2426912c4f83012d8"
+git-tree-sha1 = "076bb0da51a8c8d1229936a1af7bdfacd65037e1"
 uuid = "8197267c-284f-5f27-9208-e0e47529a953"
-version = "0.7.1"
+version = "0.7.2"
 
 [[deps.InverseFunctions]]
 deps = ["Test"]
@@ -535,10 +569,10 @@ uuid = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 version = "1.3.0"
 
 [[deps.LazyStack]]
-deps = ["LinearAlgebra", "NamedDims", "OffsetArrays", "Test", "ZygoteRules"]
-git-tree-sha1 = "a8bf67afad3f1ee59d367267adb7c44ccac7fdee"
+deps = ["ChainRulesCore", "LinearAlgebra", "NamedDims", "OffsetArrays"]
+git-tree-sha1 = "2eb4a5bf2eb0519ebf40c797ba5637d327863637"
 uuid = "1fad7336-0346-5a1a-a56f-a06ba010965b"
-version = "0.0.7"
+version = "0.0.8"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -568,9 +602,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LogExpFunctions]]
 deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "361c2b088575b07946508f135ac556751240091c"
+git-tree-sha1 = "94d9c52ca447e23eac0c0f074effbcd38830deb5"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.17"
+version = "0.3.18"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -611,9 +645,9 @@ version = "1.0.1"
 
 [[deps.NamedDims]]
 deps = ["AbstractFFTs", "ChainRulesCore", "CovarianceEstimation", "LinearAlgebra", "Pkg", "Requires", "Statistics"]
-git-tree-sha1 = "cb8ebcee2b4e07b72befb9def593baef8aa12f07"
+git-tree-sha1 = "f39537cbe1cf4f407e65bdf7aca6b04f5877fbb1"
 uuid = "356022a1-0364-5f58-8944-0da4b18d706f"
-version = "0.2.50"
+version = "1.1.0"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
@@ -681,15 +715,15 @@ uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [[deps.PyCall]]
 deps = ["Conda", "Dates", "Libdl", "LinearAlgebra", "MacroTools", "Serialization", "VersionParsing"]
-git-tree-sha1 = "1fc929f47d7c151c839c5fc1375929766fb8edcc"
+git-tree-sha1 = "53b8b07b721b77144a0fbbbc2675222ebf40a02d"
 uuid = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
-version = "1.93.1"
+version = "1.94.1"
 
 [[deps.PyPlot]]
 deps = ["Colors", "LaTeXStrings", "PyCall", "Sockets", "Test", "VersionParsing"]
-git-tree-sha1 = "14c1b795b9d764e1784713941e787e1384268103"
+git-tree-sha1 = "f9d953684d4d21e947cb6d642db18853d43cb027"
 uuid = "d330b81b-6aea-500a-939a-2ce795aea3ee"
-version = "2.10.0"
+version = "2.11.0"
 
 [[deps.PyPlotUtils]]
 deps = ["Accessors", "AxisKeys", "Colors", "DataPipes", "DirectionalStatistics", "DomainSets", "IntervalSets", "LinearAlgebra", "NonNegLeastSquares", "PyCall", "PyPlot", "StatsBase", "Unitful"]
@@ -712,10 +746,10 @@ deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[deps.RectiGrids]]
-deps = ["AxisKeys", "Random"]
-git-tree-sha1 = "912e131b77009e273867f1982915bd613f40f7c0"
+deps = ["AxisKeys", "ConstructionBase", "Random", "StaticArraysCore"]
+git-tree-sha1 = "5892b3551d6bea70066434ade9628fe2e176191b"
 uuid = "8ac6971d-971d-971d-971d-971d5ab1a71a"
-version = "0.1.10"
+version = "0.1.12"
 
 [[deps.Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
@@ -774,14 +808,14 @@ version = "1.2.2"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "8803c6dea034ab8cd988abe4a91e5589d61c7416"
+git-tree-sha1 = "dfec37b90740e3b9aa5dc2613892a3fc155c3b42"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.5.4"
+version = "1.5.6"
 
 [[deps.StaticArraysCore]]
-git-tree-sha1 = "5b413a57dd3cea38497d745ce088ac8592fbb5be"
+git-tree-sha1 = "ec2bd695e905a3c755b33026954b119ea17f2d22"
 uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
-version = "1.1.0"
+version = "1.3.0"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -806,10 +840,10 @@ uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 version = "1.0.1"
 
 [[deps.StructArrays]]
-deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
-git-tree-sha1 = "ec47fb6069c57f1cee2f67541bf8f23415146de7"
+deps = ["Adapt", "DataAPI", "StaticArraysCore", "Tables"]
+git-tree-sha1 = "8c6ac65ec9ab781af05b08ff305ddc727c25f680"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.6.11"
+version = "0.6.12"
 
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
@@ -864,12 +898,6 @@ deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
 version = "1.2.12+3"
 
-[[deps.ZygoteRules]]
-deps = ["MacroTools"]
-git-tree-sha1 = "8c1a8e4dfacb1fd631745552c8db35d0deb09ea0"
-uuid = "700de1a5-db45-46bc-99cf-38207098b444"
-version = "0.2.2"
-
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
@@ -899,6 +927,15 @@ version = "17.4.0+0"
 # ╠═63ac4bc8-b42b-4d77-ba6c-c2a13da61977
 # ╠═d3c72bd3-7dcd-4dc3-86c8-ad1b37bf84d7
 # ╠═290dfedd-ff44-495f-b25a-213372891cb5
+# ╟─f2b4453c-6955-49c8-97ae-e45cd2788a0e
+# ╠═bd65eeb5-7c3f-4975-874d-948c938b7a56
+# ╠═0db80bc0-bc94-4c80-8149-6b92d28ec5d1
+# ╠═8798f5ca-9b09-4251-9e5f-849bb6062891
+# ╠═bd3b5f76-0d7f-4c1b-af7d-410f18f8fdf7
+# ╠═c1208386-200b-4e5e-9f6f-3a43c28e7ae0
+# ╠═f21df0d4-cbb7-4016-8c04-5df623360803
+# ╠═4cd15ace-8418-4118-ba69-23f6c3bc7331
+# ╠═b27270bd-63c3-41e2-a81c-06857f133282
 # ╟─3524e098-d91e-4d71-b730-19e0fb768f90
 # ╟─49e27844-311c-40a7-a74e-c0eb7a8694f3
 # ╠═1394b5a1-a496-41cd-9141-bb5842665414
@@ -944,5 +981,6 @@ version = "17.4.0+0"
 # ╠═87c909b3-af7e-49e5-b92f-74c6d89356bf
 # ╠═e0e83090-ebff-41af-9f43-8fa15e90175e
 # ╠═1a4affaa-465d-4bdd-9f79-b9fc09e4ce21
+# ╠═e8983922-5f1c-4696-b3dc-b84135bb66b1
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

@@ -7,6 +7,7 @@ using SkyCoords; using SkyCoords: lat, lon
 using IntervalSets
 using Distributions
 using Dictionaries
+using StaticArrays: SVector, MVector
 using InverseFunctions
 
 
@@ -21,6 +22,15 @@ using InverseFunctions
 
     @test_throws Exception eval(:(@replace(nt_1.c = nt_2.a)))
     @test_throws Exception eval(:(@replace(_.c = _.a)))
+end
+
+@testset "staticarrays" begin
+    sv = SVector(1, 2)
+    @test SVector(3.0, 2.0) === @set sv.x = 3.0
+    @test SVector(3.0, 5.0) === @inferred setproperties(sv, x = 3.0, y = 5.0)
+    @test SVector(-1.0, -2.0) === @set sv.data = (-1.0, -2)
+
+    @test_throws "does not have properties (:z,)" @set sv.z = 3.0
 end
 
 struct S{TA, TB}
@@ -92,6 +102,11 @@ end
     @test @modify(x -> 2x, A |> ViewLens((1:2,))) === A == [-4, -6, (a=10, b=4)]
     Accessors.test_getset_laws(opt, A, "a", :b)
     Accessors.test_getset_laws(@optic(_ |> ViewLens((1:2,))), A, [5, 6], [7, 8])
+
+    A = [1, 2, (a=3, b=4)]
+    @test set(A, @optic(view(_, 1:2)), [-2, -3]) === A == [-2, -3, (a=3, b=4)]
+    @test @modify(x -> 2x, A |> view(_, 1:2)) === A == [-4, -6, (a=3, b=4)]
+    @test @modify(x -> x + 1, A |> view(_, 1:2) |> Elements()) === A == [-3, -5, (a=3, b=4)]
 end
 
 @testset "ranges" begin
@@ -123,6 +138,19 @@ end
     @test axes(B) == (10:11, 1:3)
 
     @test_throws Exception @set axes(A)[1] = 10:12
+
+    @test A == @set axes(A)[1] = Base.OneTo(2)
+    @test reshape(A, (2, 1, 3)) == @insert axes(A)[2] = Base.OneTo(1)
+    B = @insert size(A)[2] = 1
+    @test reshape(A, (2, 1, 3)) == B
+    @test A == @delete size(B)[2]
+    @test_throws Exception @set size(A)[1] = 1
+    @test_throws Exception @insert size(A)[2] = 2
+
+    @inferred set(A, @optic(axes(_)[1]), Base.OneTo(2))
+    @inferred insert(A, @optic(axes(_)[2]), Base.OneTo(1))
+    @inferred insert(A, @optic(size(_)[2]), 1)
+    @inferred delete(B, @optic(size(_)[2]))
 
     B = @set vec(A) = 1:6
     @test B == [1 3 5; 2 4 6]
@@ -263,6 +291,11 @@ end
     @test Interval{:open, :closed}(-2, 5) === @set leftendpoint(int) = -2
     @test Interval{:open, :closed}(1, 2) === @set rightendpoint(int) = 2
     @test Interval{:closed, :closed}(1, 5) === @set first(closedendpoints(int)) = true
+
+    @test 1 === @set 2 |> mod(_, 0..3) = 1
+    @test 0 === @set 2 |> mod(_, 0..3) = 0
+    @test 3 === @set 2 |> mod(_, 0..3) = 3
+    @test 31 === @set 32 |> mod(_, 0..3) = 1
 end
 
 
