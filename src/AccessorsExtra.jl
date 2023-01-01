@@ -6,7 +6,7 @@ using ConstructionBase
 using InverseFunctions
 using Requires
 
-export ViewLens, Keys, Values, @replace
+export ViewLens, Keys, Values, Pairs, @replace
 
 
 function __init__()
@@ -100,6 +100,25 @@ struct Values end
 Accessors.OpticStyle(::Type{Values}) = Accessors.ModifyBased()
 Accessors.modify(f, obj::Dict, ::Values) = Dict(k => f(v) for (k, v) in pairs(obj))
 Accessors.modify(f, obj::Union{AbstractArray, Tuple, NamedTuple}, ::Values) = map(f, obj)
+
+struct Pairs end
+Accessors.OpticStyle(::Type{Pairs}) = Accessors.ModifyBased()
+Accessors.modify(f, obj::Dict, ::Pairs) = Dict(f(p) for p in pairs(obj))
+Accessors.modify(f, obj::AbstractArray, ::Pairs) = map(eachindex(obj), obj) do i, x
+    p = f(i => x)
+    @assert first(p) == i
+    last(p)
+end
+Accessors.modify(f, obj::Tuple, ::Pairs) = ntuple(length(obj)) do i
+    p = f(i => obj[i])
+    @assert first(p) == i
+    last(p)
+end
+Accessors.modify(f, obj::NamedTuple, ::Pairs) = map(keys(obj), values(obj)) do k, v
+    p = f(k => v)
+    @assert first(p) == k
+    last(p)
+end |> NamedTuple{keys(obj)}
 
 
 # replace()

@@ -150,14 +150,19 @@ end
 @testset "other optics" begin
     T = (4, 5, 6)
     @test @modify(x -> 2x, T |> Values()) === (8, 10, 12)
+    @test @modify(((i, x),) -> i => i + x, T |> Pairs()) === (5, 7, 9)
+    @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> Pairs())
     T = (a=4, b=5, c=6)
     @test @modify(x -> 2x, T |> Values()) === (a=8, b=10, c=12)
     @test @modify(x -> Symbol(x, x), T |> Keys()) === (aa=4, bb=5, cc=6)
+    @test @modify(((i, x),) -> i => (i, 2x), T |> Pairs()) === (a=(:a, 8), b=(:b, 10), c=(:c, 12))
     A = [4, 5, 6]
     @test @modify(x -> 2x, A |> Values()) == [8, 10, 12]
+    @test @modify(((i, x),) -> i => i + x, A |> Pairs()) == [5, 7, 9]
     D = Dict(4 => 5, 6 => 7)
     @test @modify(x -> x+1, D |> Values()) == Dict(4 => 6, 6 => 8)
     @test @modify(x -> x+1, D |> Keys()) == Dict(5 => 5, 7 => 7)
+    @test @modify(((i, x),) -> 2i => i + x, D |> Pairs()) == Dict(8 => 9, 12 => 13)
     D = dictionary([4 => 5, 6 => 7])
     @test @modify(x -> x+1, D |> Values()) == dictionary([4 => 6, 6 => 8])
     @test @modify(x -> x+1, D |> Keys()) == dictionary([5 => 5, 7 => 7])
