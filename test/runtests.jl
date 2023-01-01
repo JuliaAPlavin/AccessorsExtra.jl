@@ -158,6 +158,10 @@ end
     @test named_axiskeys(B) == named_axiskeys(A)
     @test AxisKeys.keyless_unname(B) == [6 5 4; 3 2 1]
 
+    B = @set vec(A) = 1:6
+    @test AxisKeys.keyless_unname(B) == [1 3 5; 2 4 6]
+    @test named_axiskeys(B) == named_axiskeys(A)
+
 
     @test_throws ArgumentError @set axiskeys(A)[1] = 1:3
     @test_throws ArgumentError @set named_axiskeys(A).x = 1:3
@@ -186,7 +190,7 @@ end
 
     B = @set vec(A) = 1:6
     @test AxisKeys.keyless_unname(B) == [1 3 5; 2 4 6]
-    @test named_axiskeys(B) === named_axiskeys(A)
+    @test axiskeys(B) == axiskeys(A)
 end
 
 @testset "inverses" begin
