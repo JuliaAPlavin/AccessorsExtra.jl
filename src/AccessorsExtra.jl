@@ -37,6 +37,13 @@ function __init__()
 
         ConstructionBase.setproperties(x::KeyedArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), AxisKeys.named_axiskeys(x))
     end
+
+    @require Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f" begin
+        using .Distributions
+
+        InverseFunctions.inverse(f::Base.Fix1{typeof(cdf)}) = Base.Fix1(quantile, f.x)
+        InverseFunctions.inverse(f::Base.Fix1{typeof(quantile)}) = Base.Fix1(cdf, f.x)
+    end
 end
 
 

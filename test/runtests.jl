@@ -3,6 +3,7 @@ using Test
 using StructArrays
 using SplitApplyCombine
 using AxisKeys
+using Distributions
 using InverseFunctions
 
 
@@ -116,6 +117,10 @@ end
 @testset "inverses" begin
     InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
     InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
+
+    d = Normal(2, 5)
+    InverseFunctions.test_inverse(@optic(cdf(d, _)), 2)
+    InverseFunctions.test_inverse(@optic(quantile(d, _)), 0.1)
 end
 
 
