@@ -7,6 +7,7 @@ using SkyCoords; using SkyCoords: lat, lon
 using IntervalSets
 using Distributions
 using Dictionaries
+using StaticArrays
 using InverseFunctions
 
 
@@ -21,6 +22,14 @@ using InverseFunctions
 
     @test_throws Exception eval(:(@replace(nt_1.c = nt_2.a)))
     @test_throws Exception eval(:(@replace(_.c = _.a)))
+end
+
+@testset "staticarrays" begin
+    sv = SVector(1, 2)
+    @test SVector(3.0, 2.0) === @set sv.x = 3.0
+    @test SVector(3.0, 5.0) === setproperties(sv, x = 3.0, y = 5.0)
+    @test SVector(-1.0, -2.0) === @set sv.data = (-1.0, -2)
+    @test_throws "does not have properties (:z,)" @set sv.z = 3.0
 end
 
 struct S{TA, TB}

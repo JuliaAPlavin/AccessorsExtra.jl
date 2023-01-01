@@ -4,6 +4,7 @@ using Reexport
 @reexport using Accessors
 using ConstructionBase
 using InverseFunctions
+using StaticArraysCore: SVector, MVector
 using Requires
 
 export ViewLens, Keys, Values, Pairs, @replace
@@ -82,6 +83,24 @@ function __init__()
 
         # use regular mod() setter here when added to Accessors
         Accessors.set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = width(f.x) * fld(x, width(f.x)) + v
+    end
+end
+
+
+ConstructionBase.constructorof(::Type{<:SVector}) = SVector
+ConstructionBase.constructorof(::Type{<:MVector}) = MVector
+
+@generated function ConstructionBase.setproperties(obj::Union{SVector{N}, MVector{N}}, patch::NamedTuple{KS}) where {N, KS}
+    if KS == (:data,)
+        :( constructorof(typeof(obj))(only(patch)) )
+    else
+        propnames = (:x, :y, :z, :w)[1:N]
+        KS ⊆ propnames || error("type $obj does not have properties $KS")
+        field_exprs = map(enumerate(propnames)) do (i, p)
+            from = p ∈ KS ? :patch : :obj
+            :( $from.$p )
+        end
+        :( constructorof(typeof(obj))($(field_exprs...)) )
     end
 end
 
