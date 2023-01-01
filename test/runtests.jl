@@ -115,3 +115,6 @@ end
 
 import CompatHelperLocal as CHL
 CHL.@check()
+
+using Aqua
+Aqua.test_all(AccessorsExtra)

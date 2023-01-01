@@ -1,4 +1,5 @@
 [deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
 CompatHelperLocal = "5224ae11-6099-4aaa-941d-3aab004bd678"
 SplitApplyCombine = "03a91e81-4c3e-53e1-a0a4-9c0c8f19dd66"
@@ -6,6 +7,7 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+Aqua = "0.5.5"
 AxisKeys = "0.2.4"
 CompatHelperLocal = "0.1.24"
 SplitApplyCombine = "1.2.1"

@@ -12,7 +12,7 @@ function __init__()
     @require StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a" begin
         using .StructArrays
 
-        Accessors.set(x::StructArray, ::typeof(StructArrays.components), v) where {T} = StructArray(v)
+        Accessors.set(x::StructArray, ::typeof(StructArrays.components), v) = StructArray(v)
 
         ConstructionBase.setproperties(x::StructArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), StructArrays.components(x))
 
