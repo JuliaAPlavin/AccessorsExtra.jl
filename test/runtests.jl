@@ -3,6 +3,7 @@ using Test
 using StructArrays
 using SplitApplyCombine
 using AxisKeys
+using SkyCoords; using SkyCoords: lat, lon
 using Distributions
 using Dictionaries
 using InverseFunctions
@@ -224,6 +225,16 @@ end
     D = ArrayDictionary([4, 6], [5, 7])
     @test dictionary([4 => 6, 6 => 8]) == @inferred modify(x -> x+1, D, Values())
     @test dictionary([5 => 5, 7 => 7]) == @inferred modify(x -> x+1, D, Keys())
+end
+
+@testset "skycoords" begin
+    for T in [ICRSCoords, FK5Coords{2000}, GalCoords]
+        c = T(0.5, -1)
+        @test @set(lat(c) = 1.2) == T(0.5, 1.2)
+        @test lat(@set(lat(c) = 1.2)) == 1.2
+        @test @set(lon(c) = 2.3) == T(2.3, -1)
+        @test lon(@set(lon(c) = 2.3)) == 2.3
+    end
 end
 
 

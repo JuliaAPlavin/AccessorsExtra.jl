@@ -57,6 +57,18 @@ function __init__()
         Accessors.modify(f, obj::AbstractDictionary, ::Keys) = constructorof(typeof(obj))(map(f, keys(obj)), values(obj))
         Accessors.modify(f, obj::AbstractDictionary, ::Values) = map(f, obj)
     end
+
+    @require SkyCoords = "fc659fc5-75a3-5475-a2ea-3da92c065361" begin
+        using .SkyCoords
+        using .SkyCoords: lat, lon
+
+        Accessors.set(x::ICRSCoords, ::typeof(lon), v) = @set x.ra = v
+        Accessors.set(x::ICRSCoords, ::typeof(lat), v) = @set x.dec = v
+        Accessors.set(x::FK5Coords, ::typeof(lon), v) = @set x.ra = v
+        Accessors.set(x::FK5Coords, ::typeof(lat), v) = @set x.dec = v
+        Accessors.set(x::GalCoords, ::typeof(lon), v) = @set x.l = v
+        Accessors.set(x::GalCoords, ::typeof(lat), v) = @set x.b = v
+    end
 end
 
 
