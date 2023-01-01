@@ -27,6 +27,7 @@ function __init__()
 
         # https://github.com/JuliaObjects/Accessors.jl/pull/53
         Base.setindex!(ma::MappedArray, val, ix) = parent(ma)[ix] = set(parent(ma)[ix], ma.f, val)
+        Base.append!(ma::MappedArray, iter) = append!(parent(ma), map(inverse(ma.f), iter))
     end
 
     @require AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5" begin

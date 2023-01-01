@@ -63,6 +63,18 @@ end
     Y[2] = 100
     @test Y == [2, 100]
     @test X == [(a=1, b=2), (a=3, b=100)]
+
+    X = [1, 2]
+    Y = mapview(@optic(_ * 10), X)
+    @test Y == [10, 20]
+    Y[2] = 500
+    @test Y == [10, 500]
+    @test X == [1, 50]
+    push!(Y, -10)
+    @test Y == [10, 500, -10]
+    @test X == [1, 50, -1]
+    @test_throws InexactError Y[1] = 1
+    @test_throws InexactError push!(Y, 1)
 end
 
 @testset "getfield" begin
