@@ -42,7 +42,7 @@ end
     @test @set(s.a = 10:12)::StructArray == StructArray(a=10:12)
     @test @insert(s.b = 10:12)::StructArray == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]
     @test @delete(@insert(s.b = 10:12).a)::StructArray == StructArray(b=10:12)
-    @test @delete(s.a)::StructArray == NamedTuple{(), Tuple{}}[]
+    @test_throws "only eltypes with fields" @delete(s.a)
 
     s = StructArray([(a=(x=1, y=:abc),), (a=(x=2, y=:def),)]; unwrap=T -> T <: NamedTuple)
     @test @set(s.a = 10:12)::StructArray == StructArray(a=10:12)
