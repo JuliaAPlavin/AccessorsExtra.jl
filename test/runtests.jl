@@ -37,6 +37,17 @@ end
     @test_throws Exception set(t, @optic(getfield(_, :z)), 3)
 end
 
+@testset "view" begin
+    A = [1, 2, (a=3, b=4)]
+    opt = @optic _ |> ViewLens(3) |> _.a
+    @test opt(A) == 3
+    @test set(A, opt, 10) === A == [1, 2, (a=10, b=4)]
+    @test set(A, ViewLens((1:2,)), [-2, -3]) === A == [-2, -3, (a=10, b=4)]
+    @test @modify(x -> 2x, A |> ViewLens((1:2,))) === A == [-4, -6, (a=10, b=4)]
+    Accessors.test_getset_laws(opt, A, "a", :b)
+    Accessors.test_getset_laws(@optic(_ |> ViewLens((1:2,))), A, [5, 6], [7, 8])
+end
+
 
 import CompatHelperLocal as CHL
 CHL.@check()

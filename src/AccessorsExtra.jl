@@ -5,6 +5,8 @@ using Reexport
 using ConstructionBase
 using Requires
 
+export ViewLens
+
 
 function __init__()
     @require StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a" begin
@@ -33,4 +35,21 @@ end
 # set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57
 Accessors.set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
 Accessors.set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
+
+# ViewLens: adapted from IndexLens
+struct ViewLens{I<:Tuple}
+    indices::I
+end
+
+ViewLens(indices::Integer...) = ViewLens(indices)
+
+Base.@propagate_inbounds function (lens::ViewLens)(obj)
+    v = view(obj, lens.indices...)
+    ndims(v) == 0 ? v[] : v
+end
+
+Base.@propagate_inbounds function Accessors.set(obj, lens::ViewLens, val)
+    setindex!(obj, val, lens.indices...)
+end
+
 end
