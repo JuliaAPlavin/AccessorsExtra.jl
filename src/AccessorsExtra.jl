@@ -84,6 +84,12 @@ function __init__()
         # use regular mod() setter here when added to Accessors
         Accessors.set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = width(f.x) * fld(x, width(f.x)) + v
     end
+
+    @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" begin
+        using .Unitful
+
+        InverseFunctions.inverse(f::Base.Fix1{typeof(ustrip)}) = Base.Fix1(*, 1*f.x)
+    end
 end
 
 

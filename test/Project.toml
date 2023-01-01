@@ -14,6 +14,7 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 Aqua = "0.5.5"
@@ -30,4 +31,5 @@ StaticArrays = "1.5.6"
 StructArrays = "0.6.8"
 TestItemRunner = "0.2.0"
 TestItems = "0.1.0"
+Unitful = "1.11"
 julia = "1.7"

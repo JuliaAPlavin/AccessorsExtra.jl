@@ -242,12 +242,18 @@ end
 @testitem "inverses" begin
     using InverseFunctions
     using Distributions
+    using Unitful
+
     InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
     InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
 
     d = Normal(2, 5)
     InverseFunctions.test_inverse(@optic(cdf(d, _)), 2)
     InverseFunctions.test_inverse(@optic(quantile(d, _)), 0.1)
+
+    InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"m")
+    InverseFunctions.test_inverse(@optic(ustrip(0.5u"m", _)), 2u"m")
+    InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"mm")
 end
 
 @testitem "other optics" begin
