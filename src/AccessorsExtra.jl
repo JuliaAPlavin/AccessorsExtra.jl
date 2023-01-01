@@ -173,12 +173,21 @@ Accessors.modify(f, obj::NamedTuple{NS}, ::Keys) where {NS} = NamedTuple{map(f, 
 
 struct Values end
 Accessors.OpticStyle(::Type{Values}) = Accessors.ModifyBased()
-Accessors.modify(f, obj::Dict, ::Values) = Dict(k => f(v) for (k, v) in pairs(obj))
 Accessors.modify(f, obj::Union{AbstractArray, Tuple, NamedTuple}, ::Values) = map(f, obj)
+function Accessors.modify(f, dict::Dict, ::Values)
+    V = Core.Compiler.return_type(f, Tuple{valtype(dict)})
+    vals = dict.vals
+    newvals = similar(vals, V)
+    @inbounds for i in dict.idxfloor:lastindex(vals)
+        if Base.isslotfilled(dict, i)
+            newvals[i] = f(vals[i])
+        end
+    end
+    setproperties(dict, vals=newvals)
+end
 
 struct Pairs end
 Accessors.OpticStyle(::Type{Pairs}) = Accessors.ModifyBased()
-Accessors.modify(f, obj::Dict, ::Pairs) = Dict(f(p) for p in pairs(obj))
 Accessors.modify(f, obj::AbstractArray, ::Pairs) = map(eachindex(obj), obj) do i, x
     p = f(i => x)
     @assert first(p) == i
@@ -194,6 +203,15 @@ Accessors.modify(f, obj::NamedTuple, ::Pairs) = map(keys(obj), values(obj)) do k
     @assert first(p) == k
     last(p)
 end |> NamedTuple{keys(obj)}
+Accessors.modify(f, obj::Dict, ::Pairs) = Dict(f(p) for p in pairs(obj))
+
+
+function ConstructionBase.setproperties(d::Dict, patch::NamedTuple{(:vals,)})
+    K = keytype(d)
+    V = eltype(patch.vals)
+    @assert length(d.keys) == length(patch.vals)
+    Dict{K,V}(copy(d.slots), copy(d.keys), patch.vals, d.ndel, d.count, d.age, d.idxfloor, d.maxprobe)
+end
 
 
 # replace()
