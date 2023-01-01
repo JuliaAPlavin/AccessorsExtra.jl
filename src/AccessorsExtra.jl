@@ -95,14 +95,11 @@ end
 
 ViewLens(indices::Integer...) = ViewLens(indices)
 
-Base.@propagate_inbounds function (lens::ViewLens)(obj)
-    v = view(obj, lens.indices...)
-    ndims(v) == 0 ? v[] : v
-end
+Base.@propagate_inbounds (lens::ViewLens{<:Tuple{Vararg{Integer}}})(obj) = obj[lens.indices...]
+Base.@propagate_inbounds (lens::ViewLens)(obj) = view(obj, lens.indices...)
 
-Base.@propagate_inbounds function Accessors.set(obj, lens::ViewLens, val)
-    setindex!(obj, val, lens.indices...)
-end
+Base.@propagate_inbounds Accessors.set(obj, lens::ViewLens, val) = setindex!(obj, val, lens.indices...)
+Base.@propagate_inbounds Accessors.set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
 
 
 # set axes()
