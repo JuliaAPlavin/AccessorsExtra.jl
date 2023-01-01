@@ -21,6 +21,11 @@ using InverseFunctions
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
 
+struct S{TA, TB}
+    a::TA
+    b::TB
+end
+
 @testset "structarrays" begin
     s = StructArray(a=[1, 2, 3])
     @test @insert(StructArrays.components(s).b = 10:12)::StructArray == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]
@@ -38,6 +43,15 @@ end
     @test @insert(s.a.z = 10:11)::StructArray == [(a=(x=1, y=:abc, z=10),), (a=(x=2, y=:def, z=11),)]
     @test @delete(s.a.y)::StructArray == [(a=(x=1,),), (a=(x=2,),)]
     @test @replace(s.b = s.a.x)::StructArray == [(a=(y=:abc,), b=1), (a=(y=:def,), b=2)]
+
+    s = StructArray([S(1, 2), S(3, 4)])
+    @test @set(s.a = 10:11)::StructArray == StructArray([S(10, 2), S(11, 4)])
+    @test_broken @set(s.a = [:a, :b])::StructArray == StructArray([S(:a, 2), S(:b, 4)])
+    # @test @set(s.a.x = 10:11)::StructArray == [(a=(x=10, y=:abc),), (a=(x=11, y=:def),)]
+    # @test @insert(s.b = 10:11)::StructArray == [(a=(x=1, y=:abc), b=10), (a=(x=2, y=:def), b=11)]
+    # @test @insert(s.a.z = 10:11)::StructArray == [(a=(x=1, y=:abc, z=10),), (a=(x=2, y=:def, z=11),)]
+    # @test @delete(s.a.y)::StructArray == [(a=(x=1,),), (a=(x=2,),)]
+    # @test @replace(s.b = s.a.x)::StructArray == [(a=(y=:abc,), b=1), (a=(y=:def,), b=2)]
 end
 
 @testset "mapview" begin

@@ -13,12 +13,13 @@ function __init__()
     @require StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a" begin
         using .StructArrays
 
-        Accessors.set(x::StructArray, ::typeof(StructArrays.components), v) = StructArray(v)
+        Accessors.set(x::StructArray{<:Union{Tuple, NamedTuple}}, ::typeof(StructArrays.components), v) = StructArray(v)
+        Accessors.set(x::StructArray{T}, ::typeof(StructArrays.components), v) where {T} = StructArray{T}(v)
 
         ConstructionBase.setproperties(x::StructArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), StructArrays.components(x))
 
-        Accessors.insert(x::StructArray, o::Accessors.PropertyLens, v) = insert(x, o ∘ StructArrays.components, v)
-        Accessors.delete(x::StructArray, o::Accessors.PropertyLens) = delete(x, o ∘ StructArrays.components)
+        Accessors.insert(x::StructArray{<:NamedTuple}, o::Accessors.PropertyLens, v) = insert(x, o ∘ StructArrays.components, v)
+        Accessors.delete(x::StructArray{<:NamedTuple}, o::Accessors.PropertyLens) = delete(x, o ∘ StructArrays.components)
     end
 
     @require SplitApplyCombine = "03a91e81-4c3e-53e1-a0a4-9c0c8f19dd66" begin
