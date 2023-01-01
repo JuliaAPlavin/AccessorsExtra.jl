@@ -251,7 +251,9 @@ end
         @test lon(@set(lon(c) = 2.3)) == 2.3
     end
     c = ICRSCoords(0.5, -1)
-    @test @set(c |> convert(GalCoords, _) |> lon = 0) ≈ ICRSCoords(5.884005859354123, -0.69919820078915)
+    c1 = @set(c |> convert(GalCoords, _) |> lon = 0)::ICRSCoords
+    @test c1.ra ≈ 5.884005859354123
+    @test c1.dec ≈ -0.69919820078915
 end
 
 @testset "intervals" begin
