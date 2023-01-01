@@ -101,8 +101,12 @@ function Accessors.set(obj, ::typeof(axes), v::Tuple)
     copyto!(res, obj)
 end
 
-# set vec() using reshape
-Accessors.set(x::AbstractArray, ::typeof(vec), v::AbstractVector) = reshape(v, size(x))
+# set vec() keeping array shape and type (not eltype)
+function Accessors.set(x::AbstractArray, ::typeof(vec), v::AbstractVector)
+    res = similar(x, eltype(v))
+    vec(res) .= v
+    res
+end
 
 # set on ranges
 Accessors.set(r::AbstractRange, ::typeof(step), s) = range(first(r), last(r), step=s)

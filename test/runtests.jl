@@ -183,6 +183,10 @@ end
     # B = @set AxisKeys.keyless_unname(A) = [6 5 4; 3 2 1]
     # @test named_axiskeys(B) == named_axiskeys(A)
     # @test AxisKeys.keyless_unname(A) == [6 5 4; 3 2 1]
+
+    B = @set vec(A) = 1:6
+    @test AxisKeys.keyless_unname(B) == [1 3 5; 2 4 6]
+    @test named_axiskeys(B) === named_axiskeys(A)
 end
 
 @testset "inverses" begin
