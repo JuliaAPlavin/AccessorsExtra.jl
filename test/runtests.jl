@@ -1,17 +1,9 @@
-using AccessorsExtra
-using Test
-using StructArrays
-using SplitApplyCombine
-using AxisKeys
-using SkyCoords; using SkyCoords: lat, lon
-using IntervalSets
-using Distributions
-using Dictionaries
-using StaticArrays: SVector, MVector
-using InverseFunctions
+using TestItems
+using TestItemRunner
+@run_package_tests
 
 
-@testset "replace" begin
+@testitem "replace" begin
     nt = (a=1, b=:x)
     @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (c=1, b=:x)
     @test AccessorsExtra._replace(nt, (@optic(_.a) => @optic(_.c)) ∘ identity) === (c=1, b=:x)
@@ -24,7 +16,9 @@ using InverseFunctions
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
 
-@testset "staticarrays" begin
+@testitem "staticarrays" begin
+    using StaticArrays: SVector, MVector
+
     sv = SVector(1, 2)
     @test SVector(3.0, 2.0) === @set sv.x = 3.0
     @test SVector(3.0, 5.0) === @inferred setproperties(sv, x = 3.0, y = 5.0)
@@ -33,12 +27,14 @@ end
     @test_throws "does not have properties (:z,)" @set sv.z = 3.0
 end
 
-struct S{TA, TB}
-    a::TA
-    b::TB
-end
+@testitem "structarrays" begin
+    using StructArrays
 
-@testset "structarrays" begin
+    struct S{TA, TB}
+        a::TA
+        b::TB
+    end
+
     s = StructArray(a=[1, 2, 3])
     @test @insert(StructArrays.components(s).b = 10:12)::StructArray == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]
     @test setproperties(s, a=10:12)::StructArray == StructArray(a=10:12)
@@ -66,7 +62,9 @@ end
     # @test @replace(s.b = s.a.x)::StructArray == [(a=(y=:abc,), b=1), (a=(y=:def,), b=2)]
 end
 
-@testset "mapview" begin
+@testitem "mapview" begin
+    using SplitApplyCombine: mapview
+
     X = [(a=1, b=2), (a=3, b=4)]
     Y = mapview(@optic(_.b), X)
     @test Y == [2, 4]
@@ -87,13 +85,13 @@ end
     @test_throws InexactError push!(Y, 1)
 end
 
-@testset "getfield" begin
+@testitem "getfield" begin
     t = (x=1, y=2)
     @test set(t, @optic(getfield(_, :x)), :hello) === (x=:hello, y=2)
     @test_throws Exception set(t, @optic(getfield(_, :z)), 3)
 end
 
-@testset "view" begin
+@testitem "view" begin
     A = [1, 2, (a=3, b=4)]
     opt = @optic _ |> ViewLens(3) |> _.a
     @test opt(A) == 3
@@ -109,7 +107,7 @@ end
     @test @modify(x -> x + 1, A |> view(_, 1:2) |> Elements()) === A == [-3, -5, (a=3, b=4)]
 end
 
-@testset "ranges" begin
+@testitem "ranges" begin
     r = 1:10
     @test 1:3:10 === @set step(r) = 3
     @test 1:0.5:10 === @set length(r) = 19
@@ -129,7 +127,9 @@ end
     @test Base.OneTo(15) === @set last(r) = 15
 end
 
-@testset "arrays" begin
+@testitem "arrays" begin
+    using OffsetArrays
+
     A = [1 2 3; 4 5 6]
     
     B = @set axes(A)[1] = 10:11
@@ -159,7 +159,9 @@ end
     @test B == [6 4 2; 5 3 1]
 end
 
-@testset "axiskeys" begin
+@testitem "axiskeys" begin
+    using AxisKeys
+
     A = KeyedArray([1 2 3; 4 5 6], x=[:a, :b], y=11:13)
 
     for B in (
@@ -237,7 +239,9 @@ end
     @test axiskeys(B) == axiskeys(A)
 end
 
-@testset "inverses" begin
+@testitem "inverses" begin
+    using InverseFunctions
+    using Distributions
     InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
     InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
 
@@ -246,7 +250,9 @@ end
     InverseFunctions.test_inverse(@optic(quantile(d, _)), 0.1)
 end
 
-@testset "other optics" begin
+@testitem "other optics" begin
+    using Dictionaries
+
     T = (4, 5, 6)
     @test (8, 10, 12) === @inferred modify(x -> 2x, T, Values())
     @test (5, 7, 9) === @inferred modify(((i, x),) -> i => i + x, T, Pairs())
@@ -270,7 +276,10 @@ end
     @test dictionary([5 => 5, 7 => 7]) == @inferred modify(x -> x+1, D, Keys())
 end
 
-@testset "skycoords" begin
+@testitem "skycoords" begin
+    using SkyCoords
+    using SkyCoords: lat, lon
+
     for T in [ICRSCoords, FK5Coords{2000}, GalCoords]
         c = T(0.5, -1)
         @test @set(lat(c) = 1.2) == T(0.5, 1.2)
@@ -284,7 +293,9 @@ end
     @test c1.dec ≈ -0.69919820078915
 end
 
-@testset "intervals" begin
+@testitem "intervals" begin
+    using IntervalSets
+
     int = Interval{:open, :closed}(1, 5)
     @test Interval{:open, :closed}(1, 10) === @set int.right = 10
     @test Interval{:open, :closed}(10.0, 11.0) === @set endpoints(int) = (10.0, 11.0)
@@ -299,8 +310,10 @@ end
 end
 
 
-import CompatHelperLocal as CHL
-CHL.@check()
+@testitem "_" begin
+    import CompatHelperLocal as CHL
+    CHL.@check()
 
-using Aqua
-Aqua.test_all(AccessorsExtra)
+    using Aqua
+    Aqua.test_all(AccessorsExtra)
+end
