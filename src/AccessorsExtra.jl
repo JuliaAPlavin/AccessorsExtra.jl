@@ -3,6 +3,7 @@ module AccessorsExtra
 using Reexport
 @reexport using Accessors
 using ConstructionBase
+using ConstructionBaseExtras
 using InverseFunctions
 using StaticArraysCore: SVector, MVector
 using Requires
@@ -21,14 +22,6 @@ function __init__()
 
         Accessors.insert(x::StructArray{<:NamedTuple}, o::Accessors.PropertyLens, v) = insert(x, o ∘ StructArrays.components, v)
         Accessors.delete(x::StructArray{<:NamedTuple}, o::Accessors.PropertyLens) = delete(x, o ∘ StructArrays.components)
-    end
-
-    @require SplitApplyCombine = "03a91e81-4c3e-53e1-a0a4-9c0c8f19dd66" begin
-        using .SplitApplyCombine: MappedArray
-
-        # https://github.com/JuliaObjects/Accessors.jl/pull/53
-        Base.setindex!(ma::MappedArray, val, ix) = (parent(ma)[ix] = set(parent(ma)[ix], ma.f, val); ma)
-        Base.append!(ma::MappedArray, iter) = (append!(parent(ma), map(inverse(ma.f), iter)); ma)
     end
 
     @require AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5" begin
@@ -75,20 +68,21 @@ function __init__()
     @require IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953" begin
         using .IntervalSets
 
-        ConstructionBase.constructorof(::Type{<:Interval{L, R}}) where {L, R} = Interval{L, R}
         Accessors.set(x::Interval, ::typeof(endpoints), v::NTuple{2}) = setproperties(x, left=first(v), right=last(v))
         Accessors.set(x::Interval, ::typeof(leftendpoint), v) = @set x.left = v
         Accessors.set(x::Interval, ::typeof(rightendpoint), v) = @set x.right = v
         Accessors.set(x::Interval, ::typeof(closedendpoints), v::NTuple{2, Bool}) = Interval{v[1] ? :closed : :open, v[2] ? :closed : :open}(endpoints(x)...)
 
-        # use regular mod() setter here when added to Accessors
-        Accessors.set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = width(f.x) * fld(x, width(f.x)) + v
+        Accessors.set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = @set x |> mod(_, width(f.x)) = v
+    end
+
+    @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" begin
+        using .Unitful
+
+        InverseFunctions.inverse(f::Base.Fix1{typeof(ustrip)}) = Base.Fix1(*, 1*f.x)
     end
 end
 
-
-ConstructionBase.constructorof(::Type{<:SVector}) = SVector
-ConstructionBase.constructorof(::Type{<:MVector}) = MVector
 
 @generated function ConstructionBase.setproperties(obj::Union{SVector{N}, MVector{N}}, patch::NamedTuple{KS}) where {N, KS}
     if KS == (:data,)
@@ -173,12 +167,21 @@ Accessors.modify(f, obj::NamedTuple{NS}, ::Keys) where {NS} = NamedTuple{map(f, 
 
 struct Values end
 Accessors.OpticStyle(::Type{Values}) = Accessors.ModifyBased()
-Accessors.modify(f, obj::Dict, ::Values) = Dict(k => f(v) for (k, v) in pairs(obj))
 Accessors.modify(f, obj::Union{AbstractArray, Tuple, NamedTuple}, ::Values) = map(f, obj)
+function Accessors.modify(f, dict::Dict, ::Values)
+    V = Core.Compiler.return_type(f, Tuple{valtype(dict)})
+    vals = dict.vals
+    newvals = similar(vals, V)
+    @inbounds for i in dict.idxfloor:lastindex(vals)
+        if Base.isslotfilled(dict, i)
+            newvals[i] = f(vals[i])
+        end
+    end
+    setproperties(dict, vals=newvals)
+end
 
 struct Pairs end
 Accessors.OpticStyle(::Type{Pairs}) = Accessors.ModifyBased()
-Accessors.modify(f, obj::Dict, ::Pairs) = Dict(f(p) for p in pairs(obj))
 Accessors.modify(f, obj::AbstractArray, ::Pairs) = map(eachindex(obj), obj) do i, x
     p = f(i => x)
     @assert first(p) == i
@@ -194,6 +197,15 @@ Accessors.modify(f, obj::NamedTuple, ::Pairs) = map(keys(obj), values(obj)) do k
     @assert first(p) == k
     last(p)
 end |> NamedTuple{keys(obj)}
+Accessors.modify(f, obj::Dict, ::Pairs) = Dict(f(p) for p in pairs(obj))
+
+
+function ConstructionBase.setproperties(d::Dict, patch::NamedTuple{(:vals,)})
+    K = keytype(d)
+    V = eltype(patch.vals)
+    @assert length(d.keys) == length(patch.vals)
+    Dict{K,V}(copy(d.slots), copy(d.keys), patch.vals, d.ndel, d.count, d.age, d.idxfloor, d.maxprobe)
+end
 
 
 # replace()
