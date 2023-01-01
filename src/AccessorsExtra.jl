@@ -69,6 +69,16 @@ function __init__()
         Accessors.set(x::GalCoords, ::typeof(lon), v) = @set x.l = v
         Accessors.set(x::GalCoords, ::typeof(lat), v) = @set x.b = v
     end
+
+    @require IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953" begin
+        using .IntervalSets
+
+        ConstructionBase.constructorof(::Type{<:Interval{L, R}}) where {L, R} = Interval{L, R}
+        Accessors.set(x::Interval, ::typeof(endpoints), v::NTuple{2}) = setproperties(x, left=first(v), right=last(v))
+        Accessors.set(x::Interval, ::typeof(leftendpoint), v) = @set x.left = v
+        Accessors.set(x::Interval, ::typeof(rightendpoint), v) = @set x.right = v
+        Accessors.set(x::Interval, ::typeof(closedendpoints), v::NTuple{2, Bool}) = Interval{v[1] ? :closed : :open, v[2] ? :closed : :open}(endpoints(x)...)
+    end
 end
 
 

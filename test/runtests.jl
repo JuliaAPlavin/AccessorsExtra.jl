@@ -4,6 +4,7 @@ using StructArrays
 using SplitApplyCombine
 using AxisKeys
 using SkyCoords; using SkyCoords: lat, lon
+using IntervalSets
 using Distributions
 using Dictionaries
 using InverseFunctions
@@ -234,6 +235,15 @@ end
         @test @set(lon(c) = 2.3) == T(2.3, -1)
         @test lon(@set(lon(c) = 2.3)) == 2.3
     end
+end
+
+@testset "intervals" begin
+    int = Interval{:open, :closed}(1, 5)
+    @test Interval{:open, :closed}(1, 10) === @set int.right = 10
+    @test Interval{:open, :closed}(10.0, 11.0) === @set endpoints(int) = (10.0, 11.0)
+    @test Interval{:open, :closed}(-2, 5) === @set leftendpoint(int) = -2
+    @test Interval{:open, :closed}(1, 2) === @set rightendpoint(int) = 2
+    @test Interval{:closed, :closed}(1, 5) === @set first(closedendpoints(int)) = true
 end
 
 
