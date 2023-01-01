@@ -268,6 +268,11 @@ end
     @test Interval{:open, :closed}(-2, 5) === @set leftendpoint(int) = -2
     @test Interval{:open, :closed}(1, 2) === @set rightendpoint(int) = 2
     @test Interval{:closed, :closed}(1, 5) === @set first(closedendpoints(int)) = true
+
+    @test 1 === @set 2 |> mod(_, 0..3) = 1
+    @test 0 === @set 2 |> mod(_, 0..3) = 0
+    @test 3 === @set 2 |> mod(_, 0..3) = 3
+    @test 31 === @set 32 |> mod(_, 0..3) = 1
 end
 
 

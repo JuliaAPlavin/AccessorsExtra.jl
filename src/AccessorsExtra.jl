@@ -79,6 +79,9 @@ function __init__()
         Accessors.set(x::Interval, ::typeof(leftendpoint), v) = @set x.left = v
         Accessors.set(x::Interval, ::typeof(rightendpoint), v) = @set x.right = v
         Accessors.set(x::Interval, ::typeof(closedendpoints), v::NTuple{2, Bool}) = Interval{v[1] ? :closed : :open, v[2] ? :closed : :open}(endpoints(x)...)
+
+        # use regular mod() setter here when added to Accessors
+        Accessors.set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = width(f.x) * fld(x, width(f.x)) + v
     end
 end
 
