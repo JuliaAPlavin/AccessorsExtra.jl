@@ -1068,6 +1068,26 @@ end
     @test @modify(x -> x + 1, A |> view(_, 1:2) |> Elements()) === A == [-3, -5, (a=3, b=4)]
 end
 
+@testitem "eachslice" begin
+    using InverseFunctions
+
+    A = [1 2 3; 4 5 6]
+    InverseFunctions.test_inverse(@o(eachslice(_, dims=1)), A)
+    InverseFunctions.test_inverse(@o(eachslice(_, dims=2)), A)
+    InverseFunctions.test_inverse(@o(eachslice(_, dims=2, drop=true)), A)
+    InverseFunctions.test_inverse(@o(eachslice(_, dims=2, drop=false)), A)
+
+    @test @modify(x -> x / sum(x), A |> eachslice(_, dims=1)[∗]) == [1/6 2/6 3/6; 4/15 5/15 6/15]
+    @test @modify(x -> x / sum(x), A |> eachslice(_, dims=2)[∗]) == [1/5 2/7 3/9; 4/5 5/7 6/9]
+
+    A = reshape(1:24, 2, 1, 3, 4)
+    for d in 1:4
+        InverseFunctions.test_inverse(@o(eachslice(_, dims=d)), A)
+        InverseFunctions.test_inverse(@o(eachslice(_, dims=d, drop=true)), A)
+        InverseFunctions.test_inverse(@o(eachslice(_, dims=d, drop=false)), A)
+    end
+end
+
 @testitem "inverses" begin
     using InverseFunctions
     using Unitful

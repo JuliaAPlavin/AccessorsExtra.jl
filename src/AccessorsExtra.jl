@@ -25,10 +25,13 @@ export
     get_steps, logged
 
 
+const var"@o" = var"@optic"
+
 include("overrides.jl")
 include("keyvalues.jl")
 include("flexix.jl")
 include("fixargs.jl")
+include("slicing.jl")
 include("concatoptic.jl")
 include("recursive.jl")
 include("context.jl")
@@ -42,8 +45,6 @@ include("moremacros.jl")
 include("construct.jl")
 include("bystep.jl")
 include("testing.jl")
-
-const var"@o" = var"@optic"
 
 
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
