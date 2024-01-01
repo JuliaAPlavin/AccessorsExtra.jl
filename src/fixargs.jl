@@ -1,5 +1,8 @@
 struct Placeholder end
 
+Base.show(io::IO, ::Placeholder) = print(io, "_")
+Base.show(io::IO, ::MIME"text/plain", ::Placeholder) = print(io, "_")
+
 struct FixArgs{F, T<:Tuple, NT<:NamedTuple}
     f::F
     args::T
@@ -40,14 +43,17 @@ _args_str(prev, args::NamedTuple) = @p let
 end
 
 
-struct PropertyFunction{props, F}
+struct PropertyFunction{PNT, F}
+    props_nt::PNT
     func::F
 end
-PropertyFunction{props}(func) where {props} = PropertyFunction{props, typeof(func)}(func)
+
+Base.show(io::IO, pf::PropertyFunction) = print(io, "PropertyFunction(", pf.props_nt, ", ", pf.func, ")")
+Base.show(io::IO, ::MIME"text/plain", pf::PropertyFunction) = show(io, pf)
 
 (pf::PropertyFunction{props})(obj) where {props} = pf.func(obj)
 
-needed_properties(::Type{<:PropertyFunction{props}}) where {props} = props
+needed_properties(::Type{<:PropertyFunction{<:NamedTuple{KS}}}) where {KS} = KS
 
 needed_properties(::ComposedFunction{O,I}) where {I,O} = needed_properties(I)
 needed_properties(::Type{PropertyLens{P}}) where {P} = (P,)

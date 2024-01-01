@@ -117,24 +117,36 @@ function parse_obj_optics(ex::Expr)
                 # multiple function arguments are "targets" - create propertyfunction
                 props = foldtree_pre(Any[], ex) do acc, ex
                     # XXX: catches all "_.prop" code, even within other macros
-                    if @capture(ex, front_.property_) && front == :_
-                        push!(acc, property)
+                    
+                    # can this be done for arbitrary nesting?
+                    if @capture(ex, front_.p1_.p2_.p3_.p4_) && front == :_
+                        push!(acc, (p1,p2,p3,p4))
+                        return IgnoreChildren(acc)
+                    elseif @capture(ex, front_.p1_.p2_.p3_) && front == :_
+                        push!(acc, (p1,p2,p3))
+                        return IgnoreChildren(acc)
+                    elseif @capture(ex, front_.p1_.p2_) && front == :_
+                        push!(acc, (p1,p2))
+                        return IgnoreChildren(acc)
+                    elseif @capture(ex, front_.p1_) && front == :_
+                        push!(acc, (p1,))
                         return IgnoreChildren(acc)
                     elseif ex == :_
-                        push!(acc, nothing)
+                        push!(acc, ())
                     else
                         acc
                     end
-                end |> Tuple
+                end |> unique
+                props_nt = aggregate_props(props)
 
                 obj = esc(:_)
                 frontoptic = ()
                 arg = gensym(:_)
                 funcbody = :($(esc(arg)) -> $(esc(replace_underscore(ex, arg))))
-                optic = if any(isnothing, props)
+                optic = if props_nt == Placeholder()
                     funcbody
                 else
-                    :($PropertyFunction{$props}($funcbody))
+                    :($PropertyFunction($props_nt, $funcbody))
                 end
             end
         else
@@ -147,4 +159,18 @@ function parse_obj_optics(ex::Expr)
         return obj, ()
     end
     return (obj, tuple(frontoptic..., optic))
+end
+
+function aggregate_props(props)
+    if any(isempty, props)
+        return Placeholder()
+    end
+    byfirst = Dict{Symbol, Vector{Any}}()
+    for ps in props
+        push!(get!(byfirst, first(ps), []), Base.tail(ps))
+    end
+    byfirst_nested = modify(byfirst, Elements() ∘ values) do rests
+        aggregate_props(rests)
+    end
+    (; byfirst_nested...)
 end
