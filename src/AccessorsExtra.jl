@@ -7,7 +7,6 @@ import Accessors: set, modify, getall, setall, OpticStyle, SetBased, ModifyBased
 using DataPipes
 using FlexiMaps: filtermap
 using ConstructionBase
-using ConstructionBaseExtras
 using InverseFunctions
 using StaticArraysCore: SVector, MVector
 using Requires
@@ -42,28 +41,7 @@ function __init__()
     @require StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a" begin
         using .StructArrays
 
-        set(x::StructArray{<:Union{Tuple, NamedTuple}}, ::typeof(StructArrays.components), v) = StructArray(v)
-        set(x::StructArray{T}, ::typeof(StructArrays.components), v) where {T} = StructArray{T}(v)
-
         ConstructionBase.setproperties(x::StructArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), StructArrays.components(x))
-
-        Accessors.insert(x::StructArray{<:NamedTuple}, o::Accessors.PropertyLens, v) = insert(x, o ∘ StructArrays.components, v)
-        Accessors.delete(x::StructArray{<:NamedTuple}, o::Accessors.PropertyLens) = delete(x, o ∘ StructArrays.components)
-    end
-
-    @require AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5" begin
-        using .AxisKeys
-
-        set(x::KeyedArray, ::typeof(AxisKeys.axiskeys), v::Tuple) = KeyedArray(AxisKeys.keyless(x), v)
-        set(x::KeyedArray, ::typeof(AxisKeys.named_axiskeys), v::NamedTuple) = KeyedArray(AxisKeys.keyless_unname(x); v...)
-        set(x::KeyedArray, ::typeof(AxisKeys.dimnames), v::Tuple{Vararg{Symbol}}) = KeyedArray(AxisKeys.keyless_unname(x); NamedTuple{v}(axiskeys(x))...)
-
-        set(x::KeyedArray, f::Base.Fix2{typeof(AxisKeys.axiskeys), Int}, v) = @set axiskeys(x)[f.x] = v
-        set(x::KeyedArray, f::Base.Fix2{typeof(AxisKeys.axiskeys), Symbol}, v) = @set named_axiskeys(x)[f.x] = v
-
-        ConstructionBase.setproperties(x::KeyedArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), AxisKeys.named_axiskeys(x))
-
-        set(x::KeyedArray, ::typeof(AxisKeys.keyless_unname), v::AbstractArray) = KeyedArray(v; named_axiskeys(x)...)
     end
 
     @require Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f" begin
@@ -94,36 +72,10 @@ function __init__()
         set(x::GalCoords, ::typeof(lat), v) = @set x.b = v
     end
 
-    @require IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953" begin
-        using .IntervalSets
-
-        set(x::Interval, ::typeof(endpoints), v::NTuple{2}) = setproperties(x, left=first(v), right=last(v))
-        set(x::Interval, ::typeof(leftendpoint), v) = @set x.left = v
-        set(x::Interval, ::typeof(rightendpoint), v) = @set x.right = v
-        set(x::Interval, ::typeof(closedendpoints), v::NTuple{2, Bool}) = Interval{v[1] ? :closed : :open, v[2] ? :closed : :open}(endpoints(x)...)
-
-        set(x, f::Base.Fix2{typeof(mod), <:Interval}, v) = @set x |> mod(_, width(f.x)) = v - leftendpoint(f.x)
-    end
-
     @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" begin
         using .Unitful
 
-        InverseFunctions.inverse(f::Base.Fix1{typeof(ustrip)}) = Base.Fix1(*, 1*f.x)
-    end
-end
-
-
-@generated function ConstructionBase.setproperties(obj::Union{SVector{N}, MVector{N}}, patch::NamedTuple{KS}) where {N, KS}
-    if KS == (:data,)
-        :( constructorof(typeof(obj))(only(patch)) )
-    else
-        propnames = (:x, :y, :z, :w)[1:N]
-        KS ⊆ propnames || error("type $obj does not have properties $KS")
-        field_exprs = map(enumerate(propnames)) do (i, p)
-            from = p ∈ KS ? :patch : :obj
-            :( $from.$p )
-        end
-        :( constructorof(typeof(obj))($(field_exprs...)) )
+        InverseFunctions.inverse(f::Base.Fix1{typeof(ustrip)}) = Base.Fix1(*, true*f.x)
     end
 end
 
@@ -132,9 +84,6 @@ InverseFunctions.inverse(::typeof(deopcompose)) = Base.splat(opcompose)
 InverseFunctions.inverse(::typeof(Base.splat(opcompose))) = deopcompose
 InverseFunctions.inverse(::typeof(decompose)) = Base.splat(compose)
 InverseFunctions.inverse(::typeof(Base.splat(compose))) = decompose
-
-
-Accessors.constructorof(::Type{<:Expr}) = (head, args) -> Expr(head, args...)
 
 
 set(obj, o::Base.Fix1{typeof(map)}, val) = map((ob, v) -> set(ob, o.x, v), obj, val)

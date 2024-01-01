@@ -457,50 +457,12 @@ end
     @test res == (a=-1, b=[10], c=123)
 end
 
-@testitem "staticarrays" begin
-    using StaticArrays: SVector, MVector
-
-    sv = SVector(1, 2)
-    @test SVector(3.0, 2.0) === @set sv.x = 3.0
-    @test SVector(3.0, 5.0) === @inferred setproperties(sv, x = 3.0, y = 5.0)
-    @test SVector(-1.0, -2.0) === @set sv.data = (-1.0, -2)
-
-    @test_throws "does not have properties (:z,)" @set sv.z = 3.0
-end
-
 @testitem "structarrays" begin
     using StructArrays
 
-    struct S{TA, TB}
-        a::TA
-        b::TB
-    end
-
     s = StructArray(a=[1, 2, 3])
-    @test @insert(StructArrays.components(s).b = 10:12)::StructArray == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]
     @test setproperties(s, a=10:12)::StructArray == StructArray(a=10:12)
     @test_throws ArgumentError setproperties(s, b=10:12)
-    @test @set(s.a = 10:12)::StructArray == StructArray(a=10:12)
-    @test @insert(s.b = 10:12)::StructArray == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]
-    @test @delete(@insert(s.b = 10:12).a)::StructArray == StructArray(b=10:12)
-    @test_throws "only eltypes with fields" @delete(s.a)
-
-    s = StructArray([(a=(x=1, y=:abc),), (a=(x=2, y=:def),)]; unwrap=T -> T <: NamedTuple)
-    @test @set(s.a = 10:12)::StructArray == StructArray(a=10:12)
-    @test @set(s.a.x = 10:11)::StructArray == [(a=(x=10, y=:abc),), (a=(x=11, y=:def),)]
-    @test @insert(s.b = 10:11)::StructArray == [(a=(x=1, y=:abc), b=10), (a=(x=2, y=:def), b=11)]
-    @test @insert(s.a.z = 10:11)::StructArray == [(a=(x=1, y=:abc, z=10),), (a=(x=2, y=:def, z=11),)]
-    @test @delete(s.a.y)::StructArray == [(a=(x=1,),), (a=(x=2,),)]
-    @test @replace(s.b = s.a.x)::StructArray == [(a=(y=:abc,), b=1), (a=(y=:def,), b=2)]
-
-    s = StructArray([S(1, 2), S(3, 4)])
-    @test @set(s.a = 10:11)::StructArray == StructArray([S(10, 2), S(11, 4)])
-    @test_broken @set(s.a = [:a, :b])::StructArray == StructArray([S(:a, 2), S(:b, 4)])
-    # @test @set(s.a.x = 10:11)::StructArray == [(a=(x=10, y=:abc),), (a=(x=11, y=:def),)]
-    # @test @insert(s.b = 10:11)::StructArray == [(a=(x=1, y=:abc), b=10), (a=(x=2, y=:def), b=11)]
-    # @test @insert(s.a.z = 10:11)::StructArray == [(a=(x=1, y=:abc, z=10),), (a=(x=2, y=:def, z=11),)]
-    # @test @delete(s.a.y)::StructArray == [(a=(x=1,),), (a=(x=2,),)]
-    # @test @replace(s.b = s.a.x)::StructArray == [(a=(y=:abc,), b=1), (a=(y=:def,), b=2)]
 end
 
 @testitem "getfield" begin
@@ -521,86 +483,6 @@ end
     @test set(A, @optic(view(_, 1:2)), [-2, -3]) === A == [-2, -3, (a=3, b=4)]
     @test @modify(x -> 2x, A |> view(_, 1:2)) === A == [-4, -6, (a=3, b=4)]
     @test @modify(x -> x + 1, A |> view(_, 1:2) |> Elements()) === A == [-3, -5, (a=3, b=4)]
-end
-
-@testitem "axiskeys" begin
-    using AxisKeys
-
-    A = KeyedArray([1 2 3; 4 5 6], x=[:a, :b], y=11:13)
-
-    for B in (
-        @set(axiskeys(A)[1] = [:y, :z]),
-        @set(named_axiskeys(A).x = [:y, :z]),
-        @set(A |> axiskeys(_, 1) = [:y, :z]),
-        @set(A |> axiskeys(_, :x) = [:y, :z]),
-    )
-        @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-        @test named_axiskeys(B) == (x=[:y, :z], y=11:13)
-    end
-
-    for B in (
-        @set(axiskeys(A)[2] = [:y, :z, :w]),
-        @set(named_axiskeys(A).y = [:y, :z, :w]),
-        @set(A |> axiskeys(_, 2) = [:y, :z, :w]),
-        @set(A |> axiskeys(_, :y) = [:y, :z, :w]),
-    )
-        @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-        @test named_axiskeys(B) == (x=[:a, :b], y=[:y, :z, :w])
-    end
-
-    B = @set named_axiskeys(A) = (a=[1, 2], b=[3, 2, 1])
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (a=[1, 2], b=[3, 2, 1])
-
-    B = @set dimnames(A) = (:a, :b)
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (a=[:a, :b], b=11:13)
-
-    B = @set A.x = 10:11
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (x=10:11, y=11:13)
-
-    B = @replace named_axiskeys(A) |> (_.z = _.x)
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (z=[:a, :b], y=11:13)
-
-    B = @set AxisKeys.keyless_unname(A) = [6 5 4; 3 2 1]
-    @test named_axiskeys(B) == named_axiskeys(A)
-    @test AxisKeys.keyless_unname(B) == [6 5 4; 3 2 1]
-
-    B = @set vec(A) = 1:6
-    @test AxisKeys.keyless_unname(B) == [1 3 5; 2 4 6]
-    @test named_axiskeys(B) == named_axiskeys(A)
-
-
-    @test_throws ArgumentError @set axiskeys(A)[1] = 1:3
-    @test_throws ArgumentError @set named_axiskeys(A).x = 1:3
-    @test_throws Exception     @set axiskeys(A) = ()
-    @test_throws ArgumentError @set named_axiskeys(A) = (;)
-    @test_throws ArgumentError @set A.z = 10:11
-
-
-    A = KeyedArray([1 2 3; 4 5 6], ([:a, :b], 11:13))
-
-    B = @set axiskeys(A)[1] = [:y, :z]
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test axiskeys(B) == ([:y, :z], 11:13)
-
-    B = @set named_axiskeys(A) = (a=[1, 2], b=[3, 2, 1])
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (a=[1, 2], b=[3, 2, 1])
-
-    B = @set dimnames(A) = (:a, :b)
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (a=[:a, :b], b=11:13)
-
-    # B = @set AxisKeys.keyless_unname(A) = [6 5 4; 3 2 1]
-    # @test named_axiskeys(B) == named_axiskeys(A)
-    # @test AxisKeys.keyless_unname(A) == [6 5 4; 3 2 1]
-
-    B = @set vec(A) = 1:6
-    @test AxisKeys.keyless_unname(B) == [1 3 5; 2 4 6]
-    @test axiskeys(B) == axiskeys(A)
 end
 
 @testitem "inverses" begin
@@ -686,27 +568,6 @@ end
     @test c1.ra ≈ 5.884005859354123
     @test c1.dec ≈ -0.69919820078915
 end
-
-@testitem "intervals" begin
-    using IntervalSets
-
-    int = Interval{:open, :closed}(1, 5)
-    @test Interval{:open, :closed}(1, 10) === @set int.right = 10
-    @test Interval{:open, :closed}(10.0, 11.0) === @set endpoints(int) = (10.0, 11.0)
-    @test Interval{:open, :closed}(-2, 5) === @set leftendpoint(int) = -2
-    @test Interval{:open, :closed}(1, 2) === @set rightendpoint(int) = 2
-    @test Interval{:closed, :closed}(1, 5) === @set first(closedendpoints(int)) = true
-
-    @test 1 === @set 2 |> mod(_, 0..3) = 1
-    @test 0 === @set 2 |> mod(_, 0..3) = 0
-    @test 3 === @set 2 |> mod(_, 0..3) = 3
-    @test 31 === @set 32 |> mod(_, 0..3) = 1
-    @test 1 === @set 2 |> mod(_, 20..23) = 21
-    @test 0 === @set 2 |> mod(_, 20..23) = 20
-    @test 3 === @set 2 |> mod(_, 20..23) = 23
-    @test 31 === @set 32 |> mod(_, 20..23) = 21
-end
-
 
 @testitem "_" begin
     import CompatHelperLocal as CHL

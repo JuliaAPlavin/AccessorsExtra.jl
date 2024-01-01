@@ -1,6 +1,5 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
 CompatHelperLocal = "5224ae11-6099-4aaa-941d-3aab004bd678"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -17,7 +16,6 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 Aqua = "0.6"
-AxisKeys = "0.2.4"
 CompatHelperLocal = "0.1.24"
 Dictionaries = "0.3.21"
 Distributions = "0.25"
