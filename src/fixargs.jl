@@ -7,10 +7,15 @@ struct FixArgs{F, T<:Tuple, NT<:NamedTuple}
 end
 
 function fixargs(f, args...; kwargs...)
+    # XXX: sometimes these checks take significant time?..
+    # @assert hasplaceholder(args)
+    # @assert !hasplaceholder(values(values(kwargs)))
     @assert Placeholder() ∈ args
     @assert Placeholder() ∉ values(kwargs)
     FixArgs(f, args, values(kwargs))
 end
+# @inline hasplaceholder(xs::T) where {T<:Tuple} = (Placeholder() ∈ xs)::Bool
+# @generated hasplaceholder(xs::T) where {T<:Tuple} = Placeholder ∈ T.parameters
 
 @inline function (fa::FixArgs)(arg)
     args = map(x -> x isa Placeholder ? arg : x, fa.args)
