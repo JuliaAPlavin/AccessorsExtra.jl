@@ -389,10 +389,10 @@ end
     o = keyed(Elements()) ⨟ @optic(_.a)
     @test modify(((i, v),) -> i => v, obj, o) == ((a=1=>'a',), (a=2=>'b',), (a=3=>'c',))
     o = keyed(Elements()) ⨟ @optic(_.a) ⨟ @optic(convert(Int, _) + 1)
-    @test map(x -> (x.i, x.v), getall(obj, o)) == ((1, 98), (2, 99), (3, 100))
+    @test map(x -> (x.ctx, x.v), getall(obj, o)) == ((1, 98), (2, 99), (3, 100))
     @test modify(((i, v),) -> i + v, obj, o) == ((a='b',), (a='d',), (a='f',))
     o = Elements() ⨟ keyed(Elements())
-    @test map(x -> (x.i, x.v), getall(obj, o)) == ((:a, 'a'), (:a, 'b'), (:a, 'c'))
+    @test map(x -> (x.ctx, x.v), getall(obj, o)) == ((:a, 'a'), (:a, 'b'), (:a, 'c'))
     @test modify(((i, v),) -> v, obj, o) == obj
     end
 
@@ -400,48 +400,48 @@ end
     @test modify(((i, v),) -> i => v, (a=1, b=((a='a',), (a='b',), (a='c',))), o) == (a=1, b=((a=1=>'a',), (a=2=>'b',), (a=3=>'c',)))
     @test modify(((i, v),) -> i => v, (a=1, b=[(a='a',), (a='b',), (a='c',)]), o) == (a=1, b=[(a=1=>'a',), (a=2=>'b',), (a=3=>'c',)])
     @test modify(
-        wix -> wix.i => wix.v,
+        wix -> wix.ctx => wix.v,
         (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
         keyed(@optic(_.a)) ++ keyed(@optic(_.b)) ⨟ @optic(_[∗].a)
     ) == (a=:a=>1, b=(x=(a=:b=>'a',), y=(a=:b=>'b',), z=(a=:b=>'c',)))
     @test modify(
-        wix -> wix.i => wix.v,
+        wix -> wix.ctx => wix.v,
         (a=[(a=1,)], b=(x=(a='a',), y=(a='b',), z=(a='c',))),
         (keyed(@optic(_.a)) ++ keyed(@optic(_.b))) ⨟ @optic(_[∗].a)ᵢ
     ) == (a=[(a=:a=>1,)], b=(x=(a=:b=>'a',), y=(a=:b=>'b',), z=(a=:b=>'c',)))
     @test modify(
-        wix -> wix.i => wix.v,
+        wix -> wix.ctx => wix.v,
         (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
         @optic(_.b) ⨟ keyed(Elements()) ⨟ Elements()
     ) == (a=1, b=(x=(a=:x=>'a',), y=(a=:y=>'b',), z=(a=:z=>'c',)))
 
     AccessorsExtra.@allinferred modify begin
     @test modify(
-        wix -> wix.v / wix.i.total,
+        wix -> wix.v / wix.ctx.total,
         ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
         Elements() ⨟ selfcontext() ⨟ @optic(_.x)
     ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
     @test modify(
-        wix -> wix.v / wix.i,
+        wix -> wix.v / wix.ctx,
         ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
         Elements() ⨟ selfcontext(r -> r.total) ⨟ @optic(_.x)
     ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
 
     str = "abc def 5 x y z 123"
     o = @optic(eachmatch(r"\w+", _)) ⨟ enumerated(Elements())
-    @test map(wix -> "$(wix.v.match)_$(wix.i)", getall(str, o)) == ["abc_1", "def_2", "5_3", "x_4", "y_5", "z_6", "123_7"]
+    @test map(wix -> "$(wix.v.match)_$(wix.ctx)", getall(str, o)) == ["abc_1", "def_2", "5_3", "x_4", "y_5", "z_6", "123_7"]
     @test modify(
-        wix -> "$(wix.v.match)_$(wix.i)",
+        wix -> "$(wix.v.match)_$(wix.ctx)",
         str,
         o
     ) == "abc_1 def_2 5_3 x_4 y_5 z_6 123_7"
     @test modify(
-        wix -> wix.v + wix.i,
+        wix -> wix.v + wix.ctx,
         str,
         @optic(eachmatch(r"\d+", _)) ⨟ enumerated(Elements()) ⨟ @optic(parse(Int, _.match))
     ) == "abc def 6 x y z 125"
     @test modify(
-        wix -> "$(wix.i):$(wix.v)",
+        wix -> "$(wix.ctx):$(wix.v)",
         "2022-03-15",
         @optic(match(r"(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})", _)) ⨟ keyed(Elements())
     ) == "y:2022-m:03-d:15"
@@ -452,8 +452,8 @@ end
         (a=2, bs=[20, 21]),
     ]
     o = @optic _[∗] |> selfcontext() |> _.bs[∗]
-    @test map(x -> (;x.i.a, b=x.v), getall(data, o)) == [(a = 1, b = 10), (a = 1, b = 11), (a = 1, b = 12), (a = 2, b = 20), (a = 2, b = 21)]
-    @test modify(x -> 100*x.i.a + x.v, data, o) == [
+    @test map(x -> (;x.ctx.a, b=x.v), getall(data, o)) == [(a = 1, b = 10), (a = 1, b = 11), (a = 1, b = 12), (a = 2, b = 20), (a = 2, b = 21)]
+    @test modify(x -> 100*x.ctx.a + x.v, data, o) == [
         (a=1, bs=[110, 111, 112]),
         (a=2, bs=[220, 221]),
     ]
