@@ -6,24 +6,6 @@ using TestItemRunner
 @testitem "setindex" begin
     using Dictionaries
 
-    AccessorsExtra.@allinferred set begin
-    @test set((1, 2), @optic(_[1:0]), Int[]) === (1, 2)
-    @test set((1, 2), @optic(_[1:1]), [10]) === (10, 2)
-    @test set((1, 2), @optic(_[1:2]), [10, 20]) === (10, 20)
-    @test set((1, 2), @optic(_[Int[]]), Int[]) === (1, 2)
-    @test set((1, 2), @optic(_[[1]]), [10]) === (10, 2)
-    @test set((1, 2), @optic(_[[1, 2]]), [10, 20]) === (10, 20)
-    @test set((1, 2), @optic(_[[2, 1]]), [10, 20]) === (20, 10)
-    end
-
-    @test set((1, :a), @optic(_[1:0]), []) === (1, :a)
-    @test set((1, :a), @optic(_[1:1]), ["x"]) === ("x", :a)
-    @test set((1, :a), @optic(_[1:2]), ["x", "y"]) === ("x", "y")
-    @test set((1, :a), @optic(_[Int[]]), []) === (1, :a)
-    @test set((1, :a), @optic(_[[1]]), ["x"]) === ("x", :a)
-    @test set((1, :a), @optic(_[[1, 2]]), ["x", "y"]) === ("x", "y")
-    @test set((1, :a), @optic(_[[2, 1]]), ["x", "y"]) === ("y", "x")
-
     dct = dictionary([:a => 1, :b => 2])
     DT = Dictionary{Symbol,Int}
     @test @set(dct[:a] = 10)::DT == dictionary([:a => 10, :b => 2])
@@ -398,7 +380,7 @@ end
     o = keyed(Elements()) ⨟ @optic(_.a)
     @test modify(((i, v),) -> i => v, obj, o) == ((a=1=>'a',), (a=2=>'b',), (a=3=>'c',))
     o = keyed(Elements()) ⨟ @optic(_.a) ⨟ @optic(convert(Int, _) + 1)
-    @test_broken (map(x -> (x.i, x.v), getall(obj, o)); true)  # needs compose order fix
+    @test map(x -> (x.i, x.v), getall(obj, o)) == [(1, 98), (2, 99), (3, 100)]
     @test modify(((i, v),) -> i + v, obj, o) == ((a='b',), (a='d',), (a='f',))
     end
 
@@ -664,31 +646,6 @@ end
     @test Base.OneTo(19) === @set length(r) = 19
     @test -5:10 === @set first(r) = -5
     @test Base.OneTo(15) === @set last(r) = 15
-end
-
-@testitem "collections" begin
-    o = @optic map(-, _)  # invertible
-    Accessors.test_getset_laws(o, [1, 2], [3, 4], [5, 6])
-    o = @optic map(only, _)  # non-invertible
-    Accessors.test_getset_laws(o, [(1,), (2,)], [(3,), (4,)], [(5,), (6,)])
-    o = @optic filter(>(0), _)
-    Accessors.test_getset_laws(o, [1, -2, 3, -4, 5, -6], [1, 2, 3], [1, 3, 5])
-    @test modify([1, -2, 3, -4, 5, -6], o) do x
-        x .+ sum(x)
-    end == [10, -2, 12, -4, 14, -6]
-
-    @test modify(cumsum, [5, 1, 4, 2, 3], sort) == [15, 1, 10, 3, 6]
-    @test modify(cumsum, [4, 1, 4, 2, 3], sort) == [10, 1, 14, 3, 6]
-
-    data = [
-        (a=1, bs=[10, 11, 12]),
-        (a=2, bs=[20, 21]),
-    ]
-    @test_throws "not supported" delete(data, @optic _[∗].bs[∗] |> If(isodd))
-    @test delete(data, @optic _[∗].bs |> filter(isodd, _)) == [(a = 1, bs = [10, 12]), (a = 2, bs = [20])]
-    @test delete(data, @optic _[∗].bs |> filter(x -> x > 15, _)) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = [])]
-    # @test modify(b -> b < 15 ? b : nothing, data, @optic(_[∗].bs |> Wither())) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = Nothing[])]
-    # @test modify(b -> b < 15 ? b : nothing, data, @optic _ |> Wither() |> _.bs |> Wither()) == [(a = 1, bs = [10, 11, 12])]
 end
 
 @testitem "keys, values, pairs" begin

@@ -1,4 +1,10 @@
 OpticStyle(::Type{<:Base.Fix1{typeof(match)}}) = ModifyBased()
+OpticStyle(::Type{<:Base.Fix1{typeof(eachmatch)}}) = ModifyBased()
+
+# same as default; fallback getall() just errors for ModifyBased
+getall(obj, o::Base.Fix1{typeof(match)}) = (o(obj),)
+getall(obj, o::Base.Fix1{typeof(eachmatch)}) = (o(obj),)
+
 
 function modify(f, s, o::Base.Fix1{typeof(match)})
     m = match(o.x, s)
@@ -13,8 +19,6 @@ function modify(f, s, o::Base.Fix1{typeof(match)})
         error("Expected AbstractString or $m, got $v")
     end
 end
-
-OpticStyle(::Type{<:Base.Fix1{typeof(eachmatch)}}) = ModifyBased()
 
 getall(obj::Base.RegexMatchIterator, ::Elements) = obj
 

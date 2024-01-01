@@ -1,6 +1,25 @@
 abstract type ContextOptic end
 Broadcast.broadcastable(o::ContextOptic) = Ref(o)
 
+struct ValWithContext{I,V}
+    i::I
+    v::V
+end
+Base.first(ix::ValWithContext) = ix.i
+Base.last(ix::ValWithContext) = ix.v
+Base.iterate(ix::ValWithContext, args...) = iterate(ix.i => ix.v, args...)
+Base.show(io::IO, ix::ValWithContext) = print(io, ix.i, " ⇒ ", ix.v)
+
+
+struct _ContextValOnly{I} <: ContextOptic
+    i::I
+end
+OpticStyle(::Type{<:_ContextValOnly}) = ModifyBased()
+modify(f, obj, o::_ContextValOnly) = _unpack_val(f(ValWithContext(o.i, obj)), o.i)
+_unpack_val(x, i) = x
+_unpack_val(x::ValWithContext, i) = (@assert x.i == i; x.v)
+
+
 struct Keyed{O} <: ContextOptic
     o::O
 end
@@ -24,27 +43,11 @@ end
 OpticStyle(::Type{<:SelfContext}) = ModifyBased()
 Base.show(io::IO, co::SelfContext) = print(io, "selfcontext(", co.f, ")")
 selfcontext(f=identity) = SelfContext(f)
- 
-struct ValWithContext{I,V}
-    i::I
-    v::V
-end
-Base.first(ix::ValWithContext) = ix.i
-Base.last(ix::ValWithContext) = ix.v
-Base.iterate(ix::ValWithContext, args...) = iterate(ix.i => ix.v, args...)
-Base.show(io::IO, ix::ValWithContext) = print(io, ix.i, " ⇒ ", ix.v)
-
-
-struct _ContextValOnly{I} <: ContextOptic
-    i::I
-end
-OpticStyle(::Type{<:_ContextValOnly}) = ModifyBased()
-modify(f, obj, o::_ContextValOnly) = _unpack_val(f(ValWithContext(o.i, obj)), o.i)
-_unpack_val(x, i) = x
-_unpack_val(x::ValWithContext, i) = (@assert x.i == i; x.v)
 
 modify(f, obj, o::SelfContext) = modify(f, obj, _ContextValOnly(o.f(obj)))
 (o::SelfContext)(obj) = ValWithContext(o.f(obj), obj)
+# same as default; fallback getall() just errors for ModifyBased
+getall(obj, o::SelfContext) = (o(obj),)
 
 getall(obj, ::Enumerated{Elements}) =
     map(enumerate(obj)) do (i, v)
@@ -94,7 +97,7 @@ export ᵢ
 const ᵢ = Val(:ᵢ)
 Base.:(*)(o, ::typeof(ᵢ)) = KeepContext(o)
 
-OpticStyle(::Type{KeepContext{O}}) where {O} = ModifyBased() # OpticStyle(O)
+OpticStyle(::Type{KeepContext{O}}) where {O} = ModifyBased() # OpticStyle(O) ???
 Base.show(io::IO, co::KeepContext) = print(io, "(ᵢ", co.o, ")ᵢ")
 
 for T in [

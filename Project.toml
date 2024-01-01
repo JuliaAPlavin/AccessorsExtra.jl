@@ -22,7 +22,7 @@ SciMLExt = "SciMLBase"
 StructArraysExt = "StructArrays"
 
 [compat]
-Accessors = "0.1.28"
+Accessors = "0.1.29"
 ConstructionBase = "1.5.1"
 DataPipes = "0.3.5"
 Dictionaries = "0.3"

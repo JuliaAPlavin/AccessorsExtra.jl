@@ -24,7 +24,6 @@ export
     OptArgs, OptCons, OptProblemSpec, solobj
 
 
-include("setindex.jl")
 include("keyvalues.jl")
 include("flexix.jl")
 include("concatoptic.jl")
@@ -57,19 +56,6 @@ InverseFunctions.inverse(::typeof(Base.splat(opcompose))) = deopcompose
 InverseFunctions.inverse(::typeof(decompose)) = Base.splat(compose)
 InverseFunctions.inverse(::typeof(Base.splat(compose))) = decompose
 
-
-# Tuples, arrays: upstream to Accessors?
-set(obj::Tuple, ::Type{Tuple}, val::Tuple) = val
-set(obj::NamedTuple{KS}, ::Type{Tuple}, val::Tuple) where {KS} = NamedTuple{KS}(val)
-
-set(obj, o::Base.Fix1{typeof(map)}, val) = map((ob, v) -> set(ob, o.x, v), obj, val)
-set(obj, o::Base.Fix1{typeof(filter)}, val) = @set obj[findall(o.x, obj)] = val
-modify(f, obj, o::Base.Fix1{typeof(filter)}) = @modify(f, obj[findall(o.x, obj)])
-set(obj, ::typeof(sort), val) = @set obj[sortperm(obj)] = val
-
-set(obj, ::typeof(getproperties), val::NamedTuple) = (@assert keys(val) == keys(getproperties(obj)); setproperties(obj, val))
-
-
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view), <:Integer}, val::AbstractArray{<:Any, 0}) = setindex!(obj, only(val), lens.x)
 
@@ -92,10 +78,6 @@ Accessors.IndexLens(::Tuple{Elements}) = Elements()
 Accessors.IndexLens(::Tuple{Properties}) = Properties()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
-
-
-delete(obj, o::If) = error("`delete(obj, ::If)` not supported, try using `filter` as an optic instead")
-delete(obj, o::Base.Fix1{typeof(filter)}) = filter(!o.x, obj)
 
 
 struct ⩓{F,G}

@@ -3,7 +3,7 @@ Broadcast.broadcastable(o::PartsOf) = Ref(o)
 struct _PartsOfOptic{O}
     o::O
 end
-OpticStyle(::Type{_PartsOfOptic}) = ModifyBased()
+OpticStyle(::Type{_PartsOfOptic}) = ModifyBased() # ????
 (o::_PartsOfOptic)(obj) = getall(obj, o.o)
 set(obj, o::_PartsOfOptic, val) = setall(obj, o.o, val)
 
