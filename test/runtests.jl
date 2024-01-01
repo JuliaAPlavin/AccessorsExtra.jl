@@ -96,20 +96,39 @@ end
     end == "fractions: 2/4, another 0.5, 5/3, all!"
 end
 
-# @testitem "maybe" begin
-#     o = maybe(@optic _[2]) ∘ @optic(_.a)
-#     @test o((a=[1, 2],)) == 2
-#     @test o((a=[1],)) == nothing
-#     @test_throws Exception o((;))
-#     @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
-#     @test set((a=[1],), o, 5) == (a=[1, 5],)
-#     @test_throws Exception set((;), o, 5)
-#     @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
-#     @test modify(x -> x+1, (a=[1],), o) == (a=[1],)
-#     @test_throws Exception modify(x -> x+1, (;), o)
-#     @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
-#     @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
-#     @test_throws Exception modify(x -> nothing, (;), o)
+@testitem "maybe" begin
+    o = maybe(@optic _[2]) ∘ @optic(_.a)
+    @test o((a=[1, 2],)) == 2
+    @test o((a=[1],)) == nothing
+    @test_throws Exception o((;))
+    @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
+    @test set((a=[1],), o, 5) == (a=[1, 5],)
+    @test_throws Exception set((;), o, 5)
+    @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
+    @test modify(x -> x+1, (a=[1],), o) == (a=[1],)
+    @test_throws Exception modify(x -> x+1, (;), o)
+    @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
+    @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
+    @test_throws Exception modify(x -> nothing, (;), o)
+
+    o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
+    @test o((a=[1, 2],)) == 2
+    @test o((a=[1],)) == 10
+    @test_throws Exception o((;))
+    @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
+    @test set((a=[1],), o, 5) == (a=[1, 5],)
+    @test_throws Exception set((;), o, 5)
+    @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
+    @test_broken modify(x -> x+1, (a=[1],), o) == (a=[1, 11],)
+    @test_throws Exception modify(x -> x+1, (;), o)
+    @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
+    @test_broken modify(x -> 10, (a=[1, 2],), o) == (a=[1],)
+    @test modify(x -> 10, (a=[1],), o) == (a=[1],)
+    @test_throws Exception modify(x -> 10, (;), o)
+    @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
+    @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
+    @test_throws Exception modify(x -> nothing, (;), o)
+end
 
 #     o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
 #     @test o((a=[1, 2],)) == 2
