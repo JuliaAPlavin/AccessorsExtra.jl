@@ -33,24 +33,24 @@ end
 
 
 function unrecurcize(or::RecursiveOfType, ::Type{T}) where {T}
-    TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
-    res_optic = if TS == Union{} || !isconcretetype(TS)
-        error("Cannot recurse on $T |> $(or.optic): got $TS")
-    elseif TS <: Tuple
-        map(enumerate(fieldtypes(TS))) do (i, ET)
-            any(rt -> ET <: rt, or.outtypes) ? identity :
-            any(rt -> ET <: rt, or.rectypes) ? unrecurcize(or, ET) :
-                EmptyOptic()
-        end |> Tuple |> AlongsideOptic
-    elseif TS <: AbstractVector
-        ET = eltype(TS)
-        any(rt -> ET <: rt, or.outtypes) ? Elements() :
-        any(rt -> ET <: rt, or.rectypes) ? unrecurcize(or, ET) ∘ Elements() :
-            EmptyOptic()
+    rec_optic = if any(rt -> T <: rt, or.rectypes)
+        TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
+        if TS == Union{} || !isconcretetype(TS)
+            error("Cannot recurse on $T |> $(or.optic): got $TS")
+        elseif TS <: Tuple
+            map(enumerate(fieldtypes(TS))) do (i, ET)
+                unrecurcize(or, ET)
+            end |> Tuple |> AlongsideOptic
+        elseif TS <: AbstractVector
+            ET = eltype(TS)
+            unrecurcize(or, ET) ∘ Elements()
+        end
+    else
+        EmptyOptic()
     end
     any(rt -> T <: rt, or.outtypes) ?
-        res_optic ++ identity :
-        res_optic
+        rec_optic ++ identity :
+        rec_optic
 end
 
 

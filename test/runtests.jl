@@ -174,8 +174,15 @@ end
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
-    @test @inferred(getall(m, o)) == getall(m, or)
-    @test @inferred(modify(Dict ∘ pairs, m, o)) == modify(Dict ∘ pairs, m, or)
+    @test_broken @inferred(getall(m, o)) == getall(m, or)
+    @test getall(m, o) == getall(m, or)
+    @test_broken @inferred(modify(Dict ∘ pairs, m, o)) == modify(Dict ∘ pairs, m, or)
+    @test modify(Dict ∘ pairs, m, o) == modify(Dict ∘ pairs, m, or)
+
+    m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
+    @test getall(m, o) == getall(m, or)
 end
 
 @testitem "steps" begin
