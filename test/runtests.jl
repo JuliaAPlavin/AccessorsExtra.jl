@@ -3,15 +3,31 @@ using TestItemRunner
 @run_package_tests
 
 
-@testitem "setindex" begin
+@testitem "Dictionaries" begin
     using Dictionaries
+    using UnionCollections
+    const UnionDictionary = Base.get_extension(UnionCollections, :DictionariesExt).UnionDictionary
 
     dct = dictionary([:a => 1, :b => 2])
-    DT = Dictionary{Symbol,Int}
-    @test @set(dct[:a] = 10)::DT == dictionary([:a => 10, :b => 2])
-    @test @set(dct[:a] = 10.)::Dictionary{Symbol,Float64} == dictionary([:a => 10, :b => 2])
-    @test @delete(dct[:a])::DT == dictionary([:b => 2])
-    @test @insert(dct[:c] = 5)::DT == dictionary([:a => 1, :b => 2, :c => 5])
+    DT = Dictionary{Symbol,Float64}
+    @test @set(dct[:a] = 10)::typeof(dct) == dictionary([:a => 10, :b => 2])
+    @test @set(dct[:a] = 10.)::DT == dictionary([:a => 10, :b => 2])
+    @test @delete(dct[:a])::typeof(dct) == dictionary([:b => 2])
+    @test @insert(dct[:c] = 5.)::DT == dictionary([:a => 1, :b => 2, :c => 5])
+
+    dct = ArrayDictionary(dct)
+    DT = ArrayDictionary{Symbol,Float64}
+    @test @set(dct[:a] = 10)::typeof(dct) == dictionary([:a => 10, :b => 2])
+    @test @set(dct[:a] = 10.)::DT == dictionary([:a => 10, :b => 2])
+    @test @delete(dct[:a])::typeof(dct) == dictionary([:b => 2])
+    @test @insert(dct[:c] = 5.)::DT == dictionary([:a => 1, :b => 2, :c => 5])
+
+    dct = unioncollection(dct)
+    DT = UnionDictionary{Symbol,Union{Int,Float64}}
+    @test @set(dct[:a] = 10)::UnionDictionary{Symbol,Int} == dictionary([:a => 10, :b => 2])
+    @test @set(dct[:a] = 10.)::DT == dictionary([:a => 10, :b => 2])
+    @test @delete(dct[:a])::UnionDictionary{Symbol,Int} == dictionary([:b => 2])
+    @test @insert(dct[:c] = 5.)::DT == dictionary([:a => 1, :b => 2, :c => 5])
 end
 
 @testitem "flexix" begin
@@ -412,6 +428,7 @@ end
     using StaticArrays
 
     AccessorsExtra.@allinferred modify getall setall begin
+
     or = RecursiveOfType(Number)
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     @test getall(m, or) == (1, 1, 3)
@@ -442,6 +459,7 @@ end
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
     @test setall(m, or, (10, 20, 30)) == (a=10, b=20+30im)
+
     end
 
     # or = keyed(RecursiveOfType(Number))
