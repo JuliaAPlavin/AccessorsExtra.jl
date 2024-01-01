@@ -2,7 +2,7 @@ module AccessorsExtra
 
 using Reexport
 @reexport using Accessors
-using Accessors: compose, opcompose, decompose, deopcompose
+using CompositionsBase
 import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBased, ModifyBased
 using DataPipes
 using ConstructionBase
@@ -41,12 +41,6 @@ include("testing.jl")
 
 const var"@o" = var"@optic"
 
-
-# https://github.com/JuliaFunctional/CompositionsBase.jl/pull/12
-InverseFunctions.inverse(::typeof(deopcompose)) = Base.splat(opcompose)
-InverseFunctions.inverse(::typeof(Base.splat(opcompose))) = deopcompose
-InverseFunctions.inverse(::typeof(decompose)) = Base.splat(compose)
-InverseFunctions.inverse(::typeof(Base.splat(compose))) = decompose
 
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view), <:Integer}, val::AbstractArray{<:Any, 0}) = setindex!(obj, only(val), lens.x)
