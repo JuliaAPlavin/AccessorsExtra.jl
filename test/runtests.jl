@@ -457,6 +457,14 @@ end
         (a=1, bs=[110, 111, 112]),
         (a=2, bs=[220, 221]),
     ]
+
+    o = keyed(∗) ⨟ @optic(_.bs) ⨟ keyed(∗)
+    @test map(x -> (x.ctx[1], x.ctx[2], x.v), getall(data, o)) == [(1, 1, 10), (1, 2, 11), (1, 3, 12), (2, 1, 20), (2, 2, 21)]
+    @test modify(x -> (x.ctx[1], x.ctx[2], x.v), data, o) == [(a = 1, bs = [(1, 1, 10), (1, 2, 11), (1, 3, 12)]), (a = 2, bs = [(2, 1, 20), (2, 2, 21)])]
+    o = keyed(∗) ⨟ keyed(@optic(_.bs)) ⨟ keyed(∗)
+    @test map(x -> (x.ctx..., x.v), getall(data, o)) == [(1, :bs, 1, 10), (1, :bs, 2, 11), (1, :bs, 3, 12), (2, :bs, 1, 20), (2, :bs, 2, 21)]
+    @test modify(x -> (x.ctx..., x.v), data, o) ==
+        [(a = 1, bs = [(1, :bs, 1, 10), (1, :bs, 2, 11), (1, :bs, 3, 12)]), (a = 2, bs = [(2, :bs, 1, 20), (2, :bs, 2, 21)])]
 end
 
 @testitem "PartsOf" begin

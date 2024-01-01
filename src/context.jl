@@ -4,18 +4,37 @@ Broadcast.broadcastable(o::ContextOptic) = Ref(o)
 struct ValWithContext{C,V}
     ctx::C
     v::V
+
+    function ValWithContext(ctx, v)
+        @assert !(v isa ValWithContext)
+        new{typeof(ctx),typeof(v)}(ctx, v)
+    end
 end
+ValWithContext(ctx, v::ValWithContext) = ValWithContext(MultiContext(ctx, v.ctx), v.v)
 Base.first(ix::ValWithContext) = ix.ctx
 Base.last(ix::ValWithContext) = ix.v
 Base.iterate(ix::ValWithContext, args...) = iterate(ix.ctx => ix.v, args...)
 Base.show(io::IO, ix::ValWithContext) = print(io, ix.ctx, " ⇒ ", ix.v)
 
+struct MultiContext{CS}
+    contexts::CS
+
+    function MultiContext(ctxs...)
+        fullctxs = _reduce_concat(map(_contexts, ctxs))
+        new{typeof(fullctxs)}(fullctxs)
+    end
+end
+_contexts(ctx) = (ctx,)
+_contexts(ctx::MultiContext) = ctx.contexts
+Base.getindex(ctx::MultiContext, i) = ctx.contexts[i]
+Base.iterate(ctx::MultiContext, args...) = iterate(ctx.contexts, args...)
+
 
 struct _ContextValOnly{C} <: ContextOptic
     ctx::C
 end
-OpticStyle(::Type{<:_ContextValOnly}) = ModifyBased()
-modify(f, obj, o::_ContextValOnly) = _unpack_val(f(ValWithContext(o.ctx, obj)), o.ctx)
+(o::_ContextValOnly)(obj) = ValWithContext(o.ctx, obj)
+set(obj, o::_ContextValOnly, v) = _unpack_val(v, o(obj).ctx)
 _unpack_val(x, i) = x
 _unpack_val(x::ValWithContext, i) = (@assert x.ctx == i; x.v)
 
@@ -101,22 +120,27 @@ for T in [
         ContextOptic,
     ]
     @eval Base.:∘(o::KeepContext, c::$T) = ComposedFunction(o, c)
+    @eval Base.:∘(o::_ContextValOnly, c::$T) = ComposedFunction(o, c)
     @eval Base.:∘(o, c::$T) = KeepContext(o) ∘ c
 end
+
 
 (o::KeepContext)(obj) = o.o(obj)
 (o::KeepContext)(obj::ValWithContext) = @modify(o.o, obj.v)
 getall(obj, o::KeepContext) = getall(obj, o.o)
 getall(obj::ValWithContext, o::KeepContext) = map(x -> @set(obj.v = x), getall(obj.v, o.o))
 
+
 modify(f, obj, o::KeepContext) = modify(f, obj, o.o)
 modify(f, obj::ValWithContext, o::KeepContext) =
     if OpticStyle(o.o) isa SetBased
-        x = o.o(obj.v)
-        fx = f(ValWithContext(obj.ctx, x))
-        fx isa ValWithContext ?
-            ValWithContext(fx.ctx, set(obj.v, o.o, fx.v)) :
-            set(obj.v, o.o, fx)
+        fx = f(o(obj))
+        @assert !(fx isa ValWithContext)
+        set(obj.v, o.o, fx)
+        # fx = f(o(obj))
+        # fx isa ValWithContext ?
+        #     ValWithContext(fx.ctx, set(obj.v, o.o, fx.v)) :
+        #     set(obj.v, o.o, fx)
     else
         modify(f, obj.v, _ContextValOnly(obj.ctx) ∘ o.o)
     end
