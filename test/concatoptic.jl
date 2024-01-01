@@ -74,6 +74,8 @@ end
     @test o(m) == (2, -3)
     @test set(m, o, (4, 5)) == (a=(b=3, c=2), c=-5)
     @test modify(xs -> xs ./ sum(xs), m, o) == (a=(b=-3.0, c=2), c=-3.0)
+
+    @test_broken eval(:(@optic₊ (;_.a)))
     end
     
     o = @optic₊ SVector(_.a.b, _.c)
