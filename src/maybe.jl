@@ -6,25 +6,27 @@ Broadcast.broadcastable(o::MaybeOptic) = Ref(o)
 
 maybe(o; default=nothing) = MaybeOptic(o, default)
 
-OpticStyle(::Type{<:MaybeOptic}) = Val(:maybe)
-
-Accessors.composed_optic_style(m::Val{:maybe}, ::Any) = m
-Accessors.composed_optic_style(::Any, m::Val{:maybe}) = m
-Accessors.composed_optic_style(::Val{:maybe}, m::Val{:maybe}) = m
-
-@inline function Accessors._set(obj, optic::ComposedFunction, val, ::Val{:maybe})
-    inner_obj = optic.inner(obj)
-    inner_val = set(inner_obj, optic.outer, val)
-    set(obj, optic.inner, inner_val)
+struct MaybeStyle{P}
+    parent::P
 end
 
-function Accessors._modify(f, obj, optic::ComposedFunction, ::Val{:maybe})
-    otr = optic.outer
-    inr = optic.inner
-    modify(obj, inr) do o1
-        modify(f, o1, otr)
+OpticStyle(::Type{<:MaybeOptic{O}}) where O = MaybeStyle(OpticStyle(O))
+
+Accessors.composed_optic_style(m::MaybeStyle, s::Any) = MaybeStyle(Accessors.composed_optic_style(m.parent, s))
+Accessors.composed_optic_style(s::Any, m::MaybeStyle) = MaybeStyle(Accessors.composed_optic_style(s, m.parent))
+Accessors.composed_optic_style(ma::MaybeStyle, mb::MaybeStyle) = MaybeStyle(Accessors.composed_optic_style(ma.parent, mb.parent))
+
+@inline Accessors._set(obj, optic::ComposedFunction, val, ::MaybeStyle{Accessors.SetBased}) =
+    set(obj, optic.inner,
+        set(optic.inner(obj), optic.outer, val))
+
+@inline Accessors._set(obj, optic::ComposedFunction, val, ::MaybeStyle{Accessors.ModifyBased}) =
+    modify(Returns(val), obj, optic)
+
+Accessors._modify(f, obj, optic::ComposedFunction, ::MaybeStyle) =
+    modify(obj, optic.inner) do o1
+        modify(f, o1, optic.outer)
     end
-end
 
 (o::MaybeOptic)(obj) = hasoptic(obj, o.o) ? o.o(obj) : o.default
 set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj

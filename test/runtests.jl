@@ -335,7 +335,7 @@ end
 end
 
 @testitem "maybe" begin
-    AccessorsExtra.@allinferred modify set begin
+    AccessorsExtra.@allinferred modify set getall setall begin
     # @test set(1, something, 2) == 2
     # @test set(Some(1), something, 2) == Some(2)
 
@@ -444,6 +444,18 @@ end
     @test set("1", o, 2) == "2"
     @test_broken set("a", o, 2) == "2"
 
+    o = maybe(@o _.a) ∘ Elements()
+    @test getall(((a=1,), (b=2,)), o) === (1,)
+    @test getall(((b=2,),), o) === ()
+    @test getall(((),), o) === ()
+    @test modify(x -> x+1, ((a=1,), (b=2,)), o) === ((a=2,), (b=2,))
+    @test modify(x -> nothing, ((a=1,), (b=2,)), o) === ((;), (b=2,))
+    @test set(((a=1,), (b=2,)), o, 10) === ((a=10,), (b=2,))
+    @test set(((a=1,), (b=2,)), o, nothing) === ((;), (b=2,))
+    @test setall(((a=1,), (b=2,)), o, (10,)) === ((a=10,), (b=2,))
+    @test_throws "tried to assign 0 elements to 1 destinations" setall(((a=1,), (b=2,)), o, ()) === ((a=10,), (b=2,))
+    @test_throws "tried to assign 2 elements to 1 destinations" setall(((a=1,), (b=2,)), o, (10, 20)) === ((a=10,), (b=2,))
+
     o = @o _.a[2]
     @test oget((a=[1, 2, 3],), o, 123) == 2
     @test oget((;), o, 123) == 123
@@ -475,7 +487,7 @@ end
 @testitem "recursive" begin
     using StaticArrays
 
-    AccessorsExtra.@allinferred modify getall setall begin
+    AccessorsExtra.@allinferred set modify getall setall begin
 
     or = RecursiveOfType(Number)
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
@@ -483,6 +495,7 @@ end
     @test modify(x->x+10, m, or) === (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
     @test setall(m, or, (10, 20, 30)) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @test setall(m, or, [10, 20, 30]) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
+    @test set(m, or, 123) === (a=123, bs=((c=123, d="2"), (c=123, d="xxx")))
 
     m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
     @test getall(m, or) == [1, 1, 3]
