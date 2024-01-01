@@ -506,6 +506,10 @@ end
     @test set([(a=1,)], o, 'y') == [(a='x',)]
     @test setall([(a=1,)], o, ['y']) == [(a='x',)]
     @test modify(-, [(a=1,)], o) == [(a=-3,)]
+    o = logged(@optics _[∗].a + 1 _[1].a)
+    @test getall([(a=1,)], o) == [2, 1]
+    o = logged(@optic₊ (_[1].a + 1, _[1].a))
+    @test o([(a=1,)]) == (2, 1)
 end
 
 @testitem "replace" begin
