@@ -11,7 +11,7 @@ using StaticArraysCore: SVector, MVector
 using Requires
 
 export
-    ViewLens, Keys, Values, Pairs,
+    ViewLens,
     ∗,
     concat, ++,
     @replace,
@@ -153,6 +153,7 @@ Accessors.set(r::Base.OneTo, ::typeof(last),  x) = Base.OneTo(x)
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
 InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)
 
+
 # optics inspired by https://juliaobjects.github.io/Accessors.jl/stable/examples/custom_optics/
 struct Keys end
 Accessors.OpticStyle(::Type{Keys}) = Accessors.ModifyBased()
@@ -192,6 +193,16 @@ Accessors.modify(f, obj::NamedTuple, ::Pairs) = map(keys(obj), values(obj)) do k
     last(p)
 end |> NamedTuple{keys(obj)}
 Accessors.modify(f, obj::Dict, ::Pairs) = Dict(f(p) for p in pairs(obj))
+
+
+for (f, o) in [
+    (values, Values),
+    (keys, Keys),
+    (pairs, Pairs),
+]
+    @eval Base.:∘(i::Elements, o::typeof($f)) = $o()
+    @eval Base.:∘(c::ComposedFunction{<:Any, <:Elements}, o::typeof($f)) = c.outer ∘ $o()
+end
 
 
 function ConstructionBase.setproperties(d::Dict, patch::NamedTuple{(:vals,)})

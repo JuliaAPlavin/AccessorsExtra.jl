@@ -402,33 +402,33 @@ end
     InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"mm")
 end
 
-@testitem "other optics" begin
+@testitem "keys, values, pairs" begin
     using Dictionaries
 
     AccessorsExtra.@allinferred modify begin
         T = (4, 5, 6)
-        @test (8, 10, 12) === modify(x -> 2x, T, Values())
-        @test (5, 7, 9) === modify(((i, x),) -> i => i + x, T, Pairs())
-        @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> Pairs())
+        @test (8, 10, 12) === modify(x -> 2x, T, @optic values(_)[∗])
+        @test (5, 7, 9) === modify(((i, x),) -> i => i + x, T, @optic pairs(_)[∗])
+        @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> @optic pairs(_)[∗])
         T = (a=4, b=5, c=6)
-        @test (a=8, b=10, c=12) === modify(x -> 2x, T, Values())
-        @test_broken (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), Keys())  # doesn't infer, but result correct
-        @test (a=(:a, 8), b=(:b, 10), c=(:c, 12)) === modify(((i, x),) -> i => (i, 2x), T, Pairs())
+        @test (a=8, b=10, c=12) === modify(x -> 2x, T, @optic values(_)[∗])
+        @test_broken (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @optic keys(_)[∗])  # doesn't infer, but result correct
+        @test (a=(:a, 8), b=(:b, 10), c=(:c, 12)) === modify(((i, x),) -> i => (i, 2x), T, @optic pairs(_)[∗])
         A = [4, 5, 6]
-        @test [8, 10, 12] == modify(x -> 2x, A, Values())
-        @test [5, 7, 9] == modify(((i, x),) -> i => i + x, A, Pairs())
+        @test [8, 10, 12] == modify(x -> 2x, A, @optic values(_)[∗])
+        @test [5, 7, 9] == modify(((i, x),) -> i => i + x, A, @optic pairs(_)[∗])
         D = Dict(4 => 5, 6 => 7)
-        @test Dict(4 => 6, 6 => 8) == modify(x -> x+1, D, Values())
-        @test Dict(5 => 5, 7 => 7) == modify(x -> x+1, D, Keys())
-        @test Dict(8 => 9, 12 => 13) == modify(((i, x),) -> 2i => i + x, D, Pairs())
+        @test Dict(4 => 6, 6 => 8) == modify(x -> x+1, D, @optic values(_)[∗])
+        @test Dict(5 => 5, 7 => 7) == modify(x -> x+1, D, @optic keys(_)[∗])
+        @test Dict(8 => 9, 12 => 13) == modify(((i, x),) -> 2i => i + x, D, @optic pairs(_)[∗])
         D = dictionary([4 => 5, 6 => 7])
-        @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, Values())
-        @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, Keys())
+        @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, @optic values(_)[∗])
+        @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @optic keys(_)[∗])
         D = ArrayDictionary([4, 6], [5, 7])
-        @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, Values())
-        @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, Keys())
+        @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, @optic values(_)[∗])
+        @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @optic keys(_)[∗])
     end
-    @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), Keys())
+    @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @optic keys(_)[∗])
 end
 
 @testitem "skycoords" begin
