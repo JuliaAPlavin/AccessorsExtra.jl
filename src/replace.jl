@@ -1,5 +1,3 @@
-
-# replace()
 _replace(obj, (from, to)::Pair) = insert(delete(obj, from), to, from(obj))
 _replace(obj::NamedTuple{NS}, (from, to)::Pair{PropertyLens{A}, PropertyLens{B}}) where {NS, A, B} = NamedTuple{replace(NS, A => B)}(values(obj))
 
