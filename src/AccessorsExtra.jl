@@ -18,6 +18,7 @@ export
 include("concatoptic.jl")
 include("replace.jl")
 include("assemble.jl")
+include("testing.jl")
 
 
 function __init__()
