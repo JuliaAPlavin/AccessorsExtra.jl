@@ -1,4 +1,6 @@
-struct Keyed{O}
+abstract type ContextOptic end
+
+struct Keyed{O} <: ContextOptic
     o::O
 end
 OpticStyle(::Type{Keyed{O}}) where {O} = ModifyBased()
@@ -7,7 +9,7 @@ Base.show(io::IO, co::Keyed) = print(io, "keyed(", co.o, ")")
 keyed(o) = Keyed(o)
 keyed(o::PropertyLens{p}) where {p} = _ContextValOnly(p) ∘ o
 
-struct Enumerated{O}
+struct Enumerated{O} <: ContextOptic
     o::O
 end
 OpticStyle(::Type{Enumerated{O}}) where {O} = ModifyBased()
@@ -15,7 +17,7 @@ Base.show(io::IO, co::Enumerated) = print(io, "enumerated(", co.o, ")")
 
 enumerated(o) = Enumerated(o)
 
-struct SelfContext{F}
+struct SelfContext{F} <: ContextOptic
     f::F
 end
 OpticStyle(::Type{<:SelfContext}) = ModifyBased()
@@ -31,7 +33,7 @@ Base.last(ix::WithContext) = ix.v
 Base.iterate(ix::WithContext, args...) = iterate(ix.i => ix.v, args...)
 
 
-struct _ContextValOnly{I}
+struct _ContextValOnly{I} <: ContextOptic
     i::I
 end
 OpticStyle(::Type{<:_ContextValOnly}) = ModifyBased()
@@ -73,17 +75,27 @@ function modify(f, obj::NamedTuple{KS}, ::Keyed{Elements}) where {KS}
 end
 
 
-struct KeepContext{O}
+struct KeepContext{O} <: ContextOptic
     o::O
 end
 
 export ᵢ
 const ᵢ = Val(:ᵢ)
 Base.:(*)(o, ::typeof(ᵢ)) = KeepContext(o)
-Base.:(*)(o::ComposedFunction, ::typeof(ᵢ)) = @modify(o -> o * ᵢ, deopcompose(o)[∗])
 
 OpticStyle(::Type{KeepContext{O}}) where {O} = ModifyBased() # OpticStyle(O)
-Base.show(io::IO, co::KeepContext) = print(io, "", co.o, "ᵢ")
+Base.show(io::IO, co::KeepContext) = print(io, "(ᵢ", co.o, ")ᵢ")
+
+for T in [
+        ComposedFunction{<:ContextOptic, <:ContextOptic},
+        ComposedFunction{<:ContextOptic, <:Any},
+        ComposedFunction{<:Any, <:ContextOptic},
+        ContextOptic,
+    ]
+    @eval Base.:∘(o::KeepContext, c::$T) = ComposedFunction(o, c)
+    @eval Base.:∘(o, c::$T) = KeepContext(o) ∘ c
+end
+
 
 function modify(f, obj, o::KeepContext)
     modify(f, obj, o.o)

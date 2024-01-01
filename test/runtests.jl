@@ -263,29 +263,38 @@ end
 end
 
 @testitem "context" begin
-    o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)ᵢ
+    o = keyed(Elements()) ⨟ @optic(_.a)
+    @test modify(((i, v),) -> i => v, ((a='a',), (a='b',), (a='c',)), o) == ((a=1=>'a',), (a=2=>'b',), (a=3=>'c',))
+    o = keyed(Elements()) ⨟ @optic(_.a) ⨟ @optic(convert(Int, _) + 1)
+    @test modify(((i, v),) -> i + v, ((a='a',), (a='b',), (a='c',)), o) == ((a='b',), (a='d',), (a='f',))
+    o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)
     @test modify(((i, v),) -> i => v, (a=1, b=((a='a',), (a='b',), (a='c',))), o) == (a=1, b=((a=1=>'a',), (a=2=>'b',), (a=3=>'c',)))
     @test modify(((i, v),) -> i => v, (a=1, b=[(a='a',), (a='b',), (a='c',)]), o) == (a=1, b=[(a=1=>'a',), (a=2=>'b',), (a=3=>'c',)])
     @test modify(
         wix -> wix.i => wix.v,
         (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
-        keyed(@optic(_.a)) ++ keyed(@optic(_.b)) ⨟ @optic(_[∗].a)ᵢ
+        keyed(@optic(_.a)) ++ keyed(@optic(_.b)) ⨟ @optic(_[∗].a)
     ) == (a=:a=>1, b=(x=(a=:b=>'a',), y=(a=:b=>'b',), z=(a=:b=>'c',)))
     @test modify(
         wix -> wix.i => wix.v,
+        (a=[(a=1,)], b=(x=(a='a',), y=(a='b',), z=(a='c',))),
+        (keyed(@optic(_.a)) ++ keyed(@optic(_.b))) ⨟ @optic(_[∗].a)ᵢ
+    ) == (a=[(a=:a=>1,)], b=(x=(a=:b=>'a',), y=(a=:b=>'b',), z=(a=:b=>'c',)))
+    @test modify(
+        wix -> wix.i => wix.v,
         (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
-        @optic(_.b) ⨟ keyed(Elements()) ⨟ Elements()ᵢ
+        @optic(_.b) ⨟ keyed(Elements()) ⨟ Elements()
     ) == (a=1, b=(x=(a=:x=>'a',), y=(a=:y=>'b',), z=(a=:z=>'c',)))
 
     @test modify(
         wix -> wix.v / wix.i.total,
         ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
-        Elements() ⨟ selfcontext() ⨟ @optic(_.x)ᵢ
+        Elements() ⨟ selfcontext() ⨟ @optic(_.x)
     ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
     @test modify(
         wix -> wix.v / wix.i,
         ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
-        Elements() ⨟ selfcontext(r -> r.total) ⨟ @optic(_.x)ᵢ
+        Elements() ⨟ selfcontext(r -> r.total) ⨟ @optic(_.x)
     ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
 
     @test modify(
@@ -296,7 +305,7 @@ end
     @test modify(
         wix -> wix.v + wix.i,
         "abc def 5 x y z 123",
-        @optic(eachmatch(r"\d+", _)) ⨟ enumerated(Elements()) ⨟ @optic(parse(Int, _.match))ᵢ
+        @optic(eachmatch(r"\d+", _)) ⨟ enumerated(Elements()) ⨟ @optic(parse(Int, _.match))
     ) == "abc def 6 x y z 125"
     @test modify(
         wix -> "$(wix.i):$(wix.v)",
