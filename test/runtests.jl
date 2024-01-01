@@ -452,10 +452,10 @@ end
 
     # specify default value in maybe() - semantic not totally clear...
     # also see get(...) above
-    # o = maybe(@o _[2]; default=10) ∘ @o(_.a)
-    # @test o((a=[1, 2],)) == 2
-    # @test o((a=[1],)) == 10
-    # @test_throws Exception o((;))
+    o = maybe(@o _[2]; default=10) ∘ @o(_.a)
+    @test o((a=[1, 2],)) == 2
+    @test o((a=[1],)) == 10
+    @test_throws Exception o((;))
     # @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
     # @test set((a=[1],), o, 5) == (a=[1, 5],)
     # @test_throws Exception set((;), o, 5)
