@@ -586,6 +586,10 @@ end
     @test stripcontext(Elements() ∘ selfcontext(r -> r.total) ∘ @optic(_.x)) ==ᶠ Elements() ∘ @optic(_.x)
     re = r"\d+"
     @test stripcontext(@optic(eachmatch(re, _)) ∘ enumerated(Elements()) ∘ @optic(parse(Int, _.match))) ==ᶠ @optic(eachmatch(re, _)) ∘ Elements() ∘ @optic(parse(Int, _.match))
+
+    Accessors.test_getset_laws(stripcontext, @optic(_.a), (@optic _.x), identity)
+    Accessors.test_getset_laws(stripcontext, keyed(Elements()), (@optic _.x), identity)
+    Accessors.test_getset_laws(stripcontext, selfcontext(x -> x + 1), identity, identity)
 end
 
 @testitem "PartsOf" begin

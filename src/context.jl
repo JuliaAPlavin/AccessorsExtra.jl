@@ -17,7 +17,7 @@ Base.last(ix::ValWithContext) = ix.v
 Base.iterate(ix::ValWithContext, args...) = iterate(ix.ctx => ix.v, args...)
 Base.show(io::IO, ix::ValWithContext) = print(io, ix.ctx, " ⇒ ", ix.v)
 hascontext(::ValWithContext) = true
-stripcontext(ix::ValWithContext) = stripcontext(ix.v)
+@accessor stripcontext(ix::ValWithContext) = stripcontext(ix.v)
 
 struct MultiContext{CS}
     contexts::CS
@@ -46,7 +46,7 @@ _unpack_val(x::ValWithContext, i) = (@assert x.ctx == i; x.v)
 struct Keyed{O} <: ContextOptic
     o::O
 end
-stripcontext(o::Keyed) = stripcontext(o.o)
+@accessor stripcontext(o::Keyed) = stripcontext(o.o)
 OpticStyle(::Type{Keyed{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Keyed) = print(io, "keyed(", co.o, ")")
 Accessors._shortstring(prev, o::Keyed) = "$prev |> keyed($(o.o))"
@@ -57,7 +57,7 @@ keyed(o::PropertyLens{p}) where {p} = _ContextValOnly(p) ∘ o
 struct Enumerated{O} <: ContextOptic
     o::O
 end
-stripcontext(o::Enumerated) = stripcontext(o.o)
+@accessor stripcontext(o::Enumerated) = stripcontext(o.o)
 OpticStyle(::Type{Enumerated{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Enumerated) = print(io, "enumerated(", co.o, ")")
 Accessors._shortstring(prev, o::Enumerated) = "$prev |> enumerated($(o.o))"
@@ -68,6 +68,8 @@ struct SelfContext{F} <: ContextOptic
     f::F
 end
 stripcontext(o::SelfContext) = identity
+set(o::SelfContext, ::typeof(stripcontext), v::typeof(identity)) = o
+set(o::SelfContext, ::typeof(stripcontext), v) = error("Not implemented")
 OpticStyle(::Type{<:SelfContext}) = ModifyBased()
 Base.show(io::IO, co::SelfContext) = print(io, "selfcontext(", co.f, ")")
 Accessors._shortstring(prev, o::SelfContext) = "$prev |> selfcontext($(o.f))"
@@ -112,7 +114,7 @@ modify(f, obj, ::Keyed{Properties}) = modify(f, obj, keyed(Elements()) ∘ getpr
 struct KeepContext{O} <: ContextOptic
     o::O
 end
-stripcontext(o::KeepContext) = stripcontext(o.o)
+@accessor stripcontext(o::KeepContext) = stripcontext(o.o)
 
 export ᵢ
 const ᵢ = Val(:ᵢ)
@@ -158,6 +160,10 @@ modify(f, obj::ValWithContext, o::KeepContext) =
 stripcontext(o::ComposedFunction) = @modify(stripcontext, decompose(o)[∗])
 stripcontext(o::ConcatOptics) = @modify(stripcontext, o.optics[∗])
 stripcontext(o) = o
+
+set(o::ComposedFunction, ::typeof(stripcontext), v) = hascontext(o) || hascontext(v) ? error("Not implemented") : v
+set(o::ConcatOptics, ::typeof(stripcontext), v) = error("Not implemented")
+set(o, ::typeof(stripcontext), v) = v
 
 hascontext(o::ComposedFunction) = any(hascontext, decompose(o))
 function hascontext(o::ConcatOptics)
