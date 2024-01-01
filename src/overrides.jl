@@ -101,7 +101,6 @@ function parse_obj_optics(ex::Expr)
             obj, frontoptic = parse_obj_optics(args[i_under])
             @reset args[i_under] = Placeholder()
             optic = Expr(:call, fixargs, esc(f), esc.(args)...)
-            dump(optic)
         end
     else
         obj = esc(ex)
