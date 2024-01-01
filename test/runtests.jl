@@ -337,6 +337,15 @@ end
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
     @test getall(m, o) == getall(m, or)
+
+    m = (a=1, b=2+3im)
+    or = RecursiveOfType(out=(Real,), optic=∗ₚ)
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == (1, 2, 3)
+    @test modify(x->x+10, m, or) == (a=11, b=12+13im)
+    @test @inferred(getall(m, o)) == getall(m, or)
+    @test setall(m, o, (10, 20, 30)) == (a=10, b=20+30im)
+    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
 end
 
 @testitem "context" begin

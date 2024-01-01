@@ -6,12 +6,13 @@ Broadcast.broadcastable(o::AlongsideOptic) = Ref(o)
 OpticStyle(::Type{<:AlongsideOptic}) = ModifyBased()
 
 getall(obj, ao::AlongsideOptic{<:Tuple}) =
-    map(Tuple(obj), ao.optics) do obj, opt
+    map(_Tuple(obj), ao.optics) do obj, opt
         getall(obj, opt)
     end |> _reduce_concat
 
+setall(obj, ao::AlongsideOptic{Tuple{}}, vals) = (@assert isempty(vals); obj)
 function setall(obj, ao::AlongsideOptic{<:Tuple}, vals)
-    modify(obj, Tuple) do obj
+    modify(obj, _Tuple) do obj
         lengths = map(obj, ao.optics) do obj, opt
             Accessors._staticlength(getall(obj, opt))
         end
@@ -32,15 +33,18 @@ end
 # end
 
 # with @generated:
-@generated function modify(f, obj::Union{Tuple,NamedTuple}, ao::AlongsideOptic{OS}) where {OS<:Tuple}
+@generated function modify(f, obj, ao::AlongsideOptic{OS}) where {OS<:Tuple}
     quote
-        tup = Tuple(obj)
+        tup = _Tuple(obj)
         res = ($(ntuple(fieldcount(OS)) do i
             :( modify(f, tup[$i], ao.optics[$i]) )
         end...),)
-        set(obj, Tuple, res)
+        set(obj, _Tuple, res)
     end
 end
+
+@accessor _Tuple(x::Union{Tuple,NamedTuple,AbstractVector}) = Tuple(x)
+@accessor _Tuple(x) = Tuple(getproperties(x))
 
 getall(obj, ao::AlongsideOptic) = error("not supported")
 modify(f, obj, ao::AlongsideOptic) = error("not supported")
