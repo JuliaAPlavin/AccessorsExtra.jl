@@ -29,6 +29,7 @@ const var"@o" = var"@optic"
 include("overrides.jl")
 include("keyvalues.jl")
 include("flexix.jl")
+include("propertyfunction.jl")
 include("fixargs.jl")
 include("slicing.jl")
 include("concatoptic.jl")
