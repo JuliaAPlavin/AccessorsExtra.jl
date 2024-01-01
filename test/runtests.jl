@@ -631,23 +631,6 @@ end
     @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @optic keys(_)[∗])
 end
 
-@testitem "skycoords" begin
-    using SkyCoords
-    using SkyCoords: lat, lon
-
-    for T in [ICRSCoords, FK5Coords{2000}, GalCoords]
-        c = T(0.5, -1)
-        @test @set(lat(c) = 1.2) == T(0.5, 1.2)
-        @test lat(@set(lat(c) = 1.2)) == 1.2
-        @test @set(lon(c) = 2.3) == T(2.3, -1)
-        @test lon(@set(lon(c) = 2.3)) == 2.3
-    end
-    c = ICRSCoords(0.5, -1)
-    c1 = @set(c |> convert(GalCoords, _) |> lon = 0)::ICRSCoords
-    @test c1.ra ≈ 5.884005859354123
-    @test c1.dec ≈ -0.69919820078915
-end
-
 @testitem "Optimization" begin
     using IntervalSets
     using StructArrays

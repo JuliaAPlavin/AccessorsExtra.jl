@@ -39,19 +39,6 @@ include("testing.jl")
 
 
 function __init__()
-    # https://github.com/JuliaAstro/SkyCoords.jl/pull/50
-    @require SkyCoords = "fc659fc5-75a3-5475-a2ea-3da92c065361" begin
-        using .SkyCoords
-        using .SkyCoords: lat, lon
-
-        set(x::ICRSCoords, ::typeof(lon), v) = @set x.ra = v
-        set(x::ICRSCoords, ::typeof(lat), v) = @set x.dec = v
-        set(x::FK5Coords, ::typeof(lon), v) = @set x.ra = v
-        set(x::FK5Coords, ::typeof(lat), v) = @set x.dec = v
-        set(x::GalCoords, ::typeof(lon), v) = @set x.l = v
-        set(x::GalCoords, ::typeof(lat), v) = @set x.b = v
-    end
-
     # https://github.com/PainterQubits/Unitful.jl/pull/622
     @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" begin
         using .Unitful
