@@ -226,7 +226,7 @@ Accessors.IndexLens(::Tuple{typeof(∗)}) = Elements()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 
 Accessors.IndexLens(::Tuple{typeof(∗ₚ)}) = Properties()
-Accessors._shortstring(prev, o::Elements) = "$prev[∗ₚ]"
+Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
 
 
 struct FuncValLens{A <: Tuple, KA <: NamedTuple}

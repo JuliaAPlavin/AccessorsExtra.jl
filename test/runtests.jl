@@ -47,7 +47,9 @@ using TestItemRunner
 end
 
 @testitem "shorter forms" begin
-    @test @optic(_.a[∗].b[∗ₚ].c[2]) === @optic(_.a |> Elements() |> _.b |> Properties() |> _.c[2])
+    o = @optic(_.a[∗].b[∗ₚ].c[2])
+    @test o === @optic(_.a |> Elements() |> _.b |> Properties() |> _.c[2])
+    @test sprint(show, o) == "(@optic _.a[∗].b[∗ₚ].c[2])"
 end
 
 @testitem "function value setting" begin
