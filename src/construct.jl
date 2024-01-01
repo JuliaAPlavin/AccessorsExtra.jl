@@ -1,7 +1,5 @@
 function construct end
 
-construct(::Type{T}, (_,x)::Pair{PropertyLens{:re}}, (_,y)::Pair{PropertyLens{:im}}) where {T<:Complex} = T(x, y)
-
 function construct(::Type{T}, (_,x)::Pair{typeof(abs)}, (_,y)::Pair{typeof(angle)}) where {T<:Complex}
     @assert x >= zero(x)
     convert(T, cis(y) * x)
@@ -19,10 +17,19 @@ construct(T::Type{Tuple{}})::T = T()
 construct(T::Type{<:Tuple{Any,Any}}, (_, x)::Pair{typeof(first)}, (_, y)::Pair{typeof(last)})::T = constructorof(T)(x, y)
 construct(T::Type{<:Tuple{Any,Any}}, (_, n)::Pair{typeof(norm)}, (_, a)::Pair{typeof(splat(atan))})::T = constructorof(T)((n .* sincos(a))...)
 
+
 construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
     foldl(args; init=(;)) do acc, a
         insert(acc, first(a), last(a))
     end
+
+
+_propname(::PropertyLens{P}) where {P} = P
+construct(::Type{T}, arg1::Pair{<:PropertyLens}, args::Vararg{Pair{<:PropertyLens}}) where {T} = _construct(T, arg1, args...)
+function _construct(::Type{T}, args::Vararg{Pair{<:PropertyLens}})::T where {T}
+    @assert fieldnames(T) == map(_propname ∘ first, args)
+    constructorof(T)(map(last, args)...)
+end
 
 
 function construct(T, args::Vararg{Pair})

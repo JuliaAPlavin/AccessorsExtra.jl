@@ -50,7 +50,7 @@ First, the little convenience thing for commonly used objects:
 ∗ₚ
 
 # ╔═╡ e41d36fe-faa5-4352-8a60-85333cf10509
-@optic(_.a |> Elements() |> _.b) === @o _.a[∗].b
+@o(_.a |> Elements() |> _.b) === @o _.a[∗].b
 
 # ╔═╡ 67906fcb-6a41-47df-b64b-aab148d455c8
 md"""
@@ -69,7 +69,7 @@ obj = (a=1, b=[2, 3], c=[4, 5])
 multiopt = @optics _.a _.c[∗]
 
 # ╔═╡ e1e39d1e-c273-4589-8bbc-8795190bbf4a
-multiopt === @optic(_.a) ++ @optic(_.c[∗])
+multiopt === @o(_.a) ++ @o(_.c[∗])
 
 # ╔═╡ 118b07f9-cb3d-4ae8-86c4-9b78e7746707
 getall(obj, multiopt)
@@ -158,7 +158,7 @@ Use the `maybe()` function to create such an optic:
 """
 
 # ╔═╡ b3ffef81-13e2-40ef-bb03-71c51f36f47e
-o_mb = maybe(@optic _[2]) ∘ @optic(_.a)
+o_mb = maybe(@o _[2]) ∘ @o(_.a)
 
 # ╔═╡ 269a5a37-d4bf-4ba0-a59b-aa628e47ff3b
 o_mb((a=[1, 2],))
@@ -213,13 +213,13 @@ Use these functions as optics:
 dct = Dict(4 => 5, 6 => 7)
 
 # ╔═╡ a6b8c4fc-9555-4ddc-a2d8-9c2c4e65344e
-modify(x -> x+1, dct, @optic values(_)[∗])
+modify(x -> x+1, dct, @o values(_)[∗])
 
 # ╔═╡ a3387faf-20df-4f3d-bf6c-f0e409ded011
-modify(x -> x+1, dct, @optic keys(_)[∗])
+modify(x -> x+1, dct, @o keys(_)[∗])
 
 # ╔═╡ 06690850-de63-4217-b619-8838f524bcc5
-modify(((i, x),) -> 2i => i + x, dct, @optic pairs(_)[∗])
+modify(((i, x),) -> 2i => i + x, dct, @o pairs(_)[∗])
 
 # ╔═╡ 2fe6a54a-e914-430b-9703-a48ad172b0bf
 md"""
@@ -234,7 +234,7 @@ The following isn't documented, see packages tests for usage examples:
 - `⩓` and `⩔` function operators
 - `PartsOf()` all optic values together
 - regular expressions as optics
-- `@optic view(_, ix)` modifies the input array
+- `@o view(_, ix)` modifies the input array
 - `set(1:5, last, 10) == 1:10`
 - `funcvallens`/`FuncResult`/`FuncArgument` optics
 - `get_steps`

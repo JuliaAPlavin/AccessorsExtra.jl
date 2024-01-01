@@ -76,20 +76,25 @@ end
 Base.show(io::IO, ::MIME"text/plain", optic::ConcatOptics{<:Tuple}) = show(io, optic)
 
 
-# some piracy:
-(os::Union{Tuple,NamedTuple,AbstractArray,Dict,Pair})(obj) = @modify(o -> o(obj), values(os)[∗])
-function set(obj, os::Union{Tuple,Pair,AbstractArray}, vals::Union{Tuple,Pair,AbstractArray})
-    length(os) == length(vals) || throw(DimensionMismatch("length mismatch between optics ($(length(os))) and values ($(length(vals)))"))
-    foldl(map(tuple, os, vals); init=obj) do obj, (o, v)
+struct ContainerOptic{O}
+    optics::O
+end
+
+(os::ContainerOptic{<:Union{Tuple,NamedTuple,AbstractArray,Dict,Pair}})(obj) =
+    @modify(o -> o(obj), values($(os.optics))[∗])
+
+function set(obj, os::ContainerOptic{<:Union{Tuple,Pair,AbstractArray}}, vals::Union{Tuple,Pair,AbstractArray})
+    length(os.optics) == length(vals) || throw(DimensionMismatch("length mismatch between optics ($(length(os))) and values ($(length(vals)))"))
+    foldl(map(tuple, os.optics, vals); init=obj) do obj, (o, v)
         set(obj, o, v)
     end
 end
-set(obj, os::NamedTuple{KS}, vals) where {KS} =
-    foldl(map(tuple, os, NamedTuple{KS}(vals)); init=obj) do obj, (o, v)
+set(obj, os::ContainerOptic{<:NamedTuple{KS}}, vals) where {KS} =
+    foldl(map(tuple, os.optics, NamedTuple{KS}(vals)); init=obj) do obj, (o, v)
         set(obj, o, v)
     end
-set(obj, os::Dict, vals) =
-    foldl(pairs(os); init=obj) do obj, (k, o)
+set(obj, os::ContainerOptic{<:Dict}, vals) =
+    foldl(pairs(os.optics); init=obj) do obj, (k, o)
         v = vals[k]
         set(obj, o, v)
     end
@@ -100,17 +105,19 @@ end
 
 function process_optic₊(ex)
     if Base.isexpr(ex, :tuple) || Base.isexpr(ex, :vect)
-        @modify(ex.args[∗]) do arg
+        oex = @modify(ex.args[∗]) do arg
             if MacroTools.@capture arg (key_ = optic_)
                 :( $key = $(process_optic₊(optic)) )
             else
                 process_optic₊(arg)
             end
         end
+        :( $ContainerOptic($oex) )
     elseif iscall(ex, :SVector) || iscall(ex, :MVector) || iscall(ex, :Pair) || iscall(ex, :(=>))
-        @modify(ex.args[2:end][∗]) do arg
+        oex = @modify(ex.args[2:end][∗]) do arg
             process_optic₊(arg)
         end
+        :( $ContainerOptic($oex) )
     else
         :( $Accessors.@optic $ex )
     end
