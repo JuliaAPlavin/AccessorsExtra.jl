@@ -582,6 +582,16 @@ end
     @test @popfirst(obj.b) == (a=1, b=(3,))
 end
 
+@testitem "in" begin
+    x = [1, 2, 3]
+    @test (@set (2 in $x) = false) == [1, 3]
+    @test (@set (5 in $x) = true) == [1, 2, 3, 5]
+    Accessors.test_getset_laws(@optic(2 in _), [1,2,3], false, true)
+    Accessors.test_getset_laws(@optic(5 in _), [1,2,3], false, true)
+    Accessors.test_getset_laws(@optic(2 in _), Set([1,2,3]), false, true)
+    Accessors.test_getset_laws(@optic(5 in _), Set([1,2,3]), false, true)
+end
+
 @testitem "on get/set" begin
     obj = (a=1, b=2, tot=4)
 

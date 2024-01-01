@@ -124,4 +124,7 @@ end
 
 ongetset(f) = onget(f) ∘ onset(f)
 
+
+set(obj, o::Base.Fix1{typeof(in)}, val::Bool) = val ? union(obj, (o.x,)) : setdiff(obj, (o.x,))
+
 end
