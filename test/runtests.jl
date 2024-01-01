@@ -91,6 +91,12 @@ end
     @test set(m, o, (x=4, y=5)) == (a=(b=4, c=2), c=5)
     @test set(m, o, (y=5, x=4)) == (a=(b=4, c=2), c=5)
     @test modify(xs -> map(x -> x - xs.x, xs), m, o) == (a=(b=0, c=2), c=2)
+
+    o = @optic₊ (_.a.b + 1, -_.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (2, -3)
+    @test set(m, o, (4, 5)) == (a=(b=3, c=2), c=-5)
+    @test modify(xs -> xs ./ sum(xs), m, o) == (a=(b=-3.0, c=2), c=-3.0)
     end
     
     o = @optic₊ SVector(_.a.b, _.c)

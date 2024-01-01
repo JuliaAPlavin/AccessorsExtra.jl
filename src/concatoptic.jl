@@ -94,7 +94,7 @@ function process_optic₊(ex)
                 process_optic₊(arg)
             end
         end
-    elseif Base.isexpr(ex, :call)
+    elseif iscall(ex, :SVector) || iscall(ex, :MVector) || iscall(ex, :Pair) || iscall(ex, :(=>))
         @modify(ex.args[2:end][∗]) do arg
             process_optic₊(arg)
         end
