@@ -6,6 +6,17 @@ import Accessors: parse_obj_optics
 tree_contains(ex, parts::Tuple) = foldtree((yes, x) -> yes || x ∈ parts, false, ex)
 tree_contains(ex, part) = tree_contains(ex, (part,))
 
+struct IgnoreChildren
+    value
+end
+
+foldtree_pre(op, init, x) = op(init, x)
+function foldtree_pre(op, init, ex::Expr)
+    curval = op(init, ex)
+    curval isa IgnoreChildren && return curval.value
+    return foldl((acc, x) -> foldtree_pre(op, acc, x), ex.args; init=curval)
+end
+
 
 # changes from upstream:
 # https://github.com/JuliaObjects/Accessors.jl/pull/55
@@ -104,10 +115,13 @@ function parse_obj_optics(ex::Expr)
                 end
             else
                 # multiple function arguments are "targets" - create propertyfunction
-                props = foldtree(Symbol[], ex) do acc, ex
+                props = foldtree_pre(Any[], ex) do acc, ex
                     # XXX: catches all "_.prop" code, even within other macros
                     if @capture(ex, front_.property_) && front == :_
                         push!(acc, property)
+                        return IgnoreChildren(acc)
+                    elseif ex == :_
+                        push!(acc, nothing)
                     else
                         acc
                     end
@@ -116,7 +130,12 @@ function parse_obj_optics(ex::Expr)
                 obj = esc(:_)
                 frontoptic = ()
                 arg = gensym(:_)
-                optic = :($PropertyFunction{$props}($(esc(arg)) -> $(esc(replace_underscore(ex, arg)))))
+                funcbody = :($(esc(arg)) -> $(esc(replace_underscore(ex, arg))))
+                optic = if any(isnothing, props)
+                    funcbody
+                else
+                    :($PropertyFunction{$props}($funcbody))
+                end
             end
         else
             # as if f(args...) didn't match

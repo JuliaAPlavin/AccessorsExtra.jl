@@ -102,6 +102,14 @@ end
         @test needed_properties(o) == (:a, :b)
         @test o((a=1, b=2)) == 6
     end
+
+    o = @o _ + _ + 1
+    @test_throws "Cannot determine" needed_properties(o)
+    @test o(2) == 5
+
+    o = @o _.a + _[2] + 1
+    @test_throws "Cannot determine" needed_properties(o)
+    @test o((a=10, b=100)) == 111
 end
 
 @testitem "concat optics" begin
