@@ -73,6 +73,9 @@ Accessors.IndexLens(::Tuple{Elements}) = Elements()
 Accessors.IndexLens(::Tuple{Properties}) = Properties()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
+Base.show(io::IO, ::Elements) = print(io, "∗")
+Base.show(io::IO, ::Properties) = print(io, "∗ₚ")
+Base.show(io::IO, ::MIME"text/plain", optic::Union{Elements,Properties}) = show(io, optic)
 
 
 struct ⩓{F,G}
