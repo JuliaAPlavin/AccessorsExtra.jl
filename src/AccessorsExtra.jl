@@ -28,6 +28,7 @@ export
 include("overrides.jl")
 include("keyvalues.jl")
 include("flexix.jl")
+include("fixargs.jl")
 include("concatoptic.jl")
 include("recursive.jl")
 include("context.jl")

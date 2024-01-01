@@ -7,8 +7,10 @@ tree_contains(ex, parts::Tuple) = foldtree((yes, x) -> yes || x ∈ parts, false
 tree_contains(ex, part) = tree_contains(ex, (part,))
 
 
+# changes from upstream:
 # https://github.com/JuliaObjects/Accessors.jl/pull/55
 # https://github.com/JuliaObjects/Accessors.jl/pull/103
+# FixArgs handling
 function parse_obj_optics(ex::Expr)
     dollar_exprs = foldtree([], ex) do exs, x
         x isa Expr && x.head == :$ ?
@@ -74,20 +76,32 @@ function parse_obj_optics(ex::Expr)
             optic = funcvallens(front)
         end
     elseif @capture(ex, f_(args__))
+        # if Base.isexpr(first(args), :parameters)
+        #     args = vcat(args[2:end], first(args).args)
+        # end
         args_contain_under = map(arg -> tree_contains(arg, :_), args)
         if !any(args_contain_under)
             # as if f(args...) didn't match
             obj = esc(ex)
             return obj, ()
         end
-        length(args) == 2 || error("Only 1- and 2-argument functions are supported")
         sum(args_contain_under) == 1 || error("Only a single function argument can be the optic target")
-        if args_contain_under[1]
-            obj, frontoptic = parse_obj_optics(args[1])
-            optic = :(Base.Fix2($(esc(f)), $(esc(args[2]))))
-        elseif args_contain_under[2]
-            obj, frontoptic = parse_obj_optics(args[2])
-            optic = :(Base.Fix1($(esc(f)), $(esc(args[1]))))
+        if length(args) == 2 && !any(a -> Base.isexpr(a, :kw) || Base.isexpr(a, :parameters), args)
+            # Base.Fix1 or Fix2 is enough
+            if args_contain_under[1]
+                obj, frontoptic = parse_obj_optics(args[1])
+                optic = :(Base.Fix2($(esc(f)), $(esc(args[2]))))
+            elseif args_contain_under[2]
+                obj, frontoptic = parse_obj_optics(args[2])
+                optic = :(Base.Fix1($(esc(f)), $(esc(args[1]))))
+            end
+        else
+            # need FixArgs
+            i_under = findfirst(args_contain_under)
+            obj, frontoptic = parse_obj_optics(args[i_under])
+            @reset args[i_under] = Placeholder()
+            optic = Expr(:call, fixargs, esc(f), esc.(args)...)
+            dump(optic)
         end
     else
         obj = esc(ex)

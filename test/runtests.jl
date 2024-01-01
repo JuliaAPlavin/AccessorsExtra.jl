@@ -28,6 +28,31 @@ end
     @test (1, 10, 2, 3) == @modify(x -> (10, x...), v[FlexIx(2:3)])
 end
 
+@testitem "fixargs" begin
+    AccessorsExtra.@allinferred o begin
+    o = @optic tuple(_)
+    @test o(0) === (0,)
+    o = @optic tuple(1, _)
+    @test o(0) === (1, 0)
+    o = @optic tuple(_, 1)
+    @test o(0) === (0, 1)
+
+    o = @optic tuple(1, 2, _)
+    @test o(0) === (1, 2, 0)
+    o = @optic tuple(1, _, 2)
+    @test o(0) === (1, 0, 2)
+    o = @optic tuple(_, 1, 2)
+    @test o(0) === (0, 1, 2)
+    end
+
+    o = @optic sort(_, by=identity)
+    @test o([-3, 1, 2, 0]) == [-3, 0, 1, 2]
+    o = @optic sort(_, by=abs)
+    @test o([-3, 1, 2, 0]) == [0, 1, 2, -3]
+    @test_broken @eval (@optic sort(_; by=identity))([-3, 1, 2, 0]) == [-3, 0, 1, 2]
+    @test_broken @eval (@optic sort(_; by=abs))([-3, 1, 2, 0]) == [0, 1, 2, -3]
+end
+
 @testitem "concat optics" begin
     @testset for o in (
         @optic(_.a) ++ @optic(_.b),
