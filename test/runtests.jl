@@ -540,6 +540,7 @@ end
         D = dictionary([4 => 5, 6 => 7])
         @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, @optic values(_)[∗])
         @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @optic keys(_)[∗])
+        @test dictionary([8 => 9, 12 => 13]) == modify(((i, x),) -> 2i => i + x, D, @optic pairs(_)[∗])
         D = ArrayDictionary([4, 6], [5, 7])
         @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, @optic values(_)[∗])
         @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @optic keys(_)[∗])
