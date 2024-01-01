@@ -44,13 +44,6 @@ function __init__()
         ConstructionBase.setproperties(x::StructArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), StructArrays.components(x))
     end
 
-    @require Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f" begin
-        using .Distributions
-
-        InverseFunctions.inverse(f::Base.Fix1{typeof(cdf)}) = Base.Fix1(quantile, f.x)
-        InverseFunctions.inverse(f::Base.Fix1{typeof(quantile)}) = Base.Fix1(cdf, f.x)
-    end
-
     @require Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4" begin
         using .Dictionaries
 
