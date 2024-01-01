@@ -68,16 +68,10 @@ modify(f, obj, o::SelfContext) = modify(f, obj, _ContextValOnly(o.f(obj)))
 # same as default; fallback getall() just errors for ModifyBased
 getall(obj, o::SelfContext) = (o(obj),)
 
-getall(obj, ::Enumerated{Elements}) =
-    map(enumerate(obj)) do (i, v)
-        ValWithContext(i, v)
-    end
+getall(obj, ::Enumerated{Elements}) = map(ValWithContext, _1indices(obj), values(obj))
+getall(obj, ::Keyed{Elements}) = map(ValWithContext, _keys(obj), values(obj))
 
-getall(obj, ::Keyed{Elements}) =
-    map(_keys(obj), values(obj)) do i, v
-        ValWithContext(i, v)
-    end
-
+# needs to call modify(obj, Elements()) and not map(...): only the former works for regex optics
 function modify(f, obj, ::Enumerated{Elements})
     i = Ref(1)
     modify(obj, Elements()) do v
@@ -151,3 +145,7 @@ modify(f, obj::ValWithContext, o::KeepContext) =
 # so that map(keys, values) returns the same kind of type
 _keys(obj) = keys(obj)
 _keys(::NTuple{N,Any}) where {N} = ntuple(identity, N)
+_1indices(obj) = first.(enumerate(obj))  # inefficient?
+_1indices(obj::AbstractArray) = 1:length(obj)
+_1indices(::NTuple{N,Any}) where {N} = ntuple(identity, N)
+_1indices(::NamedTuple{KS}) where {KS} = ntuple(identity, length(KS))
