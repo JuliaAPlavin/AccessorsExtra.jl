@@ -19,7 +19,7 @@ export
     RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, osomething, oget, hasoptic,
-    modifying,
+    modifying, onget, onset, ongetset,
     FlexIx,
     get_steps, logged,
     OptArgs, OptCons, OptProblemSpec, solobj
@@ -108,5 +108,20 @@ modifying(mo) = o -> ConstrainedLens(o, mo)
 (c::ConstrainedLens)(x) = c.o(x)
 set(obj::Complex, c::ConstrainedLens{typeof(angle),typeof(real)}, val) = set(obj, c.mo, imag(obj)/tan(val))
 set(obj::Complex, c::ConstrainedLens{typeof(angle),typeof(imag)}, val) = set(obj, c.mo, real(obj)*tan(val))
+
+
+struct onset{F}
+    f::F
+end
+@inline (o::onset)(x) = x
+@inline set(obj, o::onset, val) = o.f(val)
+
+struct onget{F}
+    f::F
+end
+@inline (o::onget)(x) = o.f(x)
+@inline set(obj, o::onget, val) = val
+
+ongetset(f) = onget(f) ∘ onset(f)
 
 end

@@ -582,6 +582,19 @@ end
     @test @popfirst(obj.b) == (a=1, b=(3,))
 end
 
+@testitem "on get/set" begin
+    obj = (a=1, b=2, tot=4)
+
+    o = @optic(_.a) ∘ onset(x -> @set x.tot = x.a + x.b)
+    @test o(obj) === 1
+    @test set(obj, o, 10) === (a=10, b=2, tot=12)
+    @test setall(obj, @optics(_.a, _.b) ∘ onset(x -> @set x.tot = x.a + x.b), (10, 20)) === (a=10, b=20, tot=30)
+
+    o = onget(x -> @set x.tot = x.a + x.b)
+    @test o(obj) === (a=1, b=2, tot=3)
+    @test set(obj, o, obj) === obj
+end
+
 @testitem "ConstrainedLens" begin
     obase = angle
     ore = modifying(real)(angle)
