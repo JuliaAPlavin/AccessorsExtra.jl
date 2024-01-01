@@ -46,6 +46,46 @@ using TestItemRunner
     @test setall(obj, o, (:a, :b, :c)) == (a=:a, bs=[(c=:b, d=3), (c=:c, d=5)])
 end
 
+@testitem "concat container" begin
+    using StaticArrays
+
+    o = @optic₊ (_.a.b, _.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (1, 3)
+    @test set(m, o, (4, 5)) == (a=(b=4, c=2), c=5)
+    @test modify(xs -> xs ./ sum(xs), m, o) == (a=(b=0.25, c=2), c=0.75)
+
+    o = @optic₊ (x=_.a.b, y=_.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (x=1, y=3)
+    @test set(m, o, (x=4, y=5)) == (a=(b=4, c=2), c=5)
+    @test set(m, o, (y=5, x=4)) == (a=(b=4, c=2), c=5)
+    @test modify(xs -> map(x -> x - xs.x, xs), m, o) == (a=(b=0, c=2), c=2)
+    
+    o = @optic₊ SVector(_.a.b, _.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == SVector(1, 3)
+    @test set(m, o, SVector(4, 5)) == (a=(b=4, c=2), c=5)
+    @test modify(xs -> 2*xs, m, o) == (a=(b=2, c=2), c=6)
+
+    o = @optic₊ Pair(_.a.b, _.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (1 => 3)
+    @test set(m, o, 4 => 5) == (a=(b=4, c=2), c=5)
+    
+    o = @optic₊ [_.a.b, _.c]
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == [1, 3]
+    @test set(m, o, [4, 5]) == (a=(b=4, c=2), c=5)
+    @test modify(xs -> 2*xs, m, o) == (a=(b=2, c=2), c=6)
+    
+    o = @optic₊ Dict("x" => _.a.b, "y" => _.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == Dict("x" => 1, "y" => 3)
+    @test set(m, o, Dict("x" => 4, "y" => 5)) == (a=(b=4, c=2), c=5)
+    @test set(m, o, Dict("y" => 5, "x" => 4)) == (a=(b=4, c=2), c=5)
+end
+
 @testitem "shorter forms" begin
     o = @optic(_.a[∗].b[∗ₚ].c[2])
     @test o === @optic(_.a |> Elements() |> _.b |> Properties() |> _.c[2])

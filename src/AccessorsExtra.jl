@@ -15,7 +15,7 @@ using Requires
 export
     ViewLens,
     ∗, ∗ₚ, All,
-    concat, ++, @optics,
+    concat, ++, @optics, @optic₊,
     @replace,
     assemble, @assemble,
     unrecurcize, RecursiveOfType,
@@ -129,6 +129,9 @@ InverseFunctions.inverse(::typeof(deopcompose)) = Base.splat(opcompose)
 InverseFunctions.inverse(::typeof(Base.splat(opcompose))) = deopcompose
 InverseFunctions.inverse(::typeof(decompose)) = Base.splat(compose)
 InverseFunctions.inverse(::typeof(Base.splat(compose))) = decompose
+
+
+Accessors.constructorof(::Type{<:Expr}) = (head, args) -> Expr(head, args...)
 
 
 # set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57

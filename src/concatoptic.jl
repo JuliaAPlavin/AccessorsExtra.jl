@@ -62,6 +62,48 @@ end
 Base.show(io::IO, ::MIME"text/plain", optic::ConcatOptics{<:Tuple}) = show(io, optic)
 
 
+
+(os::Union{Tuple,NamedTuple,AbstractArray})(obj) = map(o -> o(obj), os)
+(os::Dict)(obj) = @modify(o -> o(obj), values(os)[∗])
+(os::Pair)(obj) = first(os)(obj) => last(os)(obj)
+set(obj, os::Union{Tuple,Pair,AbstractArray}, vals::Union{Tuple,Pair,AbstractArray}) =
+    foldl(map(tuple, os, vals); init=obj) do obj, (o, v)
+        set(obj, o, v)
+    end
+set(obj, os::NamedTuple{KS}, vals) where {KS} =
+    foldl(map(tuple, os, NamedTuple{KS}(vals)); init=obj) do obj, (o, v)
+        set(obj, o, v)
+    end
+set(obj, os::Dict, vals) =
+    foldl(pairs(os); init=obj) do obj, (k, o)
+        v = vals[k]
+        set(obj, o, v)
+    end
+
+macro optic₊(ex)
+    if Base.isexpr(ex, :tuple) || Base.isexpr(ex, :vect)
+        @modify(ex.args[∗]) do arg
+            if @capture arg (key_ = optic_)
+                :( $key = $Accessors.@optic $optic )
+            else
+                :( $Accessors.@optic $arg )
+            end
+        end
+    elseif Base.isexpr(ex, :call)
+        @modify(ex.args[2:end][∗]) do arg
+            if @capture arg (key_ => optic_)
+                :( $key => $Accessors.@optic $optic )
+            else
+                :( $Accessors.@optic $arg )
+            end
+        end
+    else
+        error("Unsupported expression $ex")
+    end
+end
+
+
+
 # works? but not sure if it's useful ie better than just using ++
 
 # using FlexiGroups
