@@ -12,6 +12,7 @@ InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [weakdeps]
+ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
@@ -22,6 +23,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 URIs = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
 
 [extensions]
+ColorTypesExt = "ColorTypes"
 DictionariesExt = "Dictionaries"
 DistributionsExt = "Distributions"
 DomainSetsExt = "DomainSets"

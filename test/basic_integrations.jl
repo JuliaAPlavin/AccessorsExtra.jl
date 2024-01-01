@@ -104,3 +104,17 @@ end
         end
     end
 end
+
+@testitem "ColorTypes" begin
+    using ColorTypes
+
+    c = RGB(0.5, 0.2, 1)
+    ca = RGBA(0.5, 0.2, 1, 0.2)
+    @test RGBA(0.5, 0.2, 1, 0.1) === @set alpha(c) = 0.1
+    @test RGBA(0.5, 0.2, 1, 0.1) === @set alpha(c) *= 0.1
+    @test RGBA(0.5, 0.2, 1, 0.1) === @set alpha(ca) = 0.1
+    @test RGBA(0.5, 0.2, 1, 0.1) === @set alpha(ca) *= 0.5
+
+    @test c === @delete alpha(c)
+    @test c === @delete alpha(ca)
+end

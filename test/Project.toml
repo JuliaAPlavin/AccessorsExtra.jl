@@ -1,5 +1,6 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 CompatHelperLocal = "5224ae11-6099-4aaa-941d-3aab004bd678"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
