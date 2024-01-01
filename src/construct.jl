@@ -15,7 +15,7 @@ end
 
 construct(T::Type{Tuple{}})::T = T()
 construct(T::Type{<:Tuple{Any,Any}}, (_, x)::Pair{typeof(first)}, (_, y)::Pair{typeof(last)})::T = constructorof(T)(x, y)
-construct(T::Type{<:Tuple{Any,Any}}, (_, n)::Pair{typeof(norm)}, (_, a)::Pair{typeof(splat(atan))})::T = constructorof(T)((n .* sincos(a))...)
+construct(T::Type{<:Tuple{Any,Any}}, (_, n)::Pair{typeof(splat(hypot))}, (_, a)::Pair{typeof(splat(atan))})::T = constructorof(T)((n .* sincos(a))...)
 
 
 construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =

@@ -907,7 +907,7 @@ end
         end
         @testset for T in (Tuple{Any,Any}, Tuple{Float64,Float32}, Tuple{Real,Real}, SVector{2}, SVector{2,Float32}, SVector{2,Float64})
             test_construct_laws(T, first => 4, last => 5)
-            test_construct_laws(T, norm => 3, @o(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
+            test_construct_laws(T, @o(hypot(_...)) => 3, @o(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
             test_construct_laws(T, norm => 3, @o(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
         end
         test_construct_laws(SVector{2}, @o(_.x) => 4, @o(_.y) => 5)

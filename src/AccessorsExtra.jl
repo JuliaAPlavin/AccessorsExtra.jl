@@ -7,7 +7,6 @@ import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBa
 using DataPipes
 @reexport using ConstructionBase
 using InverseFunctions
-using LinearAlgebra: norm
 using Accessors: MacroTools
 
 export
