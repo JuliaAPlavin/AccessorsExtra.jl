@@ -600,6 +600,9 @@ end
 end
 
 @testitem "construct" begin
+    using StaticArrays
+    using StaticArrays: norm
+
     ==ₜ(_, _) = false
     ==ₜ(x::T, y::T) where T = x == y
 
@@ -650,6 +653,15 @@ end
         test_construct_laws(NamedTuple{(:a,)}, only => 1)
         test_construct_laws(NamedTuple, @optic(_.a) => 1)
         test_construct_laws(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "")
+
+        test_construct_laws(SVector{0})
+        test_construct_laws(SVector{1}, only => 2)
+        test_construct_laws(SVector{1}, first => 3)
+        test_construct_laws(SVector{1}, last => 4)
+        test_construct_laws(SVector{2}, first => 4, last => 5)
+        test_construct_laws(SVector{2}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
+        test_construct_laws(SVector{2,Float64}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
+        test_construct_laws(SVector{2,Float32}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
     end
 
     @testset "macro" begin
