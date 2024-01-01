@@ -3,6 +3,35 @@ using TestItemRunner
 @run_package_tests
 
 
+@testitem "concat optics" begin
+    for o in (
+        @optic(_.a) ++ @optic(_.b),
+        @optic(_[(:a, :b)] |> Elements()),
+    )
+        obj = (a=1, b=2, c=3)
+        @test getall(obj, o) === (1, 2)
+        @test setall(obj, o, (3, 4)) === (a=3, b=4, c=3)
+        @test modify(-, obj, o) === (a=-1, b=-2, c=3)
+        Accessors.test_getsetall_laws(o, obj, (3, 4), (:a, :b))
+    end
+
+    obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
+    o = @optic(_.a) ++ @optic(_.bs |> Elements() |> _.c)
+    @test getall(obj, o) === (1, 2, 4)
+    @test modify(-, obj, o) === (a=-1, bs=((c=-2, d=3), (c=-4, d=5)))
+    Accessors.test_getsetall_laws(o, obj, (3, 4, 5), (:a, :b, :c))
+
+    o = @optic(_ - 1) ∘ (@optic(_.a) ++ @optic(_.bs |> Elements() |> _.c))
+    @test getall(obj, o) === (0, 1, 3)
+    @test modify(-, obj, o) === (a=1, bs=((c=0, d=3), (c=-2, d=5)))
+    Accessors.test_getsetall_laws(o, obj, (3, 4, 5), (10, 20, 30))
+
+    obj = (a=1, bs=[(c=2, d=3), (c=4, d=5)])
+    o = @optic(_.a) ++ @optic(_.bs |> Elements() |> _.c)
+    @test getall(obj, o) == [1, 2, 4]
+    @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
+end
+
 @testitem "replace" begin
     nt = (a=1, b=:x)
     @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (c=1, b=:x)

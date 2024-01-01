@@ -10,10 +10,12 @@ using Requires
 
 export
     ViewLens, Keys, Values, Pairs,
+    concat, ++,
     @replace,
     assemble, @assemble
 
 
+include("concatoptic.jl")
 include("replace.jl")
 include("assemble.jl")
 
