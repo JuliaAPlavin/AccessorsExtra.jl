@@ -520,6 +520,11 @@ end
     s = StructArray(a=[1, 2, 3])
     @test setproperties(s, a=10:12)::StructArray == StructArray(a=10:12)
     @test_throws ArgumentError setproperties(s, b=10:12)
+    @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(a=[2, 3, 4])
+
+    s = StructArray(([1, 2, 3],))
+    @test setproperties(s, (10:12,))::StructArray == StructArray((10:12,))
+    @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
 end
 
 @testitem "getfield" begin
