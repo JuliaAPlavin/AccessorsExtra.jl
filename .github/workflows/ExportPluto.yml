@@ -5,6 +5,7 @@ on:
             - main
             - master
         paths:
+          - 'test/notebook.jl'  # to keep old url working
           - 'examples/notebook.jl'
           - 'examples/optimization.jl'
           - '.github/workflows/ExportPluto.yml'
