@@ -571,7 +571,7 @@ end
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
 
-@testitem "push/pop/???" begin
+@testitem "push, pop" begin
     obj = (a=1, b=(2, 3))
     @test @push(obj.b, 4) == (a=1, b=(2, 3, 4))
     @test @pushfirst(obj.b, 4) == (a=1, b=(4, 2, 3))
