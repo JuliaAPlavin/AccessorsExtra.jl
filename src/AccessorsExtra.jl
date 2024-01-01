@@ -12,9 +12,10 @@ using Accessors: MacroTools
 
 export
     ∗, ∗ₚ, PartsOf,
+    ⩓, ⩔,
     concat, ++, @optics, @optic₊,
     @replace,
-    assemble, @assemble,
+    construct, @construct,
     unrecurcize, RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, osomething, hasoptic,
@@ -35,7 +36,7 @@ include("partsof.jl")
 include("funclenses.jl")
 include("regex.jl")
 include("replace.jl")
-include("assemble.jl")
+include("construct.jl")
 include("bystep.jl")
 include("optimization.jl")
 include("testing.jl")
@@ -95,5 +96,19 @@ Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
 
 delete(obj, o::If) = error("`delete(obj, ::If)` not supported, try using `filter` as an optic instead")
 delete(obj, o::Base.Fix1{typeof(filter)}) = filter(!o.x, obj)
+
+
+struct ⩓{F,G}
+    f::F
+    g::G
+end
+(c::⩓)(x) = c.f(x) && c.g(x)
+
+struct ⩔{F,G}
+    f::F
+    g::G
+end
+(c::⩔)(x) = c.f(x) || c.g(x)
+
 
 end
