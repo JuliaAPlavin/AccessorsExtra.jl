@@ -68,6 +68,10 @@ InverseFunctions.inverse(::typeof(decompose)) = Base.splat(compose)
 InverseFunctions.inverse(::typeof(Base.splat(compose))) = decompose
 
 
+# Tuples, arrays: upstream to Accessors?
+set(obj::Tuple, ::Type{Tuple}, val::Tuple) = val
+set(obj::NamedTuple{KS}, ::Type{Tuple}, val::Tuple) where {KS} = NamedTuple{KS}(val)
+
 set(obj, o::Base.Fix1{typeof(map)}, val) = map((ob, v) -> set(ob, o.x, v), obj, val)
 set(obj, o::Base.Fix1{typeof(filter)}, val) = @set obj[findall(o.x, obj)] = val
 modify(f, obj, o::Base.Fix1{typeof(filter)}) = @modify(f, obj[findall(o.x, obj)])

@@ -29,9 +29,6 @@ getall(obj, ao::AlongsideOptic{<:Tuple}) =
     end
 end
 
-set(obj::Tuple, ::Type{Tuple}, val::Tuple) = val
-set(obj::NamedTuple{KS}, ::Type{Tuple}, val::Tuple) where {KS} = NamedTuple{KS}(val)
-
 getall(obj, ao::AlongsideOptic) = error("not supported")
 modify(f, obj, ao::AlongsideOptic) = error("not supported")
 
