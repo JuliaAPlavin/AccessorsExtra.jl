@@ -8,6 +8,8 @@ Base.show(io::IO, ::MIME"text/plain", pf::PropertyFunction) = show(io, pf)
 
 (pf::PropertyFunction{props})(obj) where {props} = pf.func(obj)
 
+
+# is needed_properties() actually needed?
 needed_properties(::Type{<:PropertyFunction{<:NamedTuple{KS}}}) where {KS} = KS
 
 needed_properties(::ComposedFunction{O,I}) where {I,O} = needed_properties(I)
