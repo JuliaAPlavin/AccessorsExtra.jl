@@ -43,6 +43,17 @@ function modify(f, obj, o::MaybeOptic)
     end
 end
 
+
+struct OSomething{OS}
+    os::OS
+end
+osomething(optics...) = OSomething(optics)
+(o::OSomething)(obj) = hasoptic(obj, first(o.os)) ? first(o.os)(obj) : (@delete first(o.os))(obj)
+(o::OSomething{Tuple{}})(obj) = error("no optic in osomething applicable to $obj")
+set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os), val) : set(obj, (@delete first(o.os)), val)
+set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
+
+
 hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
 hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
 hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))

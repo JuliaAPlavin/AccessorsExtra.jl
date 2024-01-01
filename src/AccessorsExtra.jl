@@ -17,7 +17,7 @@ export
     assemble, @assemble,
     unrecurcize, RecursiveOfType,
     keyed, enumerated, selfcontext,
-    maybe, hasoptic,
+    maybe, osomething, hasoptic,
     FlexIx,
     get_steps, logged,
     OptArgs, OptCons, OptProblemSpec, solobj
