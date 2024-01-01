@@ -11,6 +11,10 @@
         Accessors.test_getsetall_laws(o, obj, (3, 4), (:a, :b))
     end
 
+    @test (@optics _.a _.b) ++ (@optics _.c _.d) === @optics _.a _.b _.c _.d
+    @test (@optics _.a _.b) ++ (@o _.c) === @optics _.a _.b _.c
+    @test (@optics _.a _.b) ++ concat() ++ (@o _.c) === @optics _.a _.b _.c
+
     obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
     o = concat(a=@o(_.a), c=@o(first(_.bs) |> _.c))
     AccessorsExtra.@allinferred getall modify delete if VERSION >= v"1.10-"; :setall end begin

@@ -15,9 +15,11 @@ Specifically, with a concat-optic:
 - `modify` applies `modify` for each optic in turn, with the same transformation function
 """
 function concat end
-concat(optics...) = ConcatOptics(optics)
-concat(; optics...) = ConcatOptics(values(optics))
 const ++ = concat
+concat(optics...) = ConcatOptics(_reduce_concat(map(_optics, optics)))
+concat(; optics...) = ConcatOptics(values(optics))
+_optics(o) = (o,)
+_optics(o::ConcatOptics) = o.optics
 
 OpticStyle(::Type{<:ConcatOptics}) = ModifyBased()
 
