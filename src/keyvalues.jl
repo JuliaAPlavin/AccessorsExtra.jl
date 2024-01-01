@@ -20,15 +20,16 @@ modify(f, obj::KVPWrapper{typeof(values), <:Pair}, ::Elements) = modify(f, obj.o
 
 function modify(f, obj::KVPWrapper{typeof(values), <:Dict}, ::Elements)
     dict = obj.obj
-    V = Core.Compiler.return_type(f, Tuple{valtype(dict)})
-    vals = dict.vals
-    newvals = similar(vals, V)
-    @inbounds for i in dict.idxfloor:lastindex(vals)
-        if Base.isslotfilled(dict, i)
-            newvals[i] = f(vals[i])
+    @modify(dict.vals) do vals
+        V = Core.Compiler.return_type(f, Tuple{eltype(vals)})
+        newvals = similar(vals, V)
+        @inbounds for i in dict.idxfloor:lastindex(vals)
+            if Base.isslotfilled(dict, i)
+                newvals[i] = f(vals[i])
+            end
         end
+        return newvals
     end
-    setproperties(dict, vals=newvals)
 end
 
 ### pairs
