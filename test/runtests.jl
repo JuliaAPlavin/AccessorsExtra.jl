@@ -172,10 +172,24 @@ end
     @test set(m, o, (x=[5, 6], y=7)) == (a=(b=5, c=7), c=6)
 end
 
-@testitem "shorter forms" begin
-    o = @optic(_.a[∗].b[∗ₚ].c[2])
+@testitem "shorter aliases" begin
+    o = @o(_.a[∗].b[∗ₚ].c[2])
     @test o === @optic(_.a |> Elements() |> _.b |> Properties() |> _.c[2])
-    @test sprint(show, o) == "(@optic _.a[∗].b[∗ₚ].c[2])"
+end
+
+@testitem "show" begin
+    @test sprint(show, @o(_.a[∗].b[∗ₚ].c[2])) == "(@optic _.a[∗].b[∗ₚ].c[2])"
+    @test sprint(show, @o(_[∗].b)) == "(@optic _[∗].b)"
+    @test sprint(show, @o(_[∗ₚ])) == "∗ₚ"
+    @test sprint(show, @o(atan(_...))) == "splat(atan)"  # Base, cannot change without piracy
+    @test sprint(show, @o(atan(_.a...))) == "(@optic atan(_.a...))"
+    @test sprint(show, @o(tuple(_, 1, 2))) == "(@optic tuple(_, 1, 2))"
+    @test sprint(show, @o(sort(_, by=abs))) == "(@optic sort(_, by=abs))"
+    @test sprint(show, @o(sort(_, 1, by=abs))) == "(@optic sort(_, 1, by=abs))"
+    @test sprint(show, @o(_ |> keyed(∗))) == "keyed(∗)"
+    @test sprint(show, @o(_.a |> enumerated(∗ₚ))) == "(@optic _.a |> enumerated(∗ₚ))"
+    @test sprint(show, @o(_.a |> selfcontext(∗ₚ) |> _.b)) == "(ᵢ(@optic _.b))ᵢ ∘ (@optic _.a |> selfcontext(∗ₚ))"
+    @test_broken sprint(show, @o(_.a[∗].b[∗ₚ].c[2]); context=:compact => true) == "_.a[∗].b[∗ₚ].c[2]"
 end
 
 @testitem "and/or/..." begin
@@ -940,5 +954,5 @@ end
     CHL.@check()
 
     using Aqua
-    Aqua.test_all(AccessorsExtra, piracy=false, ambiguities=false, project_toml_formatting=false)
+    Aqua.test_all(AccessorsExtra, piracy=false, ambiguities=false)
 end

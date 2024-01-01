@@ -78,6 +78,14 @@ Base.show(io::IO, ::Elements) = print(io, "∗")
 Base.show(io::IO, ::Properties) = print(io, "∗ₚ")
 Base.show(io::IO, ::MIME"text/plain", optic::Union{Elements,Properties}) = show(io, optic)
 
+# like in Accessors, but for Elements and Properties
+Base.show(io::IO, optic::ComposedFunction{<:Any, <:Union{Elements,Properties}}) = Accessors.show_optic(io, optic)
+# resolve method ambiguity with Base:
+Base.show(io::IO, optic::ComposedFunction{typeof(!), <:Union{Elements,Properties}}) = Accessors.show_optic(io, optic)
+
+
+Accessors._shortstring(prev, o::Base.Splat) = "$(o.f)($prev...)"
+
 
 struct ⩓{F,G}
     f::F

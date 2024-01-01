@@ -47,6 +47,7 @@ end
 stripcontext(o::Keyed) = stripcontext(o.o)
 OpticStyle(::Type{Keyed{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Keyed) = print(io, "keyed(", co.o, ")")
+Accessors._shortstring(prev, o::Keyed) = "$prev |> keyed($(o.o))"
 
 keyed(o) = Keyed(o)
 keyed(o::PropertyLens{p}) where {p} = _ContextValOnly(p) ∘ o
@@ -57,6 +58,7 @@ end
 stripcontext(o::Enumerated) = stripcontext(o.o)
 OpticStyle(::Type{Enumerated{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Enumerated) = print(io, "enumerated(", co.o, ")")
+Accessors._shortstring(prev, o::Enumerated) = "$prev |> enumerated($(o.o))"
 
 enumerated(o) = Enumerated(o)
 
@@ -66,6 +68,7 @@ end
 stripcontext(o::SelfContext) = identity
 OpticStyle(::Type{<:SelfContext}) = ModifyBased()
 Base.show(io::IO, co::SelfContext) = print(io, "selfcontext(", co.f, ")")
+Accessors._shortstring(prev, o::SelfContext) = "$prev |> selfcontext($(o.f))"
 selfcontext(f=identity) = SelfContext(f)
 
 modify(f, obj, o::SelfContext) = modify(f, obj, _ContextValOnly(o.f(obj)))
