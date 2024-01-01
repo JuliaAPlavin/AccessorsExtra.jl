@@ -8,7 +8,13 @@ using InverseFunctions
 using StaticArraysCore: SVector, MVector
 using Requires
 
-export ViewLens, Keys, Values, Pairs, @replace
+export
+    ViewLens, Keys, Values, Pairs,
+    @replace,
+    assemble, @assemble
+
+
+include("assemble.jl")
 
 
 function __init__()

@@ -16,6 +16,58 @@ using TestItemRunner
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
 
+@testitem "assemble" begin
+    ==ₜ(_, _) = false
+    ==ₜ(x::T, y::T) where T = x == y
+
+    @test assemble(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+    @test assemble(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+    @test assemble(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 == 1 + 2im
+    @test assemble(Complex, @optic(_.re) => 1., @optic(_.im) => 2)::ComplexF64 === 1. + 2im
+    @test assemble(Complex, abs => 1., angle => π/2)::ComplexF64 ≈ 1im
+    @test assemble(ComplexF32, abs => 1., angle => π/2)::ComplexF32 ≈ 1im
+    @test_throws InexactError assemble(Complex{Int}, abs => 1., angle => π/2)
+
+    @test assemble(Tuple, only => 1) === (1,)
+    @test assemble(Tuple{Int}, only => 1) === (1,)
+    @test assemble(Tuple{Float64}, only => 1) === (1.0,)
+    @test_throws Exception assemble(Tuple{String}, only => 1)
+    @test_throws Exception assemble(Tuple{Int, Int}, only => 1)
+
+    @test assemble(Vector, only => 1) ==ₜ [1]
+    @test assemble(Vector{Int}, only => 1) ==ₜ [1]
+    @test assemble(Vector{Float64}, only => 1) ==ₜ [1.0]
+    @test_throws Exception assemble(Vector{String}, only => 1)
+
+    @test assemble(Set, only => 1) ==ₜ Set((1,))
+    @test assemble(Set{Int}, only => 1) ==ₜ Set((1,))
+    @test assemble(Set{Float64}, only => 1) ==ₜ Set((1.0,))
+    @test_throws Exception assemble(Set{String}, only => 1,)
+
+    @test assemble(NamedTuple{(:a,)}, only => 1) === (a=1,)
+    @test assemble(NamedTuple, @optic(_.a) => 1) === (a=1,)
+    @test assemble(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "") === (a=1, b="")
+
+    @test @assemble(Complex, _.re = 1, _.im = 2)::Complex{Int} === 1 + 2im
+    @test (@assemble Complex{Int}  _.re = 1 _.im = 2)::Complex{Int} === 1 + 2im
+    res = @assemble Complex begin
+        _.re = 1
+        _.im = 2
+    end
+    @test res::Complex{Int} === 1 + 2im
+    res = @assemble Complex{Int} begin
+        _.re = 1
+        _.im = 2
+    end
+    @test res::Complex{Int} === 1 + 2im
+    res = @assemble NamedTuple begin
+        _.a = @assemble Complex  abs(_) = 1 angle(_) = π
+        _.b = @assemble Vector  only(_) = 10
+        _.c = 123
+    end
+    @test res == (a=-1, b=[10], c=123)
+end
+
 @testitem "staticarrays" begin
     using StaticArrays: SVector, MVector
 
