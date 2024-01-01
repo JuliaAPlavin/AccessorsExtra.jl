@@ -120,6 +120,12 @@ end
 end
 
 
+InverseFunctions.inverse(::typeof(Accessors.deopcompose)) = Base.splat(Accessors.opcompose)
+InverseFunctions.inverse(::typeof(Base.splat(Accessors.opcompose))) = Accessors.deopcompose
+InverseFunctions.inverse(::typeof(Accessors.decompose)) = Base.splat(Accessors.compose)
+InverseFunctions.inverse(::typeof(Base.splat(Accessors.compose))) = Accessors.decompose
+
+
 # set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57
 Accessors.set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
 Accessors.set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val

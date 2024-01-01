@@ -463,6 +463,9 @@ end
 
     InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"m")
     InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"mm")
+
+    InverseFunctions.test_inverse(Accessors.decompose, sin ∘ tan ∘ cos; compare= ==)
+    InverseFunctions.test_inverse(Accessors.deopcompose, sin ∘ tan ∘ cos; compare= ==)
 end
 
 @testitem "keys, values, pairs" begin
