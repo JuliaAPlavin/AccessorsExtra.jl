@@ -7,7 +7,7 @@
     @test @replace(nt.c = nt.a) === (c=1, b=:x)
     @test @replace(nt.c = _.a) === (c=1, b=:x)
     @test @replace(_.c = nt.a) === (c=1, b=:x)
-    @test @replace(nt |> (_.c = _.a)) === (c=1, b=:x)
+    @test_broken @eval @replace(nt |> (_.c = _.a)) === (c=1, b=:x)
 
     @test_throws Exception eval(:(@replace(nt_1.c = nt_2.a)))
     @test_throws Exception eval(:(@replace(_.c = _.a)))

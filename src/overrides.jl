@@ -114,50 +114,57 @@ function parse_obj_optics(ex::Expr)
                     optic = Expr(:call, fixargs, esc(f), esc.(args)...)
                 end
             else
-                # multiple function arguments are "targets" - create propertyfunction
-                props = foldtree_pre(Any[], ex) do acc, ex
-                    # XXX: catches all "_.prop" code, even within other macros
-                    
-                    # can this be done for arbitrary nesting?
-                    if @capture(ex, front_.p1_.p2_.p3_.p4_) && front == :_
-                        push!(acc, (p1,p2,p3,p4))
-                        return IgnoreChildren(acc)
-                    elseif @capture(ex, front_.p1_.p2_.p3_) && front == :_
-                        push!(acc, (p1,p2,p3))
-                        return IgnoreChildren(acc)
-                    elseif @capture(ex, front_.p1_.p2_) && front == :_
-                        push!(acc, (p1,p2))
-                        return IgnoreChildren(acc)
-                    elseif @capture(ex, front_.p1_) && front == :_
-                        push!(acc, (p1,))
-                        return IgnoreChildren(acc)
-                    elseif ex == :_
-                        push!(acc, ())
-                    else
-                        acc
-                    end
-                end |> unique
-                props_nt = aggregate_props(props)
-
-                obj = esc(:_)
-                frontoptic = ()
-                arg = gensym(:_)
-                funcbody = :($(esc(arg)) -> $(esc(replace_underscore(ex, arg))))
-                optic = if props_nt == Placeholder()
-                    funcbody
-                else
-                    :($PropertyFunction($props_nt, $funcbody))
-                end
+                # multiple function arguments are "targets" - do nothing here, will create propertyfunction below
             end
         else
-            # as if f(args...) didn't match
+            # do nothing, see extra processing below
+        end
+    end
+
+    if !@isdefined optic
+        if tree_contains(ex, :_)
+            # placeholder in ex, but doesn't match any of the known forms
+            # try creating a propertyfunction if possible
+            props = foldtree_pre(Any[], ex) do acc, ex
+                # XXX: catches all "_.prop" code, even within other macros
+                
+                # can this be done for arbitrary nesting?
+                if @capture(ex, front_.p1_.p2_.p3_.p4_) && front == :_
+                    push!(acc, (p1,p2,p3,p4))
+                    return IgnoreChildren(acc)
+                elseif @capture(ex, front_.p1_.p2_.p3_) && front == :_
+                    push!(acc, (p1,p2,p3))
+                    return IgnoreChildren(acc)
+                elseif @capture(ex, front_.p1_.p2_) && front == :_
+                    push!(acc, (p1,p2))
+                    return IgnoreChildren(acc)
+                elseif @capture(ex, front_.p1_) && front == :_
+                    push!(acc, (p1,))
+                    return IgnoreChildren(acc)
+                elseif ex == :_
+                    push!(acc, ())
+                else
+                    acc
+                end
+            end |> unique
+            props_nt = aggregate_props(props)
+
+            obj = esc(:_)
+            frontoptic = ()
+            arg = gensym(:_)
+            funcbody = :($(esc(arg)) -> $(esc(replace_underscore(ex, arg))))
+            optic = if props_nt == Placeholder()
+                funcbody
+            else
+                :($PropertyFunction($props_nt, $funcbody))
+            end
+        else
+            # no placeholder in ex
             obj = esc(ex)
             return obj, ()
         end
-    else
-        obj = esc(ex)
-        return obj, ()
     end
+
     return (obj, tuple(frontoptic..., optic))
 end
 

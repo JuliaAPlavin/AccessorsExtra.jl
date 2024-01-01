@@ -1,4 +1,3 @@
-
 @testitem "basic" begin
     using AccessorsExtra: needed_properties
     o = @o _.a + 1
@@ -32,6 +31,13 @@
         @test needed_properties(o) == (:a, :b)
         @test o((a=1, b=2)) == 6
     end
+
+    o = @o (_.xy.y, _.z.im)
+    @test o((xy=(x=1, y=2), z=ComplexF64(0, 3))) == (2, 3)
+    o = @o (a=_.xy.y+1, b=_.z.im + _.xy.y)
+    @test o((xy=(x=1, y=2), z=ComplexF64(0, 3))) == (a=3, b=5)
+    o = @o (;a=_.xy.y+1, b=_.z.im + _.xy.y)
+    @test o((xy=(x=1, y=2), z=ComplexF64(0, 3))) == (a=3, b=5)
 
     o = @o _ + _ + 1
     @test_throws "Cannot determine" needed_properties(o)
