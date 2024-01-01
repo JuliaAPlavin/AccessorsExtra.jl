@@ -263,6 +263,15 @@ end
         @test modify(x -> nothing, (a=(b=1,),), o) == (a=(;),)
         @test modify(x -> nothing, (a=(;),), o) == (a=(;),)
         @test modify(x -> nothing, (;), o) == (;)
+
+        @test getall((a=(b=1,),), o) == (1,)
+        @test getall((a=(;),), o) == ()
+        @test getall((;), o) == ()
+        @test getall(nothing, o) == ()
+        @test setall((a=(b=1,),), o, (5,)) == (a=(b=5,),)
+        @test setall((a=(;),), o, ()) == (a=(;),)
+        @test setall((;), o, ()) == (;)
+        @test setall(nothing, o, ()) == nothing
     end
 
     for obj in ((5,), (a=5,), [5], Dict(1 => 5),)

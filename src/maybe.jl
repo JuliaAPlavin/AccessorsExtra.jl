@@ -30,6 +30,9 @@ end
 set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
 set(obj, o::MaybeOptic, val) = hasoptic(obj, o.o) ? set(obj, o.o, val) : insert(obj, o.o, val)
 
+getall(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? getall(obj, o.o) : ()
+setall(obj, o::MaybeOptic, vals) = hasoptic(obj, o.o) ? setall(obj, o.o, vals) : obj
+
 function modify(f, obj, o::MaybeOptic)
     if hasoptic(obj, o.o)
         # like modify(f, obj, o.o), but can delete
@@ -54,6 +57,7 @@ osomething(optics...) = OSomething(optics)
 (o::OSomething{Tuple{}})(obj) = error("no optic in osomething applicable to $obj")
 set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os), val) : set(obj, (@delete first(o.os)), val)
 set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
+
 
 hasoptic(obj, o::ComposedFunction) = hasoptic(obj, o.inner) && hasoptic(o.inner(obj), o.outer)
 
