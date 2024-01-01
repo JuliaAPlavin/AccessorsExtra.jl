@@ -13,19 +13,25 @@ function Accessors.modify(f, s, o::Base.Fix1{typeof(match)})
     end
 end
 
+Accessors.OpticStyle(::Type{<:Base.Fix1{typeof(eachmatch)}}) = Accessors.ModifyBased()
 
-struct EachmatchElements
-    r::Regex
+Accessors.getall(obj::Base.RegexMatchIterator, ::Elements) = obj
+
+# special wrapper type, can only be modify'ed with Elements()
+struct EachMatchWrapper
+    mi::Base.RegexMatchIterator
 end
-Accessors.OpticStyle(::Type{<:EachmatchElements}) = Accessors.ModifyBased()
 
-Base.:∘(i::Elements, o::Base.Fix1{typeof(eachmatch)}) = EachmatchElements(o.x)
-Base.:∘(c::ComposedFunction{<:Any, <:Elements}, o::Base.Fix1{typeof(eachmatch)}) = c.outer ∘ EachmatchElements(o.x)
+function Accessors.modify(f, s::AbstractString, o::Base.Fix1{typeof(eachmatch)})
+    replacements = f(EachMatchWrapper(o(s)))
+    @assert issorted(replacements, by=r -> first(first(r)))
+    foldl(reverse(replacements); init=s) do s, (rng, v)
+        @set s[FlexIx(rng)] = v
+    end
+end
 
-Accessors.getall(s::AbstractString, o::EachmatchElements) = eachmatch(o.r, s)
-
-function Accessors.modify(f, s::AbstractString, o::EachmatchElements)
-    replacements = map(eachmatch(o.r, s)) do m
+function Accessors.modify(f, obj::EachMatchWrapper, ::Elements)
+    replacements = map(obj.mi) do m
         sub = m.match
         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
         x = f(m)
@@ -37,23 +43,68 @@ function Accessors.modify(f, s::AbstractString, o::EachmatchElements)
         end
         rng => repl::AbstractString
     end
-    @assert issorted(replacements, by=r -> first(first(r)))
-    foldl(reverse(replacements); init=s) do s, (rng, v)
-        @set s[FlexIx(rng)] = v
-    end
 end
 
-function Accessors.setall(s::AbstractString, o::EachmatchElements, v)
-    replacements = map(eachmatch(o.r, s), v) do m, x
+function Accessors.setall(obj::Base.RegexMatchIterator, ::Elements, vs)
+    eltype(vs) <: AbstractString || error("Only strings are supported for RegexMatchIterator |> Elements()")
+    return vs
+end
+
+function Accessors.setall(obj::AbstractString, o::Base.Fix1{typeof(eachmatch)}, vs::Tuple{Any})
+    replacements = map(eachmatch(o.x, obj), only(vs)) do m, x
         sub = m.match
         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
         rng => x::AbstractString
     end
     @assert issorted(replacements, by=r -> first(first(r)))
-    foldl(reverse(replacements); init=s) do s, (rng, v)
+    foldl(reverse(replacements); init=obj) do s, (rng, v)
         @set s[FlexIx(rng)] = v
     end
 end
+
+# alternative implementation that overload compositions - below
+# any advantages?
+
+# struct EachmatchElements
+#     r::Regex
+# end
+# Accessors.OpticStyle(::Type{<:EachmatchElements}) = Accessors.ModifyBased()
+
+# Base.:∘(i::Elements, o::Base.Fix1{typeof(eachmatch)}) = EachmatchElements(o.x)
+# Base.:∘(c::ComposedFunction{<:Any, <:Elements}, o::Base.Fix1{typeof(eachmatch)}) = c.outer ∘ EachmatchElements(o.x)
+
+# Accessors.getall(s::AbstractString, o::EachmatchElements) = eachmatch(o.r, s)
+
+# function Accessors.modify(f, s::AbstractString, o::EachmatchElements)
+#     replacements = map(eachmatch(o.r, s)) do m
+#         sub = m.match
+#         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
+#         x = f(m)
+#         repl = if x isa AbstractString
+#             x
+#         else
+#             @assert x === m
+#             m.match
+#         end
+#         rng => repl::AbstractString
+#     end
+#     @assert issorted(replacements, by=r -> first(first(r)))
+#     foldl(reverse(replacements); init=s) do s, (rng, v)
+#         @set s[FlexIx(rng)] = v
+#     end
+# end
+
+# function Accessors.setall(s::AbstractString, o::EachmatchElements, v)
+#     replacements = map(eachmatch(o.r, s), v) do m, x
+#         sub = m.match
+#         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
+#         rng => x::AbstractString
+#     end
+#     @assert issorted(replacements, by=r -> first(first(r)))
+#     foldl(reverse(replacements); init=s) do s, (rng, v)
+#         @set s[FlexIx(rng)] = v
+#     end
+# end
 
 Accessors.set(m::RegexMatch, o::IndexLens, v) = _set_regexmatch(m, o, v)
 Accessors.set(m::RegexMatch, o::PropertyLens, v) = _set_regexmatch(m, o, v)
