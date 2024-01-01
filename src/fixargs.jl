@@ -33,3 +33,19 @@ _args_str(prev, args::NamedTuple) = @p let
     join(__, ", ")
     isempty(__) ? __ : ", $__"
 end
+
+
+struct PropertyFunction{props, F}
+    func::F
+end
+PropertyFunction{props}(func) where {props} = PropertyFunction{props, typeof(func)}(func)
+
+(pf::PropertyFunction{props})(obj) where {props} = pf.func(obj)
+
+needed_properties(::Type{<:PropertyFunction{props}}) where {props} = props
+
+needed_properties(::ComposedFunction{O,I}) where {I,O} = needed_properties(I)
+needed_properties(::Type{PropertyLens{P}}) where {P} = (P,)
+
+needed_properties(::F) where {F} = needed_properties(F)
+needed_properties(::Type{F}) where {F} = error("Cannot determine needed properties for function $F")

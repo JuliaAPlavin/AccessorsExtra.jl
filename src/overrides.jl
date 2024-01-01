@@ -44,8 +44,8 @@ function parse_obj_optics(ex::Expr)
         if !tree_contains(front, :_) && any(ind -> tree_contains(ind, :_), indices)
             ind = only(indices)
             @assert tree_contains(ind, :_)
-                obj, frontoptic = parse_obj_optics(ind)
-                optic = :(Base.Fix1(getindex, $(esc(front))))
+            obj, frontoptic = parse_obj_optics(ind)
+            optic = :(Base.Fix1(getindex, $(esc(front))))
         else
             obj, frontoptic = parse_obj_optics(front)
             if any(need_dynamic_optic, indices)
@@ -84,22 +84,39 @@ function parse_obj_optics(ex::Expr)
                 optic = esc(f)
             end
         elseif any(args_contain_under)
-            sum(args_contain_under) == 1 || error("Only a single function argument can be the optic target")
-            if length(args) == 2 && !any(a -> Base.isexpr(a, :kw) || Base.isexpr(a, :parameters), args)
-                # Base.Fix1 or Fix2 is enough
-                if args_contain_under[1]
-                    obj, frontoptic = parse_obj_optics(args[1])
-                    optic = :(Base.Fix2($(esc(f)), $(esc(args[2]))))
-                elseif args_contain_under[2]
-                    obj, frontoptic = parse_obj_optics(args[2])
-                    optic = :(Base.Fix1($(esc(f)), $(esc(args[1]))))
+            if count(args_contain_under) == 1
+                # single function argument is optic target - create Fix1, Fix2, or FixArgs optic
+                if length(args) == 2 && !any(a -> Base.isexpr(a, :kw) || Base.isexpr(a, :parameters), args)
+                    # Base.Fix1 or Fix2 is enough
+                    if args_contain_under[1]
+                        obj, frontoptic = parse_obj_optics(args[1])
+                        optic = :(Base.Fix2($(esc(f)), $(esc(args[2]))))
+                    elseif args_contain_under[2]
+                        obj, frontoptic = parse_obj_optics(args[2])
+                        optic = :(Base.Fix1($(esc(f)), $(esc(args[1]))))
+                    end
+                else
+                    # need FixArgs
+                    i_under = findfirst(args_contain_under)
+                    obj, frontoptic = parse_obj_optics(args[i_under])
+                    @reset args[i_under] = Placeholder()
+                    optic = Expr(:call, fixargs, esc(f), esc.(args)...)
                 end
             else
-                # need FixArgs
-                i_under = findfirst(args_contain_under)
-                obj, frontoptic = parse_obj_optics(args[i_under])
-                @reset args[i_under] = Placeholder()
-                optic = Expr(:call, fixargs, esc(f), esc.(args)...)
+                # multiple function arguments are "targets" - create propertyfunction
+                props = foldtree(Symbol[], ex) do acc, ex
+                    # XXX: catches all "_.prop" code, even within other macros
+                    if @capture(ex, front_.property_) && front == :_
+                        push!(acc, property)
+                    else
+                        acc
+                    end
+                end |> Tuple
+
+                obj = esc(:_)
+                frontoptic = ()
+                arg = gensym(:_)
+                optic = :($PropertyFunction{$props}($arg -> $(replace_underscore(ex, arg))))
             end
         else
             # as if f(args...) didn't match

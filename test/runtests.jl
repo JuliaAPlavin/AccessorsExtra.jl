@@ -73,6 +73,28 @@ end
     @test (@o atan(reverse(_)...)) === splat(atan) ∘ reverse
 end
 
+@testitem "propertyfunction" begin
+    using AccessorsExtra: needed_properties
+    o = @o _.a + 1
+    @test needed_properties(o) == (:a,)
+    @test o((a=2,)) == 3
+
+    @test_throws "Cannot determine" needed_properties(@o _ + 1)
+    @test_throws "Cannot determine" needed_properties(@o _[1] + 1)
+
+    o = @o _.a + _.b.c
+    @test needed_properties(o) == needed_properties(typeof(o)) == (:a, :b)
+    @test o((a=2, b=(c=3,))) == 5
+
+    o = @o exp10(_.a + _.b.c)
+    @test needed_properties(o) == (:a, :b)
+    @test o((a=2, b=(c=3,))) == 10^5
+
+    o = @o round(Int, _.a + _.b.c)
+    @test needed_properties(o) == (:a, :b)
+    @test o((a=2.6, b=(c=3,))) == 6
+end
+
 @testitem "concat optics" begin
     @testset for o in (
         @o(_.a) ++ @o(_.b),
