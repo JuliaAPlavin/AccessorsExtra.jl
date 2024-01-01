@@ -37,10 +37,13 @@ end
 
     s = "abc"
     @test "adefxyz" == @set s[FlexIx(2:3)] = "defxyz"
+    @test "adefbc" == @modify(x -> "def" * x, s[FlexIx(2:3)])
     v = [1, 2, 3]
     @test [1, 10, 11, 12] == @set v[FlexIx(2:3)] = [10, 11, 12]
+    @test [1, 10, 2, 3] == @modify(x -> [10, x...], v[FlexIx(2:3)])
     v = (1, 2, 3)
     @test (1, 10, 11, 12) == @set v[FlexIx(2:3)] = (10, 11, 12)
+    @test (1, 10, 2, 3) == @modify(x -> (10, x...), v[FlexIx(2:3)])
 end
 
 @testitem "concat optics" begin
