@@ -1,6 +1,7 @@
 struct ConcatOptics{OS}
     optics::OS
 end
+Broadcast.broadcastable(o::ConcatOptics) = Ref(o)
 
 concat(optics...) = ConcatOptics(optics)
 concat(; optics...) = ConcatOptics(values(optics))

@@ -31,6 +31,7 @@ struct LoggedOptic{O}
     o::O
     depth::Int
 end
+Broadcast.broadcastable(o::LoggedOptic) = Ref(o)
 OpticStyle(::Type{LoggedOptic{O}}) where {O} = OpticStyle(O)
 
 logged(o::ComposedFunction; depth=0) = @modify(deopcompose(o)) do ops

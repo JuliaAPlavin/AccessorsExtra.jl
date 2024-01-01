@@ -3,6 +3,7 @@ struct RecursiveOfType
     rectypes
     optic
 end
+Broadcast.broadcastable(o::RecursiveOfType) = Ref(o)
 RecursiveOfType(; out, recurse=(Any,), optic) = RecursiveOfType(out, recurse, optic)
 
 OpticStyle(::Type{<:RecursiveOfType}) = ModifyBased()

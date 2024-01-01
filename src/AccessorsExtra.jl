@@ -120,6 +120,7 @@ modify(f, obj, ::FuncArgument) = obj ∘ f
 
 
 struct PartsOf end
+Broadcast.broadcastable(o::PartsOf) = Ref(o)
 struct _PartsOfOptic{O}
     o::O
 end

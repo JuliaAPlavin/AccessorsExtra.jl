@@ -1,4 +1,5 @@
 abstract type ContextOptic end
+Broadcast.broadcastable(o::ContextOptic) = Ref(o)
 
 struct Keyed{O} <: ContextOptic
     o::O

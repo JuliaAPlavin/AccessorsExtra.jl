@@ -1,6 +1,7 @@
 struct AlongsideOptic{OS}
     optics::OS
 end
+Broadcast.broadcastable(o::AlongsideOptic) = Ref(o)
 
 OpticStyle(::Type{<:AlongsideOptic}) = ModifyBased()
 

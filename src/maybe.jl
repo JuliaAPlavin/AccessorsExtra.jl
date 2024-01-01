@@ -2,6 +2,7 @@ struct MaybeOptic{O,D}
     o::O
     default::D
 end
+Broadcast.broadcastable(o::MaybeOptic) = Ref(o)
 
 maybe(o; default=nothing) = MaybeOptic(o, default)
 
@@ -47,6 +48,7 @@ end
 struct OSomething{OS}
     os::OS
 end
+Broadcast.broadcastable(o::OSomething) = Ref(o)
 osomething(optics...) = OSomething(optics)
 (o::OSomething)(obj) = hasoptic(obj, first(o.os)) ? first(o.os)(obj) : (@delete first(o.os))(obj)
 (o::OSomething{Tuple{}})(obj) = error("no optic in osomething applicable to $obj")
