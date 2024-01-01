@@ -17,11 +17,12 @@ URIs = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
 UnionCollections = "ea2a18ed-132b-4398-a457-2ce4804e5c00"
 
 [compat]
-Aqua = "0.7"
+Aqua = "0.8"
 CompatHelperLocal = "0.1.24"
 Dictionaries = "0.3.21"
 Distributions = "0.25"
 DomainSets = "0.7"
+FlexiMaps = "0.1.20"
 InverseFunctions = "0.1.7"
 OffsetArrays = "1.12.7"
 StaticArrays = "1.5.6"
