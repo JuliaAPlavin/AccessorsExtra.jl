@@ -49,6 +49,15 @@ end
     @test @optic(_.a[∗].b.:∗.c[2]) === @optic(_.a |> Elements() |> _.b |> Properties() |> _.c[2])
 end
 
+@testitem "function value setting" begin
+    # o = @optic _("abc")
+    o = AccessorsExtra.funcvallens("abc")
+    @test o(reverse) == "cba"
+    myrev = set(reverse, o, "!!!")
+    @test myrev("abc") == "!!!"
+    @test myrev("def") == "fed"
+end
+
 @testitem "replace" begin
     nt = (a=1, b=:x)
     AccessorsExtra.@allinferred _replace begin

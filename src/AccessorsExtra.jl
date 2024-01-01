@@ -208,4 +208,25 @@ Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 @generated Accessors.PropertyLens{P}() where {P} = P == :∗ ? Properties() : Expr(:new, PropertyLens{P})
 Accessors._shortstring(prev, o::Properties) = "$prev.:∗"
 
+
+struct FuncValLens{A <: Tuple, KA <: NamedTuple}
+    args::A
+    kwargs::KA
+end
+
+function funcvallens(args...; kwargs...)
+    @assert args == args
+    @assert values(kwargs) == values(kwargs)
+    FuncValLens(args, values(kwargs))
+end
+
+(lens::FuncValLens)(obj) = obj(lens.args...; lens.kwargs...)
+function Accessors.set(obj, lens::FuncValLens, val)
+    func(args...; kwargs...) = if args == lens.args && values(kwargs) == lens.kwargs
+        val
+    else
+        obj(args...; kwargs...)
+    end
+end
+
 end
