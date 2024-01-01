@@ -27,12 +27,12 @@ export
 const var"@o" = var"@optic"
 
 include("overrides.jl")
+include("concatoptic.jl")
 include("keyvalues.jl")
 include("flexix.jl")
 include("fixargs.jl")
 include("propertyfunction.jl")
 include("slicing.jl")
-include("concatoptic.jl")
 include("recursive.jl")
 include("context.jl")
 include("modifymany.jl")

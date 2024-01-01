@@ -93,8 +93,57 @@ end
     @test groupview((@o _.xy.y), B) |> length == 100
     @test groupview((@o _.xy.y > _.z.im), B)[true].xy.y == 10:10:1000
 
-    # C = @inferred mapview((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B)
-    # @test C[5] == (a = 51, b = 50.05, c = (y=50,))
+    C = @inferred mapview((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B)
+    @test C[5] == (a = 51, b = 50.05, c = (y=50,))
+end
+
+@testitem "structarrays - containeroptic" begin
+    using StructArrays
+    using FlexiMaps
+    using FlexiGroups
+
+    A = StructArray(
+        x=mapview(_ -> error("Shouldn't happen"), 1:100),
+        y=10:10:1000
+    )
+    @test A.x === @inferred mapview((@optic₊ _.x), A)
+    @test A.y === @inferred mapview((@optic₊ _.y), A)
+    @test A.y == @inferred map((@optic₊ _.y), A)
+    @test 11:10:1001 == @inferred mapview((@optic₊ _.y + 1), A)
+    @test 11:10:1001 == @inferred map((@optic₊ _.y + 1), A)
+    @test_throws "Shouldn't happen" @inferred map((@optic₊ _.x + 1), A)
+
+    B = StructArray(
+        xy=A,
+        z=StructArray{ComplexF64}(
+            re=mapview(_ -> error("Shouldn't happen"), 1:100),
+            im=0.01:0.01:1.0,
+        )
+    )
+    @test B.xy.y === @inferred mapview((@optic₊ _.xy.y), B)
+    @test 11:10:1001 == @inferred map((@optic₊ _.xy.y + 1), B)
+    @test_throws "Shouldn't happen" @inferred map((@optic₊ _.xy.x + 1), B)
+
+    @test 20:20:2000 == @inferred map((@optic₊ _.xy.y + _.xy.y), B)
+    @test 10.01:10.01:1001.0 == @inferred map((@optic₊ _.xy.y + _.z.im), B)
+
+    @test_broken @inferred map((@optic₊ (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(y=_.xy.y,))), B)
+    C = @inferred map((@optic₊ (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(y=_.xy.y,))), B)
+    @test C[5] == (a = 51, b = 50.05, c = (y=50,))
+    @test C.a == 11:10:1001
+    @test C.c.y == 10:10:1000
+
+    C = mapinsert(B, x=@optic₊ _.xy.y + 1)
+    @test C.xy === B.xy
+    @test C.x == 11:10:1001
+
+    @test mapview((@optic₊ _.xy.y > _.z.im), B) == fill(true, 100)
+
+    @test groupview((@optic₊ _.xy.y), B) |> length == 100
+    @test groupview((@optic₊ _.xy.y > _.z.im), B)[true].xy.y == 10:10:1000
+
+    C = @inferred mapview((@optic₊ (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(y=_.xy.y,))), B)
+    @test C[5] == (a = 51, b = 50.05, c = (y=50,))
 end
 
 @testitem "dictarrays" begin
