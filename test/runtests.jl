@@ -799,6 +799,22 @@ end
     end
 end
 
+@testitem "explicit target" begin
+    # https://github.com/JuliaObjects/Accessors.jl/pull/55
+    x = [1, 2, 3]
+    x_orig = x
+    @test (@set $(x)[2] = 100) == [1, 100, 3]
+    @test (@set $(x[2]) = 100) == 100
+    @test (@set $(x)[2] + 2 = 100) == [1, 98, 3]  # impossible without $
+    @test (@set $(x[2]) + 2 = 100) == 98  # impossible without $
+    @test x_orig === x == [1, 2, 3]
+
+    @test (@reset $(x[2]) = 100) == 100
+    @test x_orig === x == [1, 100, 3]
+    y = @reset $(x)[2] = 200
+    @test x_orig !== x === y == [1, 200, 3]
+end
+
 @testitem "_" begin
     import CompatHelperLocal as CHL
     CHL.@check()

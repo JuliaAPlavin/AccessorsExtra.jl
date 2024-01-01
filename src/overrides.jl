@@ -1,8 +1,23 @@
-using Accessors: @capture, foldtree, need_dynamic_optic, replace_underscore, lower_index, DynamicIndexLens
+using Accessors: @capture, foldtree, postwalk, need_dynamic_optic, replace_underscore, lower_index, DynamicIndexLens
 import Accessors: parse_obj_optics
 
 
+# https://github.com/JuliaObjects/Accessors.jl/pull/55
 function parse_obj_optics(ex::Expr)
+    dollar_exprs = foldtree([], ex) do exs, x
+        x isa Expr && x.head == :$ ?
+            push!(exs, only(x.args)) :
+            exs
+    end
+    if !isempty(dollar_exprs)
+        length(dollar_exprs) == 1 || error("Only a single dollar-expression is supported")
+        # obj is the only dollar-expression:
+        obj = esc(only(dollar_exprs))
+        # parse expr with an underscore instead of the dollar-expression:
+        _, optics = parse_obj_optics(postwalk(x -> x isa Expr && x.head == :$ ? :_ : x, ex))
+        return obj, optics
+    end
+
     if @capture(ex, (front_ |> back_))
         obj, frontoptic = parse_obj_optics(front)
         backoptic = try
