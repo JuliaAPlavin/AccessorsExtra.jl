@@ -1,10 +1,10 @@
 struct Children end
-OpticStyle(::Type{<:Children}) = ModifyBased()
-_chooseoptic(obj, ::Children) = Properties()
-_chooseoptic(obj::AbstractArray, ::Children) = Elements()
-getall(obj, c::Children) = getall(obj, _chooseoptic(obj, c))
-modify(f, obj, c::Children) = modify(f, obj, _chooseoptic(obj, c))
-setall(obj, c::Children, vals) = setall(obj, _chooseoptic(obj, c), vals)
+@inline OpticStyle(::Type{<:Children}) = ModifyBased()
+@inline _chooseoptic(obj, ::Children) = Properties()
+@inline _chooseoptic(obj::AbstractArray, ::Children) = Elements()
+@inline getall(obj, c::Children) = getall(obj, _chooseoptic(obj, c))
+@inline modify(f, obj, c::Children) = modify(f, obj, _chooseoptic(obj, c))
+@inline setall(obj, c::Children, vals) = setall(obj, _chooseoptic(obj, c), vals)
 
 
 """    RecursiveOfType(out::Type, [optic=Children()]; [recurse::Type=Any])
@@ -54,7 +54,7 @@ _walk_getall(recurse, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
     end
 _getall(recurse, obj, optic) = @p getall(obj, optic) |> map(recurse) |> _reduce_concat
 
-function _setall_T(obj::Type{T}, or::Type{RecursiveOfType{Type{OT},Type{RT},O}}, vals, istart::Val{I}) where {T,OT,RT,O,I}
+function _setall_T(obj::Type{T}, or::Type{RecursiveOfType{Type{OT},Type{RT},O}}, istart::Val{I}) where {T,OT,RT,O,I}
     curcnt = 0
     rec_expr = if T <: RT
         TS = Core.Compiler.return_type(getall, Tuple{T, O})
@@ -63,7 +63,7 @@ function _setall_T(obj::Type{T}, or::Type{RecursiveOfType{Type{OT},Type{RT},O}},
         end
 
         exprs = map(enumerate(_eltypes(TS))) do (ifield, ET)
-            expr, cnt = _setall_T(ET, or, vals, Val(I + curcnt))
+            expr, cnt = _setall_T(ET, or, Val(I + curcnt))
             curcnt += cnt
             return :(let obj = oldvs[$(ifield)];
                 $expr
@@ -93,7 +93,9 @@ _typelength(::Type{T}) where {T<:Tuple} = fieldcount(T)
 _typelength(::Type{T}) where {T<:AbstractVector} = fieldcount(only(fieldtypes(T))) # this hack because length(T) doesn't work due to worldage
 
 @generated function setall(obj::T, or::ORT, vals::VT) where {T,ORT<:RecursiveOfType,VT}
-    expr, cnt = _setall_T(T, ORT, VT, Val(1))
-    @assert _typelength(VT) == cnt
-    return expr
+    expr, cnt = _setall_T(T, ORT, Val(1))
+    return quote
+        length(vals) == $cnt || throw(DimensionMismatch("tried to assign $(length(vals)) elements to $($cnt) destinations"))
+        $expr
+    end
 end
