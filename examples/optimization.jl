@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.24
 
 using Markdown
 using InteractiveUtils
@@ -26,7 +26,10 @@ using PyPlotUtils; pyplot_style!()
 using Optimization
 
 # ╔═╡ 58165c5e-b292-4b54-90a2-24b911095af7
-using OptimizationOptimJL, OptimizationMetaheuristics
+using OptimizationOptimJL
+
+# ╔═╡ 27ebaf90-bdc4-408b-9b7a-c951d3a64c8c
+using Metaheuristics; using OptimizationMetaheuristics: ECA
 
 # ╔═╡ c7d1204a-8edf-4f36-b9f9-dc6e08477a0b
 using AccessorsExtra
@@ -141,6 +144,7 @@ This step is equivalent to `OptimizationProblem(loss, ops, data)` in `Optimizati
 # ops = OptProblemSpec(Tuple, mod0, vars)
 # ops = OptProblemSpec(Vector{Float64}, mod0, vars)
 # ops = OptProblemSpec(mod0, vars)
+# ops = OptProblemSpec(Base.Fix2(loss, data), Vector, mod0, vars)
 ops = OptProblemSpec(Base.Fix2(loss, data), SVector, mod0, vars)
 # ops = OptProblemSpec(Base.Fix2(OptimizationFunction(loss, Optimization.AutoForwardDiff()), data), Vector{Float64}, mod0, vars, cons)
 
@@ -288,6 +292,12 @@ func = AccessorsExtra.rawfunc(bops)
 # ╔═╡ 88801de8-abd8-4306-8504-04edbf2ee518
 @btime AccessorsExtra.rawbounds($bops)
 
+# ╔═╡ 53f5d11d-7f29-48ad-a9be-d6ab67b763f0
+
+
+# ╔═╡ b0ff9d1d-82fd-4d85-a976-2182c7ce0833
+Accessors.setall(obj::Tuple, ::Properties, vs) = Accessors.setproperties(obj, vs)
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -297,6 +307,7 @@ DataManipulation = "38052440-ad76-4236-8414-61389b2c5143"
 DataPipes = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
 FlexiMaps = "6394faf6-06db-4fa8-b750-35ccc60383f7"
 IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
+Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 Optimization = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
 OptimizationMetaheuristics = "3aafef2f-86ae-4776-b337-85a36adf0b55"
 OptimizationOptimJL = "36348300-93cb-4f02-beb5-3c3902f8871e"
@@ -307,18 +318,19 @@ StaticNumbers = "c5e4b96a-f99f-5557-8ed2-dc63ef9b5131"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
-AccessorsExtra = "~0.1.31"
+AccessorsExtra = "~0.1.36"
 BenchmarkTools = "~1.3.2"
-DataManipulation = "~0.1.9"
-DataPipes = "~0.3.7"
-FlexiMaps = "~0.1.12"
+DataManipulation = "~0.1.10"
+DataPipes = "~0.3.8"
+FlexiMaps = "~0.1.14"
 IntervalSets = "~0.7.4"
-Optimization = "~3.13.0"
+Metaheuristics = "~3.2.16"
+Optimization = "~3.13.1"
 OptimizationMetaheuristics = "~0.1.2"
-OptimizationOptimJL = "~0.1.5"
+OptimizationOptimJL = "~0.1.7"
 ProfileCanvas = "~0.1.6"
-PyPlotUtils = "~0.1.26"
-StaticArrays = "~1.5.19"
+PyPlotUtils = "~0.1.27"
+StaticArrays = "~1.5.21"
 StaticNumbers = "~0.4.0"
 StructArrays = "~0.6.15"
 """
@@ -327,9 +339,9 @@ StructArrays = "~0.6.15"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.0-rc1"
+julia_version = "1.9.0-rc2"
 manifest_format = "2.0"
-project_hash = "f93e71f72cee6b7c3e64ac1cf51925d91a3eaf62"
+project_hash = "b02e6415d08b56b4717b768076b78c43f3e6145c"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "faa260e4cb5aba097a73fab382dd4b5819d8ec8c"
@@ -356,9 +368,9 @@ version = "0.1.28"
 
 [[deps.AccessorsExtra]]
 deps = ["Accessors", "ConstructionBase", "DataPipes", "InverseFunctions", "Reexport", "Requires"]
-git-tree-sha1 = "6a210d0025c4fa7a0037386bebd6ec48f99839dd"
+git-tree-sha1 = "0c7a6e03137ad3f5f9220c850879177b4eff726e"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
-version = "0.1.31"
+version = "0.1.36"
 weakdeps = ["Dictionaries", "SciMLBase", "StructArrays"]
 
     [deps.AccessorsExtra.extensions]
@@ -382,9 +394,9 @@ version = "1.1.1"
 
 [[deps.ArrayInterface]]
 deps = ["Adapt", "LinearAlgebra", "Requires", "SnoopPrecompile", "SparseArrays", "SuiteSparse"]
-git-tree-sha1 = "53bb1691fb8560633ed8c0fa11d8b0900aaa805c"
+git-tree-sha1 = "38911c7737e123b28182d89027f4216cfc8a9da7"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "7.4.2"
+version = "7.4.3"
 
     [deps.ArrayInterface.extensions]
     ArrayInterfaceBandedMatricesExt = "BandedMatrices"
@@ -497,9 +509,9 @@ version = "1.14.0"
 
 [[deps.DataManipulation]]
 deps = ["Accessors", "DataPipes", "FlexiGroups", "FlexiMaps", "InverseFunctions", "Reexport", "Skipper"]
-git-tree-sha1 = "f1b4acb5988d7e9725efd7a231fa61070ea88ea7"
+git-tree-sha1 = "d8ee99ca6d5d1572e19bb5c83525a85fd03c34b8"
 uuid = "38052440-ad76-4236-8414-61389b2c5143"
-version = "0.1.9"
+version = "0.1.10"
 weakdeps = ["Dictionaries", "IntervalSets", "StructArrays"]
 
     [deps.DataManipulation.extensions]
@@ -508,9 +520,9 @@ weakdeps = ["Dictionaries", "IntervalSets", "StructArrays"]
     StructArraysExt = "StructArrays"
 
 [[deps.DataPipes]]
-git-tree-sha1 = "d421973c6b5ef60905d82a8430fa7931a2a6505c"
+git-tree-sha1 = "3b4bc031d472fbcee3335ceadd85b399dfdd8006"
 uuid = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
-version = "0.3.7"
+version = "0.3.8"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -569,9 +581,9 @@ version = "0.9.3"
 
 [[deps.DomainSets]]
 deps = ["CompositeTypes", "IntervalSets", "LinearAlgebra", "Random", "StaticArrays", "Statistics"]
-git-tree-sha1 = "26ee6a94bd33f2619d9d298acbc04c7f146ba775"
+git-tree-sha1 = "698124109da77b6914f64edd696be8dccf90229e"
 uuid = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
-version = "0.6.5"
+version = "0.6.6"
 
 [[deps.Downloads]]
 deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
@@ -593,9 +605,9 @@ uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "7072f1e3e5a8be51d525d64f63d3ec1287ff2790"
+git-tree-sha1 = "fc86b4fd3eff76c3ce4f5e96e2fdfa6282722885"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.13.11"
+version = "1.0.0"
 
 [[deps.FiniteDiff]]
 deps = ["ArrayInterface", "LinearAlgebra", "Requires", "Setfield", "SparseArrays", "StaticArrays"]
@@ -610,10 +622,10 @@ uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
 [[deps.FlexiGroups]]
-deps = ["Combinatorics", "DataPipes", "Dictionaries", "FlexiMaps"]
-git-tree-sha1 = "3a99a1912b9c057a2bb1c83387f2eb8de362a74e"
+deps = ["AccessorsExtra", "Combinatorics", "DataPipes", "Dictionaries", "FlexiMaps"]
+git-tree-sha1 = "998cd0985e2cca6b10cd62daf0c4b8388224a765"
 uuid = "1e56b746-2900-429a-8028-5ec1f00612ec"
-version = "0.1.13"
+version = "0.1.15"
 
     [deps.FlexiGroups.extensions]
     AxisKeysExt = "AxisKeys"
@@ -625,9 +637,9 @@ version = "0.1.13"
 
 [[deps.FlexiMaps]]
 deps = ["Accessors", "InverseFunctions"]
-git-tree-sha1 = "f94515ef72b935865bcbf911fc0636f785ca23b7"
+git-tree-sha1 = "e5a6fa9d8ee0dae4edc8c07212262b810e2aa570"
 uuid = "6394faf6-06db-4fa8-b750-35ccc60383f7"
-version = "0.1.12"
+version = "0.1.14"
 weakdeps = ["Dictionaries", "StructArrays"]
 
     [deps.FlexiMaps.extensions]
@@ -710,9 +722,9 @@ version = "0.7.3"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
-git-tree-sha1 = "3c837543ddb02250ef42f4738347454f95079d4e"
+git-tree-sha1 = "31e996f0a15c7b280ba9f76636b3ff9e2ae58c9a"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-version = "0.21.3"
+version = "0.21.4"
 
 [[deps.LaTeXStrings]]
 git-tree-sha1 = "f2355693d6778a178ade15952b7ac47a4ff97996"
@@ -862,15 +874,15 @@ version = "0.5.5+0"
 
 [[deps.Optim]]
 deps = ["Compat", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "1903afc76b7d01719d9c30d3c7d501b61db96721"
+git-tree-sha1 = "a89b11f0f354f06099e4001c151dffad7ebab015"
 uuid = "429524aa-4258-5aef-a3af-852621145aeb"
-version = "1.7.4"
+version = "1.7.5"
 
 [[deps.Optimization]]
 deps = ["ArrayInterface", "ConsoleProgressMonitor", "DocStringExtensions", "Logging", "LoggingExtras", "Pkg", "Printf", "ProgressLogging", "Reexport", "Requires", "SciMLBase", "SparseArrays", "TerminalLoggers"]
-git-tree-sha1 = "f35d3ea702c4fc283f1a36038d6d86deffc38467"
+git-tree-sha1 = "012e44804e52b157e3180b52c504636b52af5ea4"
 uuid = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
-version = "3.13.0"
+version = "3.13.1"
 
 [[deps.OptimizationMetaheuristics]]
 deps = ["Metaheuristics", "Optimization", "Reexport"]
@@ -880,14 +892,14 @@ version = "0.1.2"
 
 [[deps.OptimizationOptimJL]]
 deps = ["Optim", "Optimization", "Reexport", "SparseArrays"]
-git-tree-sha1 = "8de765af24432390000bc39e1efae51cf4dbdc5c"
+git-tree-sha1 = "d654b063a6c63e107d0a44a6a79430e2d0ab30d2"
 uuid = "36348300-93cb-4f02-beb5-3c3902f8871e"
-version = "0.1.5"
+version = "0.1.7"
 
 [[deps.OrderedCollections]]
-git-tree-sha1 = "d78db6df34313deaca15c5c0b9ff562c704fe1ab"
+git-tree-sha1 = "d321bf2de576bf25ec4d3e4360faca399afca282"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.5.0"
+version = "1.6.0"
 
 [[deps.Parameters]]
 deps = ["OrderedCollections", "UnPack"]
@@ -958,9 +970,9 @@ version = "2.11.1"
 
 [[deps.PyPlotUtils]]
 deps = ["Accessors", "ColorTypes", "DataPipes", "DirectionalStatistics", "DomainSets", "FlexiMaps", "IntervalSets", "LinearAlgebra", "NonNegLeastSquares", "PyCall", "PyPlot", "Statistics", "StatsBase"]
-git-tree-sha1 = "0db936b203ca7f348b54c444b2503363b94e4e2f"
+git-tree-sha1 = "a14a65db8b0a6866292e0ba422ecc752c1c1530c"
 uuid = "5384e752-6c47-47b3-86ac-9d091b110b31"
-version = "0.1.26"
+version = "0.1.27"
 
     [deps.PyPlotUtils.extensions]
     AxisKeysExt = "AxisKeys"
@@ -987,15 +999,17 @@ version = "1.3.3"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterface", "DocStringExtensions", "GPUArraysCore", "IteratorInterfaceExtensions", "LinearAlgebra", "RecipesBase", "Requires", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables"]
-git-tree-sha1 = "6131b752a3d1c4748424ea9e6d8df789cf4f6f9d"
+git-tree-sha1 = "140cddd2c457e4ebb0cdc7c2fd14a7fbfbdf206e"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
-version = "2.38.1"
+version = "2.38.3"
 
     [deps.RecursiveArrayTools.extensions]
+    RecursiveArrayToolsMeasurementsExt = "Measurements"
     RecursiveArrayToolsTrackerExt = "Tracker"
     RecursiveArrayToolsZygoteExt = "Zygote"
 
     [deps.RecursiveArrayTools.weakdeps]
+    Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
     Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
     Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
@@ -1022,9 +1036,9 @@ version = "0.7.0"
 
 [[deps.SciMLBase]]
 deps = ["ArrayInterface", "CommonSolve", "ConstructionBase", "Distributed", "DocStringExtensions", "EnumX", "FunctionWrappersWrappers", "IteratorInterfaceExtensions", "LinearAlgebra", "Logging", "Markdown", "Preferences", "RecipesBase", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLOperators", "SnoopPrecompile", "StaticArraysCore", "Statistics", "SymbolicIndexingInterface", "Tables", "TruncatedStacktraces"]
-git-tree-sha1 = "6bb55eff20ee05151b5cb4e777691fabae1524a3"
+git-tree-sha1 = "392d3e28b05984496af37100ded94dc46fa6c8de"
 uuid = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-version = "1.91.3"
+version = "1.91.7"
 
 [[deps.SciMLOperators]]
 deps = ["ArrayInterface", "DocStringExtensions", "Lazy", "LinearAlgebra", "Setfield", "SparseArrays", "StaticArraysCore", "Tricks"]
@@ -1084,9 +1098,9 @@ version = "2.2.0"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "Random", "StaticArraysCore", "Statistics"]
-git-tree-sha1 = "b8d897fe7fa688e93aef573711cb207c08c9e11e"
+git-tree-sha1 = "63e84b7fdf5021026d0f17f76af7c57772313d99"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.5.19"
+version = "1.5.21"
 
 [[deps.StaticArraysCore]]
 git-tree-sha1 = "6b7ba252635a5eff6a0b0664a41ee140a1c9e72a"
@@ -1227,6 +1241,7 @@ version = "17.4.0+0"
 # ╠═6115a5f1-6d34-4c10-985d-6abe36275978
 # ╠═6d0e158d-ba36-4100-86bf-44b878b30356
 # ╠═58165c5e-b292-4b54-90a2-24b911095af7
+# ╠═27ebaf90-bdc4-408b-9b7a-c951d3a64c8c
 # ╠═c7d1204a-8edf-4f36-b9f9-dc6e08477a0b
 # ╟─e0ea9f28-bafc-4566-9b22-d00a2253d9e9
 # ╠═3f22a7ae-bd49-478c-8f74-391bb6cf11cc
@@ -1275,5 +1290,7 @@ version = "17.4.0+0"
 # ╠═708951df-5d62-4e06-9493-9886f95e426d
 # ╠═6e6eac98-7825-467a-bd59-ee33ec66c321
 # ╠═88801de8-abd8-4306-8504-04edbf2ee518
+# ╠═53f5d11d-7f29-48ad-a9be-d6ab67b763f0
+# ╠═b0ff9d1d-82fd-4d85-a976-2182c7ce0833
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

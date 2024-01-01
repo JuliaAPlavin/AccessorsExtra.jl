@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.22
+# v0.19.24
 
 using Markdown
 using InteractiveUtils
@@ -96,23 +96,52 @@ vec_opt = @optic₊ [_.a, _.c[1], _.c[2]]
 # ╔═╡ 02b0cabf-0991-417b-8ec5-c8db1862fa08
 set(obj, vec_opt, [:x, :y, :z])
 
-# ╔═╡ 4e48927e-f6ce-4251-84b1-d0248768a048
+# ╔═╡ 29684b6c-f786-4131-9073-daaa0a33d8e2
 md"""
-## Regular expressions as optics
+## Recursive optics
 
-Supports both `match` and `eachmatch`.
+Efficient fully-featured recursive optics!
 
-Example, where we replace fractions with decimals in a string:
+The upstream `Accessors` provides the `Recursive` optic, but:
+- it either selects an element or recurses into it, cannot leave intact;
+- it only support `modify` --- no `getall`, no `setall`;
+- `modify` often doesn't infer, leading to a high overhead.
 """
 
-# ╔═╡ bec82135-7844-4e15-bdcd-beb5a24c5668
-str_fracs = "fractions: 2/3, another 1/2, 5/2, all!"
+# ╔═╡ 23a5243e-1b56-4c44-8f0e-676781ce1b1e
+objr = (a=1, b=(2, "3"), c=("4", 5))
 
-# ╔═╡ e09cded5-e746-47e7-a6bc-2405da4bfb8b
-@modify(str_fracs |> eachmatch(r"(?<num>\d+)/(?<denom>\d+)", _)[∗]) do m
-	f = parse(Int, m[:num]) / parse(Int, m[:denom])
-    first(string(f), 5)
-end
+# ╔═╡ 83a07b18-e186-4c0d-bc0d-216b3dda7800
+orec_orig = Recursive(x -> x isa Union{Tuple,NamedTuple}, Elements())
+
+# ╔═╡ 44c133ff-3c88-42d0-bf9a-a0214fb3d0c9
+@btime modify(x -> x isa Number ? -x : x, $objr, $orec_orig)
+
+# ╔═╡ b65e39ab-8a57-4498-bddf-bd64208fd2c6
+getall(objr, orec_orig)
+
+# ╔═╡ 3d9451ce-81c5-4244-a524-bf233e1de521
+md"""
+In `AccessorsExtra`, we provide a flexible and well-optimized `RecursiveOfType` optic. \
+All operations with `RecursiveOfType` are type-stable and efficient:
+"""
+
+# ╔═╡ 51e48f24-4ad9-47fc-98fe-2e65826d0cdc
+orec = RecursiveOfType(Number)
+
+# ╔═╡ 06f8917b-8542-4d37-8b71-44475a2f663a
+@btime getall($objr, $orec)
+
+# ╔═╡ edd6da10-3cd1-4b70-9c4c-e15603b7f6a2
+@btime modify(-, $objr, $orec)
+
+# ╔═╡ c7eb40e1-e18a-4640-8d86-5f3a1ce4c23f
+md"""
+`RecursiveOfType` is fully composable with other optics:
+"""
+
+# ╔═╡ eec65f2e-4a80-4c11-8ad9-a6c93a468912
+@btime modify(xs -> xs ./ sum(xs), $objr, $orec ⨟ PartsOf())
 
 # ╔═╡ cc5c1ee4-20aa-4324-b0e9-0f8db492e72c
 md"""
@@ -163,7 +192,7 @@ construct(Vector, only => 1)
 
 # ╔═╡ ccdc9876-95f2-4fd2-8ff0-fefe1f0f96a7
 md"""
-## Modify `keys()`, `values()`, `pairs()`
+## Optics for `keys()`, `values()`, `pairs()`
 
 Use these functions as optics:
 """
@@ -180,6 +209,24 @@ modify(x -> x+1, dct, @optic keys(_)[∗])
 # ╔═╡ 06690850-de63-4217-b619-8838f524bcc5
 modify(((i, x),) -> 2i => i + x, dct, @optic pairs(_)[∗])
 
+# ╔═╡ 4e48927e-f6ce-4251-84b1-d0248768a048
+md"""
+## Regular expressions as optics
+
+Supports both `match` and `eachmatch`.
+
+Example, where we replace fractions with decimals in a string:
+"""
+
+# ╔═╡ bec82135-7844-4e15-bdcd-beb5a24c5668
+str_fracs = "fractions: 2/3, another 1/2, 5/2, all!"
+
+# ╔═╡ e09cded5-e746-47e7-a6bc-2405da4bfb8b
+@modify(str_fracs |> eachmatch(r"(?<num>\d+)/(?<denom>\d+)", _)[∗]) do m
+	f = parse(Int, m[:num]) / parse(Int, m[:denom])
+    first(string(f), 5)
+end
+
 # ╔═╡ abdece8e-ca4d-4045-8bd2-670931d1ceb7
 md"""
 ## Integration with `Optimization.jl`
@@ -187,8 +234,33 @@ md"""
 See a separate notebook with examples.
 """
 
+# ╔═╡ 2fe6a54a-e914-430b-9703-a48ad172b0bf
+md"""
+## ... and more!
+
+The following isn't documented, see packages tests for usage examples:
+- `FlexIx` grow/shrink collections
+- `⩓` and `⩔` function operators
+- `funcvallens`/`FuncResult`/`FuncArgument` optics
+- optics with context, eg `keyed(Elements())`
+- `PartsOf()` all optic values together
+- `@optic view(_, ix)` modifies the input array
+- `set(1:5, last, 10) == 1:10`
+- `get_steps`
+- `@replace`
+"""
+
+# ╔═╡ c4fe8f56-2287-4fee-8c27-f23a2a3c4c40
+
+
 # ╔═╡ 10fd2a3e-924b-48fc-a126-fe5f33ecedc3
 TableOfContents()
+
+# ╔═╡ edc6c86f-8106-4df1-8b7d-23986da1d22a
+Accessors.setall(obj::Tuple, ::Properties, vs) = Accessors.setproperties(obj, vs)
+
+# ╔═╡ 08adc947-2c30-43cc-8138-d126c81e76a3
+@btime setall($objr, $orec, (10, 20, 30))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -198,7 +270,7 @@ BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
-AccessorsExtra = "~0.1.31"
+AccessorsExtra = "~0.1.36"
 BenchmarkTools = "~1.3.2"
 PlutoUI = "~0.7.50"
 """
@@ -207,7 +279,7 @@ PlutoUI = "~0.7.50"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.0-rc1"
+julia_version = "1.9.0-rc2"
 manifest_format = "2.0"
 project_hash = "81ae6a4f1e84c0bb27fe6677c02a3001e719656c"
 
@@ -237,9 +309,9 @@ version = "0.1.28"
 
 [[deps.AccessorsExtra]]
 deps = ["Accessors", "ConstructionBase", "DataPipes", "InverseFunctions", "Reexport", "Requires"]
-git-tree-sha1 = "6a210d0025c4fa7a0037386bebd6ec48f99839dd"
+git-tree-sha1 = "0c7a6e03137ad3f5f9220c850879177b4eff726e"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
-version = "0.1.31"
+version = "0.1.36"
 
     [deps.AccessorsExtra.extensions]
     DictionariesExt = "Dictionaries"
@@ -308,9 +380,9 @@ version = "1.5.1"
     StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [[deps.DataPipes]]
-git-tree-sha1 = "d421973c6b5ef60905d82a8430fa7931a2a6505c"
+git-tree-sha1 = "3b4bc031d472fbcee3335ceadd85b399dfdd8006"
 uuid = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
-version = "0.3.7"
+version = "0.3.8"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -360,9 +432,9 @@ version = "0.1.8"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
-git-tree-sha1 = "3c837543ddb02250ef42f4738347454f95079d4e"
+git-tree-sha1 = "31e996f0a15c7b280ba9f76636b3ff9e2ae58c9a"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-version = "0.21.3"
+version = "0.21.4"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -580,9 +652,18 @@ version = "17.4.0+0"
 # ╠═bb5ebb98-3c10-446b-b2c5-39cf271c6ba7
 # ╠═dc5bca1f-8ebb-4192-bd8a-eb08dfb91ac3
 # ╠═02b0cabf-0991-417b-8ec5-c8db1862fa08
-# ╟─4e48927e-f6ce-4251-84b1-d0248768a048
-# ╠═bec82135-7844-4e15-bdcd-beb5a24c5668
-# ╠═e09cded5-e746-47e7-a6bc-2405da4bfb8b
+# ╟─29684b6c-f786-4131-9073-daaa0a33d8e2
+# ╠═23a5243e-1b56-4c44-8f0e-676781ce1b1e
+# ╠═83a07b18-e186-4c0d-bc0d-216b3dda7800
+# ╠═44c133ff-3c88-42d0-bf9a-a0214fb3d0c9
+# ╠═b65e39ab-8a57-4498-bddf-bd64208fd2c6
+# ╟─3d9451ce-81c5-4244-a524-bf233e1de521
+# ╠═51e48f24-4ad9-47fc-98fe-2e65826d0cdc
+# ╠═06f8917b-8542-4d37-8b71-44475a2f663a
+# ╠═edd6da10-3cd1-4b70-9c4c-e15603b7f6a2
+# ╠═08adc947-2c30-43cc-8138-d126c81e76a3
+# ╟─c7eb40e1-e18a-4640-8d86-5f3a1ce4c23f
+# ╠═eec65f2e-4a80-4c11-8ad9-a6c93a468912
 # ╟─cc5c1ee4-20aa-4324-b0e9-0f8db492e72c
 # ╠═b3ffef81-13e2-40ef-bb03-71c51f36f47e
 # ╠═269a5a37-d4bf-4ba0-a59b-aa628e47ff3b
@@ -599,9 +680,15 @@ version = "17.4.0+0"
 # ╠═a6b8c4fc-9555-4ddc-a2d8-9c2c4e65344e
 # ╠═a3387faf-20df-4f3d-bf6c-f0e409ded011
 # ╠═06690850-de63-4217-b619-8838f524bcc5
+# ╟─4e48927e-f6ce-4251-84b1-d0248768a048
+# ╠═bec82135-7844-4e15-bdcd-beb5a24c5668
+# ╠═e09cded5-e746-47e7-a6bc-2405da4bfb8b
 # ╟─abdece8e-ca4d-4045-8bd2-670931d1ceb7
+# ╟─2fe6a54a-e914-430b-9703-a48ad172b0bf
+# ╠═c4fe8f56-2287-4fee-8c27-f23a2a3c4c40
 # ╟─a0313d3a-73a5-4a0a-92e0-1f862e95cb70
 # ╟─433ef25f-23fe-4646-8168-0c03a02cca69
 # ╟─10fd2a3e-924b-48fc-a126-fe5f33ecedc3
+# ╠═edc6c86f-8106-4df1-8b7d-23986da1d22a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
