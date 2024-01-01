@@ -158,6 +158,16 @@ end
     @test sprint(show, o) == "(@optic _.a[∗].b[∗ₚ].c[2])"
 end
 
+@testitem "and/or/..." begin
+    @test (<(5) ⩓ >(1) ⩓ >(2))(3)
+    @test !(<(5) ⩓ >(1) ⩓ >(2))(2)
+    @test (<(5) ⩓ >(1) ⩔ >(2))(2)
+    @test (<(5) ⩓ >(1) ⩔ >(2))(6)
+    @test !(<(5) ⩓ >(1) ⩔ >(2))(0)
+    @test !(<(5) ⩓ (x->throw("")))(6)
+    @test (<(5) ⩔ (x->throw("")))(4)
+end
+
 @testitem "function value setting" begin
     # o = @optic _("abc")
     o = AccessorsExtra.funcvallens("abc")
