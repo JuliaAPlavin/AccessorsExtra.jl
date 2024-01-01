@@ -69,9 +69,7 @@ end
 Base.show(io::IO, ::MIME"text/plain", optic::ConcatOptics{<:Tuple}) = show(io, optic)
 
 
-(os::Union{Tuple,NamedTuple,AbstractArray})(obj) = map(o -> o(obj), os)
-(os::Dict)(obj) = @modify(o -> o(obj), values(os)[∗])
-(os::Pair)(obj) = first(os)(obj) => last(os)(obj)
+(os::Union{Tuple,NamedTuple,AbstractArray,Dict,Pair})(obj) = @modify(o -> o(obj), values(os)[∗])
 function set(obj, os::Union{Tuple,Pair,AbstractArray}, vals::Union{Tuple,Pair,AbstractArray})
     length(os) == length(vals) || throw(DimensionMismatch("length mismatch between optics ($(length(os))) and values ($(length(vals)))"))
     foldl(map(tuple, os, vals); init=obj) do obj, (o, v)
