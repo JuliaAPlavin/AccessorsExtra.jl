@@ -2,7 +2,13 @@ struct FlexIx{I}
     indices::I
 end
 
+Base.getindex(a, i::FlexIx) = getindex(a, i.indices)
+# disambiguate:
+Base.getindex(a::AbstractArray, i::FlexIx) = @invoke getindex(a, i::Any)
+Base.to_index(i::FlexIx) = i.indices
+
 Accessors.setindex(a, v, i::FlexIx) = flex_setindex(a, v, i.indices)
+# disambiguate:
 Accessors.setindex(a::AbstractArray, v, i::FlexIx) = flex_setindex(a, v, i.indices)
 
 flex_setindex(s, v, rng::UnitRange) =

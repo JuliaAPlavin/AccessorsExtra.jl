@@ -37,10 +37,13 @@ end
 
     s = "abc"
     @test "adefxyz" == @set s[FlexIx(2:3)] = "defxyz"
+    @test "adefbc" == @modify(x -> "def" * x, s[FlexIx(2:3)])
     v = [1, 2, 3]
     @test [1, 10, 11, 12] == @set v[FlexIx(2:3)] = [10, 11, 12]
+    @test [1, 10, 2, 3] == @modify(x -> [10, x...], v[FlexIx(2:3)])
     v = (1, 2, 3)
     @test (1, 10, 11, 12) == @set v[FlexIx(2:3)] = (10, 11, 12)
+    @test (1, 10, 2, 3) == @modify(x -> (10, x...), v[FlexIx(2:3)])
 end
 
 @testitem "concat optics" begin
@@ -302,7 +305,9 @@ end
         for obj in ([(a=1,)], [(b=1,)], [(a=1,), (b=2,)], [(b=1,), (a=2,)],)
             Accessors.test_getset_laws(o, obj, 10, 20)
         end
+        @test o([(a=1,)]) === 1
         @test o([]) === nothing
+        @test o([(b=1,)]) === nothing
         @test modify(x -> x+1, [], o) == []
     end
     o = maybe(@optic only(_).a)
@@ -348,46 +353,42 @@ end
 end
 
 @testitem "recursive" begin
-    AccessorsExtra.@allinferred modify getall begin
-    or = RecursiveOfType(Number, ∗, recurse=Union{Tuple,Vector,NamedTuple})
+    using StaticArrays
+
+    AccessorsExtra.@allinferred modify getall setall begin
+    or = RecursiveOfType(Number, ∗, recurse=Union{Tuple,AbstractVector,NamedTuple})
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-    o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 1, 3)
     @test modify(x->x+10, m, or) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
-    @test getall(m, o) == getall(m, or)
-    @test setall(m, o, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
-    @test_broken @inferred(setall(m, o, (10, 20, 30))) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
-    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
+    @test setall(m, or, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
 
     m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
-    o = unrecurcize(or, typeof(m))
     @test getall(m, or) == [1, 1, 3]
     @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
-    @test setall(m, o, [10, 20, 30]) == (a=10, bs=[(c=20, d="2"), (c=30, d="xxx")])
-    @test getall(m, o) == getall(m, or)
-    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
+    @test_throws Exception setall(m, or, [10, 20, 30])  # setall not supported with dynamic length vectors
+    @test getall(m, or) == getall(m, or)
+
+    m = (a=1, bs=SVector((c=1, d="2"), (c=3, d="xxx")))
+    @test getall(m, or) == SVector(1, 1, 3)
+    @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @test setall(m, or, (10, 20, 30)) == (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
+    @test getall(m, or) == getall(m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-    or = RecursiveOfType(NamedTuple, ∗, recurse=Union{Tuple, Vector, NamedTuple})
-    o = unrecurcize(or, typeof(m))
+    or = RecursiveOfType(NamedTuple)
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
-    @test_broken getall(m, o) == getall(m, or)
-    @test modify(Dict ∘ pairs, m, o) == modify(Dict ∘ pairs, m, or)
+    @test modify(Dict ∘ pairs, m, or) == modify(Dict ∘ pairs, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
-    o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
-    @test_broken getall(m, o) == getall(m, or)
 
     m = (a=1, b=2+3im)
-    or = RecursiveOfType(Real, ∗ₚ)
-    o = unrecurcize(or, typeof(m))
+    or = RecursiveOfType(Real)
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
-    @test getall(m, o) == getall(m, or)
-    @test setall(m, o, (10, 20, 30)) == (a=10, b=20+30im)
-    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
+    @test getall(m, or) == getall(m, or)
+    @test setall(m, or, (10, 20, 30)) == (a=10, b=20+30im)
     end
 end
 
@@ -505,6 +506,10 @@ end
     @test set([(a=1,)], o, 'y') == [(a='x',)]
     @test setall([(a=1,)], o, ['y']) == [(a='x',)]
     @test modify(-, [(a=1,)], o) == [(a=-3,)]
+    o = logged(@optics _[∗].a + 1 _[1].a)
+    @test getall([(a=1,)], o) == [2, 1]
+    o = logged(@optic₊ (_[1].a + 1, _[1].a))
+    @test o([(a=1,)]) == (2, 1)
 end
 
 @testitem "replace" begin
@@ -526,60 +531,81 @@ end
     ==ₜ(_, _) = false
     ==ₜ(x::T, y::T) where T = x == y
 
-    AccessorsExtra.@allinferred construct begin
-        @test construct(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
-        @test construct(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
-        @test construct(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 == 1 + 2im
-        @test construct(Complex, @optic(_.re) => 1., @optic(_.im) => 2)::ComplexF64 === 1. + 2im
-        @test construct(Complex, abs => 1., angle => π/2)::ComplexF64 ≈ 1im
-        @test construct(ComplexF32, abs => 1., angle => π/2)::ComplexF32 ≈ 1im
-        @test_throws InexactError construct(Complex{Int}, abs => 1., angle => π/2)
+    @testset "basic usage" begin
+        AccessorsExtra.@allinferred construct begin
+            @test construct(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+            @test construct(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 === 1f0 + 2f0im
+            @test_throws InexactError construct(Complex{Int}, abs => 1., angle => π/2)
 
-        @test construct(Tuple, only => 1) === (1,)
-        @test construct(Tuple{Int}, only => 1) === (1,)
-        @test construct(Tuple{Float64}, only => 1) === (1.0,)
-        @test_throws Exception construct(Tuple{String}, only => 1)
-        @test_throws Exception construct(Tuple{Int, Int}, only => 1)
+            @test construct(Tuple, only => 1) === (1,)
+            @test construct(Tuple{Float64}, only => 1) === (1.0,)
+            @test_throws Exception construct(Tuple{String}, only => 1)
+            @test_throws Exception construct(Tuple{Int, Int}, only => 1)
 
-        @test construct(Vector, only => 1) ==ₜ [1]
-        @test construct(Vector{Int}, only => 1) ==ₜ [1]
-        @test construct(Vector{Float64}, only => 1) ==ₜ [1.0]
-        @test_throws Exception construct(Vector{String}, only => 1)
+            @test construct(Vector, only => 1) ==ₜ [1]
+            @test construct(Vector{Float64}, only => 1) ==ₜ [1.0]
+            @test_throws Exception construct(Vector{String}, only => 1)
 
-        @test construct(Set, only => 1) ==ₜ Set((1,))
-        @test construct(Set{Int}, only => 1) ==ₜ Set((1,))
-        @test construct(Set{Float64}, only => 1) ==ₜ Set((1.0,))
-        @test_throws Exception construct(Set{String}, only => 1,)
+            @test construct(Set, only => 1) ==ₜ Set((1,))
+            @test construct(Set{Float64}, only => 1) ==ₜ Set((1.0,))
+            @test_throws Exception construct(Set{String}, only => 1,)
 
-        @test construct(NamedTuple{(:a,)}, only => 1) === (a=1,)
-        @test construct(NamedTuple, @optic(_.a) => 1) === (a=1,)
-        @test construct(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "") === (a=1, b="")
+            @test construct(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "") === (a=1, b="")
+        end
     end
 
-    @test @construct(Complex, _.re = 1, _.im = 2)::Complex{Int} === 1 + 2im
-    @test (@construct Complex{Int}  _.re = 1 _.im = 2)::Complex{Int} === 1 + 2im
-    res = @construct Complex begin
-        _.re = 1
-        _.im = 2
+    @testset "laws" begin
+        using AccessorsExtra: test_construct_laws
+        test_construct_laws(Complex, @optic(_.re) => 1, @optic(_.im) => 2)
+        test_construct_laws(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)
+        test_construct_laws(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)
+        test_construct_laws(Complex, @optic(_.re) => 1., @optic(_.im) => 2)
+        test_construct_laws(Complex, abs => 1., angle => π/2)
+        test_construct_laws(ComplexF32, abs => 1., angle => π/2; cmp=(≈))
+
+        test_construct_laws(Tuple, only => 1)
+        test_construct_laws(Tuple{Int}, only => 1)
+        test_construct_laws(Tuple{Float64}, only => 1)
+
+        test_construct_laws(Vector, only => 1)
+        test_construct_laws(Vector{Int}, only => 1)
+        test_construct_laws(Vector{Float64}, only => 1)
+
+        test_construct_laws(Set, only => 1)
+        test_construct_laws(Set{Int}, only => 1)
+        test_construct_laws(Set{Float64}, only => 1)
+
+        test_construct_laws(NamedTuple{(:a,)}, only => 1)
+        test_construct_laws(NamedTuple, @optic(_.a) => 1)
+        test_construct_laws(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "")
     end
-    @test res::Complex{Int} === 1 + 2im
-    res = @construct Complex{Int} begin
-        _.re = 1
-        _.im = 2
+
+    @testset "macro" begin
+        @test @construct(Complex, _.re = 1, _.im = 2)::Complex{Int} === 1 + 2im
+        @test (@construct Complex{Int}  _.re = 1 _.im = 2)::Complex{Int} === 1 + 2im
+        res = @construct Complex begin
+            _.re = 1
+            _.im = 2
+        end
+        @test res::Complex{Int} === 1 + 2im
+        res = @construct Complex{Int} begin
+            _.re = 1
+            _.im = 2
+        end
+        @test res::Complex{Int} === 1 + 2im
+        res = @construct NamedTuple begin
+            _.a = @construct Complex  abs(_) = 1 angle(_) = π
+            _.b = @construct Vector  only(_) = 10
+            _.c = 123
+        end
+        @test res == (a=-1, b=[10], c=123)
+        res = @construct NamedTuple begin
+            _.a = construct(Complex, @optic(_.re) => -1, @optic(_.im) => 0)
+            _.b = construct(Vector, only => 10)
+            _.c = 123
+        end
+        @test res == (a=-1, b=[10], c=123)
     end
-    @test res::Complex{Int} === 1 + 2im
-    res = @construct NamedTuple begin
-        _.a = @construct Complex  abs(_) = 1 angle(_) = π
-        _.b = @construct Vector  only(_) = 10
-        _.c = 123
-    end
-    @test res == (a=-1, b=[10], c=123)
-    res = @construct NamedTuple begin
-        _.a = construct(Complex, @optic(_.re) => -1, @optic(_.im) => 0)
-        _.b = construct(Vector, only => 10)
-        _.c = 123
-    end
-    @test res == (a=-1, b=[10], c=123)
 end
 
 @testitem "structarrays" begin
@@ -627,6 +653,17 @@ end
 
     InverseFunctions.test_inverse(Accessors.decompose, sin ∘ tan ∘ cos; compare= ==)
     InverseFunctions.test_inverse(Accessors.deopcompose, sin ∘ tan ∘ cos; compare= ==)
+end
+
+@testitem "ranges" begin
+    r = 1:10
+    @test -5:10 === @set first(r) = -5
+    @test 1:15 === @set last(r) = 15
+
+    r = Base.OneTo(10)
+    @test Base.OneTo(19) === @set length(r) = 19
+    @test -5:10 === @set first(r) = -5
+    @test Base.OneTo(15) === @set last(r) = 15
 end
 
 @testitem "collections" begin
@@ -694,7 +731,8 @@ end
     using StructArrays
     using StaticArrays
     using Optimization
-    using OptimizationOptimJL, OptimizationMetaheuristics
+    using OptimizationOptimJL
+    using OptimizationMetaheuristics: ECA
 
     @testset "reconstruct" begin
         of = OptimizationFunction(sin, Optimization.AutoForwardDiff())
@@ -746,17 +784,18 @@ end
         OptProblemSpec(Base.Fix2(loss, data), mod0, vars),
         OptProblemSpec(Base.Fix2(loss, data), Vector, mod0, vars),
         OptProblemSpec(Base.Fix2(loss, data), Vector{Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), SVector, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), SVector{<:Any, Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), MVector, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), MVector{<:Any, Float64}, mod0, vars),
+        # broken by Metaheuristics@3.3:
+        # OptProblemSpec(Base.Fix2(loss, data), SVector, mod0, vars),
+        # OptProblemSpec(Base.Fix2(loss, data), SVector{<:Any, Float64}, mod0, vars),
+        # OptProblemSpec(Base.Fix2(loss, data), MVector, mod0, vars),
+        # OptProblemSpec(Base.Fix2(loss, data), MVector{<:Any, Float64}, mod0, vars),
         OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), mod0, vars),
         OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), Vector, mod0, vars),
         OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), Vector{Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), SVector, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), SVector{<:Any, Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), MVector, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), MVector{<:Any, Float64}, mod0, vars),
+        # OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), SVector, mod0, vars),
+        # OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), SVector{<:Any, Float64}, mod0, vars),
+        # OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), MVector, mod0, vars),
+        # OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), MVector{<:Any, Float64}, mod0, vars),
     )
         sol = solve(prob, ECA(), maxiters=300)
         @test sol.u isa Vector{Float64}

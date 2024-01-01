@@ -16,6 +16,8 @@ modify(f, obj::KVPWrapper{typeof(keys), <:NamedTuple{NS}}, ::Elements) where {NS
 ### values - just map by default
 modify(f, obj::KVPWrapper{typeof(values)}, ::Elements) = map(f, obj.obj)
 
+modify(f, obj::KVPWrapper{typeof(values), <:Pair}, ::Elements) = modify(f, obj.obj, Properties())
+
 function modify(f, obj::KVPWrapper{typeof(values), <:Dict}, ::Elements)
     dict = obj.obj
     V = Core.Compiler.return_type(f, Tuple{valtype(dict)})

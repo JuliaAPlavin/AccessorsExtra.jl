@@ -16,7 +16,7 @@ export
     concat, ++, @optics, @optic₊,
     @replace,
     construct, @construct,
-    unrecurcize, RecursiveOfType,
+    RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, osomething, hasoptic,
     FlexIx,
@@ -28,7 +28,6 @@ include("setindex.jl")
 include("keyvalues.jl")
 include("flexix.jl")
 include("concatoptic.jl")
-include("alongside.jl")
 include("recursive.jl")
 include("context.jl")
 include("maybe.jl")
@@ -80,17 +79,18 @@ set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
 set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
 
 # inverse getindex
+# XXX: should only be defined for a separate type, something like Bijection
+# otherwise not really an inverse
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
 InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)
 
-# shortcuts, no piracy
+# shortcuts
 const ∗ = Elements()
 const ∗ₚ = Properties()
-
-Accessors.IndexLens(::Tuple{typeof(∗)}) = Elements()
+# some piracy:
+Accessors.IndexLens(::Tuple{Elements}) = Elements()
+Accessors.IndexLens(::Tuple{Properties}) = Properties()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
-
-Accessors.IndexLens(::Tuple{typeof(∗ₚ)}) = Properties()
 Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
 
 
@@ -109,6 +109,13 @@ struct ⩔{F,G}
     g::G
 end
 (c::⩔)(x) = c.f(x) || c.g(x)
+
+
+# unambiguous for unitranges, but tension with general array @set first(x)...
+set(r::AbstractUnitRange, ::typeof(first), x) = x:last(r)
+set(r::AbstractUnitRange, ::typeof(last),  x) = first(r):x
+set(r::Base.OneTo, ::typeof(last), x) = Base.OneTo(x)
+set(r::Base.OneTo, ::typeof(length), x) = Base.OneTo(x)
 
 
 end

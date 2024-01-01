@@ -42,3 +42,13 @@ macro allinferred(exprs...)
     end
     esc(expr)
 end
+
+
+function test_construct_laws(::Type{T}, pairs...; cmp=(==)) where {T}
+    obj = construct(T, pairs...)
+    @assert obj isa T
+    for (optic, value) in pairs
+        @assert cmp(optic(obj), value)
+        # @assert cmp(set(obj, optic, value), obj)
+    end
+end

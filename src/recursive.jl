@@ -6,11 +6,7 @@ struct RecursiveOfType{OT,RT,O}
     optic::O
 end
 Broadcast.broadcastable(o::RecursiveOfType) = Ref(o)
-RecursiveOfType(; out::Type{TO}, recurse::Type{TR}=Any, optic) where {TO,TR} =
-    RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
-RecursiveOfType(out::Type{TO}; recurse::Type{TR}=Any, optic) where {TO,TR} =
-    RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
-RecursiveOfType(out::Type{TO}, optic; recurse::Type{TR}=Any) where {TO,TR} =
+RecursiveOfType(out::Type{TO}, optic=Properties(); recurse::Type{TR}=Any) where {TO,TR} =
     RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
 
 
@@ -49,33 +45,46 @@ _walk_getall(recurse, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
     end
 _getall(recurse, obj, optic) = @p getall(obj, optic) |> map(recurse) |> _reduce_concat
 
-
-function unrecurcize(or::RecursiveOfType, ::Type{T}) where {T}
-    rec_optic = if T <: or.rectypes
-        TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
+function _setall_T(obj::Type{T}, or::Type{RecursiveOfType{Type{OT},Type{RT},O}}, vals, istart::Val{I}) where {T,OT,RT,O,I}
+    curcnt = 0
+    rec_expr = if T <: RT
+        TS = Core.Compiler.return_type(getall, Tuple{T, O})
         if TS == Union{} || !isconcretetype(TS)
-            error("Cannot recurse on $T |> $(or.optic): got $TS")
-        elseif TS <: Tuple
-            map(enumerate(fieldtypes(TS))) do (i, ET)
-                unrecurcize(or, ET)
-            end |> Tuple |> AlongsideOptic
-        elseif TS <: AbstractVector
-            ET = eltype(TS)
-            unrecurcize(or, ET) ∘ Elements()
+            error("Cannot recurse on $T |> $(O): got $TS")
         end
+
+        exprs = map(enumerate(_eltypes(TS))) do (ifield, ET)
+            expr, cnt = _setall_T(ET, or, vals, Val(I + curcnt))
+            curcnt += cnt
+            return :(let obj = oldvs[$(ifield)];
+                $expr
+            end)
+        end
+        :(let oldvs = getall(obj, or.optic)
+            newvs = ($(exprs...),)
+            setall(obj, or.optic, newvs)
+        end)
     else
-        EmptyOptic()
+        :obj
     end
-    T <: or.outtypes ?
-        rec_optic ++ identity :
-        rec_optic
+    full_expr = if T <: OT
+        curcnt += 1
+        :(vals[$(I + curcnt - 1)])
+    else
+        rec_expr
+    end
+    return full_expr, curcnt
 end
 
+_eltypes(::Type{T}) where {T<:Tuple} = fieldtypes(T)
+_eltypes(::Type{T}) where {T<:AbstractVector} = ntuple(Returns(eltype(T)), _typelength(T))  # only for StaticArrays
 
-struct EmptyOptic end
-OpticStyle(::Type{<:EmptyOptic}) = ModifyBased()
-getall(obj, ::EmptyOptic) = ()
-setall(obj, ::EmptyOptic, vals) = (@assert isempty(vals); obj)
-modify(f, obj, ::EmptyOptic) = obj
-Base.show(io::IO, o::EmptyOptic) = print(io, "∅")
-Base.show(io::IO, ::MIME"text/plain", o::EmptyOptic) = show(io, optic)
+_typelength(::Type{T}) where {T<:Tuple} = fieldcount(T)
+# only for StaticArrays:
+_typelength(::Type{T}) where {T<:AbstractVector} = fieldcount(only(fieldtypes(T))) # this hack because length(T) doesn't work due to worldage
+
+@generated function setall(obj::T, or::ORT, vals::VT) where {T,ORT<:RecursiveOfType,VT}
+    expr, cnt = _setall_T(T, ORT, VT, Val(1))
+    @assert _typelength(VT) == cnt
+    return expr
+end

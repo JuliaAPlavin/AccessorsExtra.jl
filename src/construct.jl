@@ -7,10 +7,6 @@ end
 function construct(::Type{T}, x::Pair{typeof(abs)}, y::Pair{typeof(angle)}) where {T <: Complex}
     @assert last(x) >= zero(last(x))
     convert(T, cis(last(y)) * last(x))
-    # res = T(true, false)
-    # res = set(res, first(x), last(x))
-    # res = set(res, first(y), last(y))
-    # return convert(T, res)
 end
 
 function construct(::Type{T}, x::Pair{typeof(only)}) where {T <: Union{Tuple,Set}}

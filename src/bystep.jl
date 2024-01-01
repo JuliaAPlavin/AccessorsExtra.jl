@@ -39,8 +39,11 @@ logged(o::ComposedFunction; depth=0) = @modify(deopcompose(o)) do ops
         logged(op, depth=depth + i - 1)
     end
 end
-logged(o::Union{ConcatOptics,AlongsideOptic}; depth=0) =
+logged(o::ConcatOptics; depth=0) =
     LoggedOptic(@modify(f -> logged(f; depth=depth+1), o.optics[∗]), depth)
+logged(os::Union{Tuple,NamedTuple,AbstractArray,AbstractDict,Pair}; depth=0) =
+    LoggedOptic(@modify(o -> logged(o; depth=depth+1), values(os)[∗]), depth)
+
 logged(o; depth=0) = LoggedOptic(o, depth)
 
 function (o::LoggedOptic)(obj)
