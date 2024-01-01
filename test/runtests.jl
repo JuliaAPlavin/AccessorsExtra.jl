@@ -3,6 +3,26 @@ using TestItemRunner
 @run_package_tests
 
 
+@testitem "setindex" begin
+    AccessorsExtra.@allinferred set begin
+    @test set((1, 2), @optic(_[1:0]), Int[]) === (1, 2)
+    @test set((1, 2), @optic(_[1:1]), [10]) === (10, 2)
+    @test set((1, 2), @optic(_[1:2]), [10, 20]) === (10, 20)
+    @test set((1, 2), @optic(_[Int[]]), Int[]) === (1, 2)
+    @test set((1, 2), @optic(_[[1]]), [10]) === (10, 2)
+    @test set((1, 2), @optic(_[[1, 2]]), [10, 20]) === (10, 20)
+    @test set((1, 2), @optic(_[[2, 1]]), [10, 20]) === (20, 10)
+    end
+
+    @test set((1, :a), @optic(_[1:0]), []) === (1, :a)
+    @test set((1, :a), @optic(_[1:1]), ["x"]) === ("x", :a)
+    @test set((1, :a), @optic(_[1:2]), ["x", "y"]) === ("x", "y")
+    @test set((1, :a), @optic(_[Int[]]), []) === (1, :a)
+    @test set((1, :a), @optic(_[[1]]), ["x"]) === ("x", :a)
+    @test set((1, :a), @optic(_[[1, 2]]), ["x", "y"]) === ("x", "y")
+    @test set((1, :a), @optic(_[[2, 1]]), ["x", "y"]) === ("y", "x")
+end
+
 @testitem "concat optics" begin
     @testset for o in (
         @optic(_.a) ++ @optic(_.b),

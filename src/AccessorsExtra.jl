@@ -21,6 +21,7 @@ export
     get_steps, logged
 
 
+include("setindex.jl")
 include("keyvalues.jl")
 include("flexix.jl")
 include("concatoptic.jl")
