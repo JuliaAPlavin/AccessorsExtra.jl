@@ -64,6 +64,7 @@ end
     @test o(s) == "2020_03_10"
     @test set(s, o, "2021_04_11") == "name_2021_04_11.ext"
     @test modify(d -> d + 20, s, @optic match(r"(?<y>\d{4})_\d{2}_\d{2}", _)[:y] |> parse(Int, _)) == "name_2040_03_10.ext"
+    @test modify(s -> "[$s]", s, @optic match(r"(?<y>\d{4})_(\d{2})_(\d{2})", _)[∗]) == "name_[2020]_[03]_[10].ext"
     o = @optic match(r"\d", _) |> If(!isnothing) |> _.match |> parse(Int, _)
     @test getall("a 1", o) == (1,)
     @test getall("a b", o) == ()

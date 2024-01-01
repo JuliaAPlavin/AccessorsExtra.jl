@@ -69,3 +69,12 @@ function _set_regexmatch(m::RegexMatch, o::Union{IndexLens,PropertyLens}, v::Not
     @assert isnothing(sub)
     m
 end
+
+function Accessors.modify(f, m::RegexMatch, ::Elements)
+    foldl(reverse(m.captures); init=m.match) do s, sub
+        v = f(sub)
+        rng = ((sub.offset+1):(sub.offset+sub.ncodeunits)) .- m.match.offset
+        @info "" m rng v
+        @views s[begin:prevind(s, first(rng))] * v * s[nextind(s, last(rng)):end]
+    end
+end
