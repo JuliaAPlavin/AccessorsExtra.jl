@@ -9,6 +9,7 @@ modify(f, obj::KVPWrapper{typeof(pairs), <:Dictionary}, ::Elements) =
     dictionary(f(p)::Pair for p in pairs(obj.obj))
 
 
+# can upstream?
 Accessors.setindex(d0::AbstractDictionary, v, k) = merge(d0, Dictionary([k], [v]))
 Accessors.insert(obj::AbstractDictionary, l::IndexLens, val) = Accessors.setindex(obj, val, only(l.indices))
 function Accessors.delete(obj::AbstractDictionary, l::IndexLens)

@@ -135,6 +135,9 @@ orec = RecursiveOfType(Number)
 # ╔═╡ edd6da10-3cd1-4b70-9c4c-e15603b7f6a2
 @btime modify(-, $objr, $orec)
 
+# ╔═╡ 08adc947-2c30-43cc-8138-d126c81e76a3
+@btime setall($objr, $orec, (10, 20, 30))
+
 # ╔═╡ c7eb40e1-e18a-4640-8d86-5f3a1ce4c23f
 md"""
 `RecursiveOfType` is fully composable with other optics:
@@ -209,24 +212,6 @@ modify(x -> x+1, dct, @optic keys(_)[∗])
 # ╔═╡ 06690850-de63-4217-b619-8838f524bcc5
 modify(((i, x),) -> 2i => i + x, dct, @optic pairs(_)[∗])
 
-# ╔═╡ 4e48927e-f6ce-4251-84b1-d0248768a048
-md"""
-## Regular expressions as optics
-
-Supports both `match` and `eachmatch`.
-
-Example, where we replace fractions with decimals in a string:
-"""
-
-# ╔═╡ bec82135-7844-4e15-bdcd-beb5a24c5668
-str_fracs = "fractions: 2/3, another 1/2, 5/2, all!"
-
-# ╔═╡ e09cded5-e746-47e7-a6bc-2405da4bfb8b
-@modify(str_fracs |> eachmatch(r"(?<num>\d+)/(?<denom>\d+)", _)[∗]) do m
-	f = parse(Int, m[:num]) / parse(Int, m[:denom])
-    first(string(f), 5)
-end
-
 # ╔═╡ abdece8e-ca4d-4045-8bd2-670931d1ceb7
 md"""
 ## Integration with `Optimization.jl`
@@ -241,11 +226,12 @@ md"""
 The following isn't documented, see packages tests for usage examples:
 - `FlexIx` grow/shrink collections
 - `⩓` and `⩔` function operators
-- `funcvallens`/`FuncResult`/`FuncArgument` optics
 - optics with context, eg `keyed(Elements())`
 - `PartsOf()` all optic values together
+- regular expressions as optics
 - `@optic view(_, ix)` modifies the input array
 - `set(1:5, last, 10) == 1:10`
+- `funcvallens`/`FuncResult`/`FuncArgument` optics
 - `get_steps`
 - `@replace`
 """
@@ -258,8 +244,6 @@ TableOfContents()
 
 # ╔═╡ edc6c86f-8106-4df1-8b7d-23986da1d22a
 
-# ╔═╡ 08adc947-2c30-43cc-8138-d126c81e76a3
-@btime setall($objr, $orec, (10, 20, 30))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -269,7 +253,7 @@ BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
-AccessorsExtra = "~0.1.36"
+AccessorsExtra = "~0.1.37"
 BenchmarkTools = "~1.3.2"
 PlutoUI = "~0.7.50"
 """
@@ -290,9 +274,9 @@ version = "1.1.4"
 
 [[deps.Accessors]]
 deps = ["Compat", "CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "LinearAlgebra", "MacroTools", "Requires", "Test"]
-git-tree-sha1 = "beabc31fa319f9de4d16372bff31b4801e43d32c"
+git-tree-sha1 = "c7dddee3f32ceac12abd9a21cd0c4cb489f230d2"
 uuid = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
-version = "0.1.28"
+version = "0.1.29"
 
     [deps.Accessors.extensions]
     AxisKeysExt = "AxisKeys"
@@ -308,9 +292,9 @@ version = "0.1.28"
 
 [[deps.AccessorsExtra]]
 deps = ["Accessors", "ConstructionBase", "DataPipes", "InverseFunctions", "Reexport", "Requires"]
-git-tree-sha1 = "0c7a6e03137ad3f5f9220c850879177b4eff726e"
+git-tree-sha1 = "5f8779bedc1a8fe9318a79fb1ac0db8cf909b0a2"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
-version = "0.1.36"
+version = "0.1.37"
 
     [deps.AccessorsExtra.extensions]
     DictionariesExt = "Dictionaries"
@@ -679,9 +663,6 @@ version = "17.4.0+0"
 # ╠═a6b8c4fc-9555-4ddc-a2d8-9c2c4e65344e
 # ╠═a3387faf-20df-4f3d-bf6c-f0e409ded011
 # ╠═06690850-de63-4217-b619-8838f524bcc5
-# ╟─4e48927e-f6ce-4251-84b1-d0248768a048
-# ╠═bec82135-7844-4e15-bdcd-beb5a24c5668
-# ╠═e09cded5-e746-47e7-a6bc-2405da4bfb8b
 # ╟─abdece8e-ca4d-4045-8bd2-670931d1ceb7
 # ╟─2fe6a54a-e914-430b-9703-a48ad172b0bf
 # ╠═c4fe8f56-2287-4fee-8c27-f23a2a3c4c40

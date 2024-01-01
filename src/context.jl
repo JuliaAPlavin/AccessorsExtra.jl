@@ -1,6 +1,44 @@
 abstract type ContextOptic end
 Broadcast.broadcastable(o::ContextOptic) = Ref(o)
 
+struct ValWithContext{C,V}
+    ctx::C
+    v::V
+
+    function ValWithContext(ctx, v)
+        @assert !(v isa ValWithContext)
+        new{typeof(ctx),typeof(v)}(ctx, v)
+    end
+end
+ValWithContext(ctx, v::ValWithContext) = ValWithContext(MultiContext(ctx, v.ctx), v.v)
+Base.first(ix::ValWithContext) = ix.ctx
+Base.last(ix::ValWithContext) = ix.v
+Base.iterate(ix::ValWithContext, args...) = iterate(ix.ctx => ix.v, args...)
+Base.show(io::IO, ix::ValWithContext) = print(io, ix.ctx, " ⇒ ", ix.v)
+
+struct MultiContext{CS}
+    contexts::CS
+
+    function MultiContext(ctxs...)
+        fullctxs = _reduce_concat(map(_contexts, ctxs))
+        new{typeof(fullctxs)}(fullctxs)
+    end
+end
+_contexts(ctx) = (ctx,)
+_contexts(ctx::MultiContext) = ctx.contexts
+Base.getindex(ctx::MultiContext, i) = ctx.contexts[i]
+Base.iterate(ctx::MultiContext, args...) = iterate(ctx.contexts, args...)
+
+
+struct _ContextValOnly{C} <: ContextOptic
+    ctx::C
+end
+(o::_ContextValOnly)(obj) = ValWithContext(o.ctx, obj)
+set(obj, o::_ContextValOnly, v) = _unpack_val(v, o(obj).ctx)
+_unpack_val(x, i) = x
+_unpack_val(x::ValWithContext, i) = (@assert x.ctx == i; x.v)
+
+
 struct Keyed{O} <: ContextOptic
     o::O
 end
@@ -24,38 +62,16 @@ end
 OpticStyle(::Type{<:SelfContext}) = ModifyBased()
 Base.show(io::IO, co::SelfContext) = print(io, "selfcontext(", co.f, ")")
 selfcontext(f=identity) = SelfContext(f)
- 
-struct ValWithContext{I,V}
-    i::I
-    v::V
-end
-Base.first(ix::ValWithContext) = ix.i
-Base.last(ix::ValWithContext) = ix.v
-Base.iterate(ix::ValWithContext, args...) = iterate(ix.i => ix.v, args...)
-Base.show(io::IO, ix::ValWithContext) = print(io, ix.i, " ⇒ ", ix.v)
-
-
-struct _ContextValOnly{I} <: ContextOptic
-    i::I
-end
-OpticStyle(::Type{<:_ContextValOnly}) = ModifyBased()
-modify(f, obj, o::_ContextValOnly) = _unpack_val(f(ValWithContext(o.i, obj)), o.i)
-_unpack_val(x, i) = x
-_unpack_val(x::ValWithContext, i) = (@assert x.i == i; x.v)
 
 modify(f, obj, o::SelfContext) = modify(f, obj, _ContextValOnly(o.f(obj)))
 (o::SelfContext)(obj) = ValWithContext(o.f(obj), obj)
+# same as default; fallback getall() just errors for ModifyBased
+getall(obj, o::SelfContext) = (o(obj),)
 
-getall(obj, ::Enumerated{Elements}) =
-    map(enumerate(obj)) do (i, v)
-        ValWithContext(i, v)
-    end
+getall(obj, ::Enumerated{Elements}) = map(ValWithContext, _1indices(obj), values(obj))
+getall(obj, ::Keyed{Elements}) = map(ValWithContext, _keys(obj), values(obj))
 
-getall(obj, ::Keyed{Elements}) =
-    map(keys(obj), values(obj)) do i, v
-        ValWithContext(i, v)
-    end
-
+# needs to call modify(obj, Elements()) and not map(...): only the former works for regex optics
 function modify(f, obj, ::Enumerated{Elements})
     i = Ref(1)
     modify(obj, Elements()) do v
@@ -66,13 +82,7 @@ function modify(f, obj, ::Enumerated{Elements})
 end
 
 modify(f, obj, ::Keyed{Elements}) =
-    map(keys(obj), values(obj)) do i, v
-        modify(f, v, _ContextValOnly(i))
-    end
-
-modify(f, obj::Tuple, ::Keyed{Elements}) =
-    ntuple(length(obj)) do i
-        v = obj[i]
+    map(_keys(obj), values(obj)) do i, v
         modify(f, v, _ContextValOnly(i))
     end
 
@@ -94,7 +104,7 @@ export ᵢ
 const ᵢ = Val(:ᵢ)
 Base.:(*)(o, ::typeof(ᵢ)) = KeepContext(o)
 
-OpticStyle(::Type{KeepContext{O}}) where {O} = ModifyBased() # OpticStyle(O)
+OpticStyle(::Type{KeepContext{O}}) where {O} = OpticStyle(O)
 Base.show(io::IO, co::KeepContext) = print(io, "(ᵢ", co.o, ")ᵢ")
 
 for T in [
@@ -104,22 +114,38 @@ for T in [
         ContextOptic,
     ]
     @eval Base.:∘(o::KeepContext, c::$T) = ComposedFunction(o, c)
+    @eval Base.:∘(o::_ContextValOnly, c::$T) = ComposedFunction(o, c)
     @eval Base.:∘(o, c::$T) = KeepContext(o) ∘ c
 end
+
 
 (o::KeepContext)(obj) = o.o(obj)
 (o::KeepContext)(obj::ValWithContext) = @modify(o.o, obj.v)
 getall(obj, o::KeepContext) = getall(obj, o.o)
 getall(obj::ValWithContext, o::KeepContext) = map(x -> @set(obj.v = x), getall(obj.v, o.o))
 
+
 modify(f, obj, o::KeepContext) = modify(f, obj, o.o)
 modify(f, obj::ValWithContext, o::KeepContext) =
     if OpticStyle(o.o) isa SetBased
-        x = o.o(obj.v)
-        fx = f(ValWithContext(obj.i, x))
-        fx isa ValWithContext ?
-            ValWithContext(fx.i, set(obj.v, o.o, fx.v)) :
-            set(obj.v, o.o, fx)
+        fx = f(o(obj))
+        @assert !(fx isa ValWithContext)
+        set(obj.v, o.o, fx)
+        # fx = f(o(obj))
+        # fx isa ValWithContext ?
+        #     ValWithContext(fx.ctx, set(obj.v, o.o, fx.v)) :
+        #     set(obj.v, o.o, fx)
     else
-        modify(f, obj.v, _ContextValOnly(obj.i) ∘ o.o)
+        modify(f, obj.v, _ContextValOnly(obj.ctx) ∘ o.o)
     end
+
+
+# helpers:
+# should be the same kind of type as values(obj) if possible, eg AbstractVector, Tuple
+# so that map(keys, values) returns the same kind of type
+_keys(obj) = keys(obj)
+_keys(::NTuple{N,Any}) where {N} = ntuple(identity, N)
+_1indices(obj) = first.(enumerate(obj))  # inefficient?
+_1indices(obj::AbstractArray) = 1:length(obj)
+_1indices(::NTuple{N,Any}) where {N} = ntuple(identity, N)
+_1indices(::NamedTuple{KS}) where {KS} = ntuple(identity, length(KS))

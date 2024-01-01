@@ -2,12 +2,12 @@
 
 Advanced optics/lenses and relevant tools, based on the `Accessors.jl` framework.
 
-The [Accessors.jl](https://github.com/JuliaObjects/Accessors.jl) package defines a unified interface to modify immutable data structures --- so-called optics or lenses. See its docs for details and background. \
+The [Accessors.jl](https://github.com/JuliaObjects/Accessors.jl) package defines a unified interface to modify immutable data structures — so-called optics or lenses. See its docs for details and background. \
 `AccessorsExtra.jl` defines more optics and relevant tools that are too involved/opinionated/experimental to be included into a package as foundational as `Accessors` itself.
 
 Following `Accessors` itself, optics and operations in `AccessorsExtra` aim to have as little overhead as possible, often zero, with tests checking this.
 
-Some featured examples:
+Some highlights:
 ```julia
 julia> obj = (a=1, b=(2, 3, "4"))
 
