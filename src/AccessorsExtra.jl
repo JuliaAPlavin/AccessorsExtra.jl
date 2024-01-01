@@ -17,6 +17,7 @@ export
     @replace,
     assemble, @assemble,
     unrecurcize, RecursiveOfType,
+    keyed, enumerated,
     get_steps, logged
 
 
@@ -24,6 +25,7 @@ include("flexix.jl")
 include("concatoptic.jl")
 include("alongside.jl")
 include("recursive.jl")
+include("indexed.jl")
 include("maybe.jl")
 include("regex.jl")
 include("replace.jl")

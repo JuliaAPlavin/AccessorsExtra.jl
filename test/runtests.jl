@@ -185,6 +185,32 @@ end
     @test getall(m, o) == getall(m, or)
 end
 
+@testitem "indexed" begin
+    o = @optic(_.b)ᵢ ⨟ keyed(Elements()) ⨟ @optic(_.a)ᵢ
+    @test modify(((i, v),) -> i => v, (a=1, b=((a='a',), (a='b',), (a='c',))), o) == (a=1, b=((a=1=>'a',), (a=2=>'b',), (a=3=>'c',)))
+    @test modify(((i, v),) -> i => v, (a=1, b=[(a='a',), (a='b',), (a='c',)]), o) == (a=1, b=[(a=1=>'a',), (a=2=>'b',), (a=3=>'c',)])
+    @test modify(
+        wix -> wix.i => wix.v,
+        (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
+        keyed(@optic(_.a)) ++ keyed(@optic(_.b)) ⨟ @optic(_[∗].a)ᵢ
+    ) == (a=:a=>1, b=(x=(a=:b=>'a',), y=(a=:b=>'b',), z=(a=:b=>'c',)))
+    @test modify(
+        wix -> wix.i => wix.v,
+        (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
+        @optic(_.b)ᵢ ⨟ keyed(Elements()) ⨟ Elements()ᵢ
+    ) == (a=1, b=(x=(a=:x=>'a',), y=(a=:y=>'b',), z=(a=:z=>'c',)))
+    @test modify(
+        wix -> "$(wix.v.match)_$(wix.i)",
+        "abc def 5 x y z 123",
+        @optic(eachmatch(r"\w+", _)) ⨟ enumerated(Elements())
+    ) == "abc_1 def_2 5_3 x_4 y_5 z_6 123_7"
+    @test modify(
+        wix -> wix.v + wix.i,
+        "abc def 5 x y z 123",
+        @optic(eachmatch(r"\d+", _)) ⨟ enumerated(Elements()) ⨟ @optic(parse(Int, _.match))ᵢ
+    ) == "abc def 6 x y z 125"
+end
+
 @testitem "steps" begin
     @test get_steps([(a=1,)], @optic first(_).a |> _ + 1) == [
         (o = first, g = (a = 1,)),
