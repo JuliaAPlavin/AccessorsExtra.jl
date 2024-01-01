@@ -158,6 +158,20 @@ end
     end
 end
 
+@testitem "steps" begin
+    @test get_steps([(a=1,)], @optic first(_).a |> _ + 1) == [
+        (o = first, g = (a = 1,)),
+        (o = (@optic _.a), g = 1),
+        (o = @optic(_ + 1), g = 2)
+    ]
+    @test get_steps([(a=1,)], @optic first(_).b |> _ + 1 - 2) == [
+        (o = first, g = (a = 1,)),
+        (o = (@optic _.b), g = AccessorsExtra.Thrown(ErrorException("type NamedTuple has no field b"))),
+        (o = @optic(_ + 1), g = nothing),
+        (o = @optic(_ - 2), g = nothing)
+    ]
+end
+
 @testitem "replace" begin
     nt = (a=1, b=:x)
     AccessorsExtra.@allinferred _replace begin

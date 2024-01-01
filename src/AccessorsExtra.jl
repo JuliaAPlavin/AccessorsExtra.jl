@@ -16,7 +16,8 @@ export
     concat, ++, @optics,
     @replace,
     assemble, @assemble,
-    unrecurcize, RecursiveOfType
+    unrecurcize, RecursiveOfType,
+    get_steps
 
 
 include("concatoptic.jl")
@@ -26,6 +27,7 @@ include("maybe.jl")
 include("regex.jl")
 include("replace.jl")
 include("assemble.jl")
+include("bystep.jl")
 include("testing.jl")
 
 
