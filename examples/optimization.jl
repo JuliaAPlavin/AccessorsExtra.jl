@@ -16,9 +16,6 @@ using DataPipes
 # ╔═╡ f03679e5-5d9e-41e5-bff2-c02822181d01
 using FlexiMaps
 
-# ╔═╡ 22433e08-4ab4-4a23-b079-5b73b9ae6128
-using DataManipulation: uniqueonly
-
 # ╔═╡ 6115a5f1-6d34-4c10-985d-6abe36275978
 using PyPlotUtils; pyplot_style!()
 
@@ -91,7 +88,7 @@ truemod = SumModel((
 data = @p 0:0.2:10 |> StructArray(x=__, y=truemod.(__) .+ 0.03 .* randn.())
 
 # ╔═╡ 8412b028-a559-4566-bd51-c4650a8edf73
-loss(m, data) = sum(r -> abs2(r.y - m(r.x)), data)
+loss(m, data) = @p sum(abs2(_.y - m(_.x)), data)
 
 # ╔═╡ 63d598fa-02a6-4d36-94f4-43831a5de8d1
 let
@@ -128,7 +125,7 @@ md"Optionally, define a set of constrains: each is a function of the model, and 
 
 # ╔═╡ 4a97d36d-81f6-447f-ba26-6f0ebb93217c
 cons = OptCons(
-	((x, _) -> mean(c -> c.shift, x.comps)) => 0.5..4,
+	((x, _) -> @p mean(_.shift, x.comps)) => 0.5..4,
 )
 
 # ╔═╡ ae16f334-e583-4fac-8c34-c5b4e60f248f
@@ -182,10 +179,10 @@ Let's define convenience functions to fit and plot the results:
 """
 
 # ╔═╡ b51f9964-1e19-4078-a2c6-6109e935a000
-function solmod_from_vars(vars)
-	prob = OptProblemSpec(Base.Fix2(loss, data), mod0, vars)
-	sol = solve(prob, ECA(), maxiters=300)
-	return sol.uobj
+solmod_from_vars(vars) = @p let
+	OptProblemSpec(Base.Fix2(loss, data), mod0, vars)
+	solve(__, ECA(), maxiters=300)
+	__.uobj
 end
 
 # ╔═╡ 66acd240-f950-4c2a-bc06-1ac2c5929544
@@ -201,25 +198,25 @@ end
 md"Only optimize the first component shift, leaving everything else constant:"
 
 # ╔═╡ bd06ef56-c099-4631-b895-0fa68da0f8ff
-let
-	vars = OptArgs(
+@p let
+	OptArgs(
 		@optic(_.comps[1].shift) => 0..10.,
 	)
-	mod = solmod_from_vars(vars)
-	plot_datamod(data, mod), mod
+	solmod_from_vars()
+	plot_datamod(data, __), __
 end
 
 # ╔═╡ 04c2526e-b991-43f0-aea3-ff816a2bc9de
 md"Optimize scales and shifts of all components - specify them manually:"
 
 # ╔═╡ 90757798-7aa5-46e8-8c7b-d7c66b47b865
-let
-	vars = OptArgs(
+@p let
+	OptArgs(
 		@optic(_.comps[∗].scale) => 0..10.,
 		@optic(_.comps[∗].shift) => 0..10.,
 	)
-	mod = solmod_from_vars(vars)
-	plot_datamod(data, mod), mod
+	solmod_from_vars()
+	plot_datamod(data, __), __
 end
 
 # ╔═╡ 2c648777-a967-4129-8640-504fd523852f
@@ -228,27 +225,16 @@ Optimize scales and shifts of all components - specified via a recursive optic:
 """
 
 # ╔═╡ 52baa97e-dcd4-4ba7-8492-6f1179522562
-let
-	vars = OptArgs(
+@p let
+	OptArgs(
 		RecursiveOfType(Number) => 0..10.,
 	)
-	mod = solmod_from_vars(vars)
-	plot_datamod(data, mod), mod
+	solmod_from_vars()
+	plot_datamod(data, __), __
 end
 
 # ╔═╡ 4fe4e530-813d-4f8f-8a74-de08de26c3aa
 md"Optimize scales and shifts of all components, while two scales (#2 and #3) are kept exactly the same:"
-
-# ╔═╡ d741b31f-e947-4650-bcba-9d9b8f842726
-let
-	vars = OptArgs(
-		@optic(_.comps[1].scale) => 0..10.,
-		@optic(_.comps[2:3][∗].scale |> PartsOf() |> uniqueonly) => 0..1.,
-		@optic(_.comps[∗].shift) => 0..10.,
-	)
-	mod = solmod_from_vars(vars)
-	plot_datamod(data, mod), mod
-end
 
 # ╔═╡ dc57e188-20f6-4c7e-bef0-955547f2482f
 
@@ -262,6 +248,30 @@ x0 = SumModel((
 	ExpModel(0, 0),
 	ExpModel(0, 0),
 ))
+
+# ╔═╡ 708951df-5d62-4e06-9493-9886f95e426d
+@btime loss($x0, $data)
+
+# ╔═╡ 53f5d11d-7f29-48ad-a9be-d6ab67b763f0
+
+
+# ╔═╡ b0ff9d1d-82fd-4d85-a976-2182c7ce0833
+begin
+	# helper function, should really be packaged somewhere
+	uniqueonly(A) = first(A)
+	Accessors.set(obj, ::typeof(uniqueonly), v) = set(obj, Elements(), v)
+end
+
+# ╔═╡ d741b31f-e947-4650-bcba-9d9b8f842726
+@p let
+	OptArgs(
+		@optic(_.comps[1].scale) => 0..10.,
+		@optic(_.comps[2:3][∗].scale |> PartsOf() |> uniqueonly) => 0..1.,
+		@optic(_.comps[∗].shift) => 0..10.,
+	)
+	solmod_from_vars()
+	plot_datamod(data, __), __
+end
 
 # ╔═╡ 7cafbcf6-57d4-4f07-87e7-74504e98d4f3
 bvars = OptArgs(
@@ -283,26 +293,17 @@ u = @btime AccessorsExtra.rawu($bops)
 # ╔═╡ f0ede4eb-1811-48e7-9a2b-49e7f67ae7a8
 func = AccessorsExtra.rawfunc(bops)
 
-# ╔═╡ 708951df-5d62-4e06-9493-9886f95e426d
-@btime loss($x0, $data)
-
 # ╔═╡ 6e6eac98-7825-467a-bd59-ee33ec66c321
 @btime func($u, $data)
 
 # ╔═╡ 88801de8-abd8-4306-8504-04edbf2ee518
 @btime AccessorsExtra.rawbounds($bops)
 
-# ╔═╡ 53f5d11d-7f29-48ad-a9be-d6ab67b763f0
-
-
-# ╔═╡ b0ff9d1d-82fd-4d85-a976-2182c7ce0833
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 AccessorsExtra = "33016aad-b69d-45be-9359-82a41f556fd4"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-DataManipulation = "38052440-ad76-4236-8414-61389b2c5143"
 DataPipes = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
 FlexiMaps = "6394faf6-06db-4fa8-b750-35ccc60383f7"
 IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
@@ -317,16 +318,15 @@ StaticNumbers = "c5e4b96a-f99f-5557-8ed2-dc63ef9b5131"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
-AccessorsExtra = "~0.1.36"
+AccessorsExtra = "~0.1.37"
 BenchmarkTools = "~1.3.2"
-DataManipulation = "~0.1.10"
 DataPipes = "~0.3.8"
 FlexiMaps = "~0.1.14"
 IntervalSets = "~0.7.4"
-Metaheuristics = "~3.2.16"
-Optimization = "~3.13.1"
+Metaheuristics = "~3.3.1"
+Optimization = "~3.14.0"
 OptimizationMetaheuristics = "~0.1.2"
-OptimizationOptimJL = "~0.1.7"
+OptimizationOptimJL = "~0.1.8"
 ProfileCanvas = "~0.1.6"
 PyPlotUtils = "~0.1.27"
 StaticArrays = "~1.5.21"
@@ -340,7 +340,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.0-rc2"
 manifest_format = "2.0"
-project_hash = "b02e6415d08b56b4717b768076b78c43f3e6145c"
+project_hash = "b8ceeb959de4a21c7fae1ed5bf4e01249c9b814b"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "faa260e4cb5aba097a73fab382dd4b5819d8ec8c"
@@ -349,9 +349,9 @@ version = "0.4.4"
 
 [[deps.Accessors]]
 deps = ["Compat", "CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "LinearAlgebra", "MacroTools", "Requires", "Test"]
-git-tree-sha1 = "beabc31fa319f9de4d16372bff31b4801e43d32c"
+git-tree-sha1 = "c7dddee3f32ceac12abd9a21cd0c4cb489f230d2"
 uuid = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
-version = "0.1.28"
+version = "0.1.29"
 
     [deps.Accessors.extensions]
     AxisKeysExt = "AxisKeys"
@@ -367,15 +367,19 @@ version = "0.1.28"
 
 [[deps.AccessorsExtra]]
 deps = ["Accessors", "ConstructionBase", "DataPipes", "InverseFunctions", "Reexport", "Requires"]
-git-tree-sha1 = "0c7a6e03137ad3f5f9220c850879177b4eff726e"
+git-tree-sha1 = "5f8779bedc1a8fe9318a79fb1ac0db8cf909b0a2"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
-version = "0.1.36"
-weakdeps = ["Dictionaries", "SciMLBase", "StructArrays"]
+version = "0.1.37"
 
     [deps.AccessorsExtra.extensions]
     DictionariesExt = "Dictionaries"
     SciMLExt = "SciMLBase"
     StructArraysExt = "StructArrays"
+
+    [deps.AccessorsExtra.weakdeps]
+    Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
+    SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+    StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -506,18 +510,6 @@ git-tree-sha1 = "e8119c1a33d267e16108be441a287a6981ba1630"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.14.0"
 
-[[deps.DataManipulation]]
-deps = ["Accessors", "DataPipes", "FlexiGroups", "FlexiMaps", "InverseFunctions", "Reexport", "Skipper"]
-git-tree-sha1 = "d8ee99ca6d5d1572e19bb5c83525a85fd03c34b8"
-uuid = "38052440-ad76-4236-8414-61389b2c5143"
-version = "0.1.10"
-weakdeps = ["Dictionaries", "IntervalSets", "StructArrays"]
-
-    [deps.DataManipulation.extensions]
-    DictionariesExt = "Dictionaries"
-    IntervalSetsExt = "IntervalSets"
-    StructArraysExt = "StructArrays"
-
 [[deps.DataPipes]]
 git-tree-sha1 = "3b4bc031d472fbcee3335ceadd85b399dfdd8006"
 uuid = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
@@ -537,12 +529,6 @@ version = "1.0.0"
 [[deps.Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
-
-[[deps.Dictionaries]]
-deps = ["Indexing", "Random", "Serialization"]
-git-tree-sha1 = "e82c3c97b5b4ec111f3c1b55228cebc7510525a2"
-uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
-version = "0.3.25"
 
 [[deps.DiffResults]]
 deps = ["StaticArraysCore"]
@@ -620,30 +606,19 @@ git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
-[[deps.FlexiGroups]]
-deps = ["AccessorsExtra", "Combinatorics", "DataPipes", "Dictionaries", "FlexiMaps"]
-git-tree-sha1 = "998cd0985e2cca6b10cd62daf0c4b8388224a765"
-uuid = "1e56b746-2900-429a-8028-5ec1f00612ec"
-version = "0.1.15"
-
-    [deps.FlexiGroups.extensions]
-    AxisKeysExt = "AxisKeys"
-    CategoricalArraysExt = "CategoricalArrays"
-
-    [deps.FlexiGroups.weakdeps]
-    AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
-    CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
-
 [[deps.FlexiMaps]]
 deps = ["Accessors", "InverseFunctions"]
 git-tree-sha1 = "e5a6fa9d8ee0dae4edc8c07212262b810e2aa570"
 uuid = "6394faf6-06db-4fa8-b750-35ccc60383f7"
 version = "0.1.14"
-weakdeps = ["Dictionaries", "StructArrays"]
 
     [deps.FlexiMaps.extensions]
     DictionariesExt = "Dictionaries"
     StructArraysExt = "StructArrays"
+
+    [deps.FlexiMaps.weakdeps]
+    Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
+    StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [[deps.ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
@@ -675,11 +650,6 @@ deps = ["Adapt"]
 git-tree-sha1 = "1cd7f0af1aa58abc02ea1d872953a97359cb87fa"
 uuid = "46192b85-c4d5-4398-a991-12ede77f4527"
 version = "0.1.4"
-
-[[deps.Indexing]]
-git-tree-sha1 = "ce1566720fd6b19ff3411404d4b977acd4814f9f"
-uuid = "313cdc1a-70c2-5d6a-ae34-0150d3930a38"
-version = "1.1.1"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
@@ -815,10 +785,10 @@ uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 version = "2.28.2+0"
 
 [[deps.Metaheuristics]]
-deps = ["Distances", "JMcDM", "LinearAlgebra", "Pkg", "Printf", "Random", "Requires", "SnoopPrecompile", "Statistics"]
-git-tree-sha1 = "b04a029b36629e59b27790f0993a57d2075942c7"
+deps = ["Distances", "JMcDM", "LinearAlgebra", "Pkg", "Printf", "Random", "Reexport", "Requires", "SearchSpaces", "SnoopPrecompile", "Statistics"]
+git-tree-sha1 = "32382fc2b109b1879bbeed7ba8697c51b738ebbe"
 uuid = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
-version = "3.2.16"
+version = "3.3.1"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -878,10 +848,10 @@ uuid = "429524aa-4258-5aef-a3af-852621145aeb"
 version = "1.7.5"
 
 [[deps.Optimization]]
-deps = ["ArrayInterface", "ConsoleProgressMonitor", "DocStringExtensions", "Logging", "LoggingExtras", "Pkg", "Printf", "ProgressLogging", "Reexport", "Requires", "SciMLBase", "SparseArrays", "TerminalLoggers"]
-git-tree-sha1 = "012e44804e52b157e3180b52c504636b52af5ea4"
+deps = ["ArrayInterface", "ConsoleProgressMonitor", "DocStringExtensions", "LinearAlgebra", "Logging", "LoggingExtras", "Pkg", "Printf", "ProgressLogging", "Reexport", "Requires", "SciMLBase", "SparseArrays", "TerminalLoggers"]
+git-tree-sha1 = "4923f1fb8878f54073715cb40981c70331e5169a"
 uuid = "7f7a1694-90dd-40f0-9382-eb1efda571ba"
-version = "3.13.1"
+version = "3.14.0"
 
 [[deps.OptimizationMetaheuristics]]
 deps = ["Metaheuristics", "Optimization", "Reexport"]
@@ -891,9 +861,9 @@ version = "0.1.2"
 
 [[deps.OptimizationOptimJL]]
 deps = ["Optim", "Optimization", "Reexport", "SparseArrays"]
-git-tree-sha1 = "d654b063a6c63e107d0a44a6a79430e2d0ab30d2"
+git-tree-sha1 = "a3215e733b1a83e2fb4831b4c0301231a430287e"
 uuid = "36348300-93cb-4f02-beb5-3c3902f8871e"
-version = "0.1.7"
+version = "0.1.8"
 
 [[deps.OrderedCollections]]
 git-tree-sha1 = "d321bf2de576bf25ec4d3e4360faca399afca282"
@@ -1045,6 +1015,12 @@ git-tree-sha1 = "e61e48ef909375203092a6e83508c8416df55a83"
 uuid = "c0aeaf25-5076-4817-a8d5-81caf7dfa961"
 version = "0.2.0"
 
+[[deps.SearchSpaces]]
+deps = ["Combinatorics", "Random"]
+git-tree-sha1 = "2662fd537048fb12ff34fabb5249bf50e06f445b"
+uuid = "eb7571c6-2196-4f03-99b8-52a5a35b3163"
+version = "0.2.0"
+
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
@@ -1053,16 +1029,6 @@ deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
 git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
 uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 version = "1.1.1"
-
-[[deps.Skipper]]
-git-tree-sha1 = "778668a7dcb7eba533cd00c501b69435df3ace13"
-uuid = "fc65d762-6112-4b1c-b428-ad0792653d81"
-version = "0.1.7"
-weakdeps = ["Accessors", "Dictionaries"]
-
-    [deps.Skipper.extensions]
-    AccessorsExt = "Accessors"
-    DictionariesExt = "Dictionaries"
 
 [[deps.SnoopPrecompile]]
 deps = ["Preferences"]
@@ -1236,7 +1202,6 @@ version = "17.4.0+0"
 # ╠═c5915064-60e6-4180-a4e9-8e8a4e91b020
 # ╠═4bdd0dcd-ca89-4102-bfa9-926683fee155
 # ╠═f03679e5-5d9e-41e5-bff2-c02822181d01
-# ╠═22433e08-4ab4-4a23-b079-5b73b9ae6128
 # ╠═6115a5f1-6d34-4c10-985d-6abe36275978
 # ╠═6d0e158d-ba36-4100-86bf-44b878b30356
 # ╠═58165c5e-b292-4b54-90a2-24b911095af7
@@ -1290,6 +1255,6 @@ version = "17.4.0+0"
 # ╠═6e6eac98-7825-467a-bd59-ee33ec66c321
 # ╠═88801de8-abd8-4306-8504-04edbf2ee518
 # ╠═53f5d11d-7f29-48ad-a9be-d6ab67b763f0
-# ╠═b0ff9d1d-82fd-4d85-a976-2182c7ce0833
+# ╟─b0ff9d1d-82fd-4d85-a976-2182c7ce0833
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

@@ -7,7 +7,7 @@ The [Accessors.jl](https://github.com/JuliaObjects/Accessors.jl) package defines
 
 Following `Accessors` itself, optics and operations in `AccessorsExtra` aim to have as little overhead as possible, often zero, with tests checking this.
 
-Some featured examples:
+Some highlights:
 ```julia
 julia> obj = (a=1, b=(2, 3, "4"))
 
