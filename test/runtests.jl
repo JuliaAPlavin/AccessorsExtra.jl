@@ -15,6 +15,15 @@ using TestItemRunner
         Accessors.test_getsetall_laws(o, obj, (3, 4), (:a, :b))
     end
 
+    AccessorsExtra.@allinferred getall modify if VERSION >= v"1.10-"; :setall end begin
+        obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
+        o = concat(a=@optic(_.a), c=@optic(first(_.bs) |> _.c))
+        @test getall(obj, o) === (a=1, c=2)
+        @test setall(obj, o, (a="10", c="11")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
+        @test setall(obj, o, (c="11", a="10")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
+        @test modify(-, obj, o) === (a=-1, bs=((c=-2, d=3), (c=4, d=5)))
+    end
+
     AccessorsExtra.@allinferred getall setall modify begin
         obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
         o = @optic(_.a) ++ @optic(_.bs |> Elements() |> _.c)
