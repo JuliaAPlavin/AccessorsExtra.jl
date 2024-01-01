@@ -991,22 +991,50 @@ end
 end
 
 @testitem "getfield" begin
+    t = (x=1, y=2.)
+    @test set(t, @o(getfield(_, :x)), 10) === (x=10, y=2.)
+    @test set(t, @o(getfield(_, :x)), :hello) === (x=:hello, y=2.)
+    @test (@inferred set(t, @o(getfield(_, Val(:x))), 10)) === (x=10, y=2.)
+    @test (@inferred set(t, @o(getfield(_, Val(:x))), :hello)) === (x=:hello, y=2.)
+    @test_throws Exception set(t, @o(getfield(_, :z)), 3)
+    
     struct S{T}
         x::T
 
         S(x) = new{typeof(x)}(10*x)
     end
 
-    t = (x=1, y=2)
-    @test set(t, @o(getfield(_, :x)), 10) === (x=10, y=2)
-    @test set(t, @o(getfield(_, :x)), :hello) === (x=:hello, y=2)
-    @test_throws Exception set(t, @o(getfield(_, :z)), 3)
-
     s = S(2)
     @test s.x == 20
     @test (@set s.x = 10).x == 100
-    @test set(s, (@o getfield(_, :x)), 10).x === 10
-    @test_broken set(s, (@o getfield(_, :x)), 10.0).x === 10.0
+    @test @inferred set(s, (@o getfield(_, :x)), 10).x === 10
+    @test @inferred set(s, (@o getfield(_, :x)), 10.0).x === 10.0
+
+    struct U{T}
+        x::T
+        y::Real
+
+        U(x, y) = new{typeof(x)}(10*x, y+1)
+    end
+
+    u = U(2, 3)
+    @test u.x === 20
+    @test u.y === 4
+    u2 = set(u, (@o getfield(_, :x)), 10)
+    @test u2.x === 10
+    @test u2.y === 4
+    u2 = set(u, (@o getfield(_, :x)), 1.5)
+    @test u2.x === 1.5
+    @test u2.y === 4
+
+    struct W{T}
+        x::T
+    end
+    W(x) = W{Float64}(x)
+
+    w = W(2)
+    @test w.x === 2.0
+    @test_broken set(w, (@o getfield(_, :x)), 10).x === 10.0
 end
 
 @testitem "view" begin
