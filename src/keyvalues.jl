@@ -1,6 +1,7 @@
 # trivial setters
-set(obj::AbstractArray, ::typeof(values), vals) = @set obj[:] = vals
+set(obj::AbstractArray, ::typeof(values), vals) = setall(obj, Elements(), vals)
 set(obj::Tuple, ::typeof(values), vals) = Tuple(vals)
+set(obj::Pair, ::typeof(values), vals) = Pair(vals...)
 set(obj::NamedTuple{KS}, ::typeof(values), vals) where {KS} = NamedTuple{KS}(Tuple(vals))
 set(obj::NamedTuple{KS}, ::typeof(keys), vals::NTuple{<:Any,Symbol}) where {KS} = NamedTuple{vals}(values(obj))
 
