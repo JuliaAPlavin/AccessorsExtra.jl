@@ -51,7 +51,14 @@ Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view), <:Integer}, val:
 
 
 # set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57
-set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
+@generated function set(obj::T, o::typeof(getfields), val::NamedTuple{KS}) where {T, KS}
+    @assert fieldnames(T) == KS
+    if all(map((A, B) -> A >: B, fieldtypes(T), fieldtypes(val)))
+        return Expr(:new, T, map(k -> :(val.$k), KS)...)
+    else
+        :(constructorof($T)(val...))
+    end
+end
 set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
 
 # inverse getindex

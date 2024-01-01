@@ -936,9 +936,22 @@ end
 end
 
 @testitem "getfield" begin
+    struct S{T}
+        x::T
+
+        S(x) = new{typeof(x)}(10*x)
+    end
+
     t = (x=1, y=2)
+    @test set(t, @optic(getfield(_, :x)), 10) === (x=10, y=2)
     @test set(t, @optic(getfield(_, :x)), :hello) === (x=:hello, y=2)
     @test_throws Exception set(t, @optic(getfield(_, :z)), 3)
+
+    s = S(2)
+    @test s.x == 20
+    @test (@set s.x = 10).x == 100
+    @test set(s, (@o getfield(_, :x)), 10).x === 10
+    @test_broken set(s, (@o getfield(_, :x)), 10.0).x === 10.0
 end
 
 @testitem "view" begin
