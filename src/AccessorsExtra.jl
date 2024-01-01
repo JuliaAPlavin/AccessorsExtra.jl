@@ -76,8 +76,10 @@ function __init__()
     @require Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4" begin
         using .Dictionaries
 
-        modify(f, obj::AbstractDictionary, ::Keys) = constructorof(typeof(obj))(map(f, keys(obj)), values(obj))
-        modify(f, obj::AbstractDictionary, ::Values) = map(f, obj)
+        modify(f, obj::KVPWrapper{typeof(keys), <:AbstractDictionary}, ::Elements) =
+            constructorof(typeof(obj.obj))(map(f, keys(obj.obj)), values(obj.obj))
+        modify(f, obj::KVPWrapper{typeof(values), <:AbstractDictionary}, ::Elements) =
+            map(f, obj.obj)
     end
 
     @require SkyCoords = "fc659fc5-75a3-5475-a2ea-3da92c065361" begin
