@@ -19,6 +19,7 @@ using TestItemRunner
         obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
         o = @optic(_.a) ++ @optic(_.bs |> Elements() |> _.c)
         @test getall(obj, o) === (1, 2, 4)
+        @test setall(obj, o, (:a, :b, :c)) === (a=:a, bs=((c=:b, d=3), (c=:c, d=5)))
         @test modify(-, obj, o) === (a=-1, bs=((c=-2, d=3), (c=-4, d=5)))
         Accessors.test_getsetall_laws(o, obj, (3, 4, 5), (:a, :b, :c))
 
@@ -30,8 +31,9 @@ using TestItemRunner
         obj = (a=1, bs=[(c=2, d=3), (c=4, d=5)])
         o = @optic(_.a) ++ @optic(_.bs |> Elements() |> _.c)
         @test getall(obj, o) == [1, 2, 4]
+        @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
     end
-    @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
+    @test setall(obj, o, (:a, :b, :c)) == (a=:a, bs=[(c=:b, d=3), (c=:c, d=5)])
 end
 
 @testitem "shorter forms" begin

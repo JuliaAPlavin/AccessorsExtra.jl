@@ -15,7 +15,9 @@ function Accessors.getall(obj, co::ConcatOptics)
 end
 
 function Accessors.modify(f, obj, co::ConcatOptics)
-    setall(obj, co, map(f, getall(obj, co)))
+    foldl(co.optics; init=obj) do obj, o
+        modify(f, obj, o)
+    end
 end
 
 function Accessors.setall(obj, co::ConcatOptics, vals)
