@@ -7,7 +7,6 @@ import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBa
 using DataPipes
 using ConstructionBase
 using InverseFunctions
-using Requires
 using Accessors: MacroTools
 
 export
@@ -41,16 +40,6 @@ include("optimization.jl")
 include("testing.jl")
 
 const var"@o" = var"@optic"
-
-
-function __init__()
-    # https://github.com/PainterQubits/Unitful.jl/pull/622
-    @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" begin
-        using .Unitful
-
-        InverseFunctions.inverse(f::Base.Fix1{typeof(ustrip)}) = Base.Fix1(*, true*f.x)
-    end
-end
 
 
 # https://github.com/JuliaFunctional/CompositionsBase.jl/pull/12
