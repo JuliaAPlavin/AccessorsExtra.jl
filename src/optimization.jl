@@ -1,3 +1,5 @@
+# see ext/SciMLExt.jl for the rest of the code
+
 struct OptArgs{TS}
     specs::TS
     OptArgs(specs...) = new{typeof(specs)}(specs)
