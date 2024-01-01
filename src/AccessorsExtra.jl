@@ -80,6 +80,8 @@ set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
 set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
 
 # inverse getindex
+# XXX: should only be defined for a separate type, something like Bijection
+# otherwise not really an inverse
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
 InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)
 
