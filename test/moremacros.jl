@@ -21,3 +21,11 @@ end
     @test @pop(obj.b) == (a=1, b=(2,))
     @test @popfirst(obj.b) == (a=1, b=(3,))
 end
+
+@testitem "getall, setall" begin
+    obj = (a=1, b=(2, 3))
+    @test (@getall obj.b[∗]) === (2, 3)
+    @test (@getall obj[∗][∗]) === (1, 2, 3)
+    @test (@setall obj[∗] = (5, "6")) === (a=5, b="6")
+    @test (@setall obj |> RecursiveOfType(Int) = (5, 6, 7)) === (a=5, b=(6, 7))
+end

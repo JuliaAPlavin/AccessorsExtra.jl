@@ -15,6 +15,7 @@ export
     ⩓, ⩔,
     concat, ++, @optics, @optic₊,
     @replace, @push, @pushfirst, @pop, @popfirst,
+    @getall, @setall,
     construct, @construct,
     RecursiveOfType,
     keyed, enumerated, selfcontext, stripcontext, hascontext,
