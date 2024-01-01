@@ -120,6 +120,11 @@ end
 end
 
 @testitem "maybe" begin
+    # @test set(1, something, 2) == 2
+    # @test set(Some(1), something, 2) == Some(2)
+
+    # get(...) - needs Base.Fix3
+
     o = maybe(@optic _[2]) ∘ @optic(_.a)
     @test o((a=[1, 2],)) == 2
     @test o((a=[1],)) == nothing
@@ -153,7 +158,7 @@ end
     @test_throws Exception modify(x -> nothing, (;), o)
 end
 
-@testitem "unrecurcize" begin
+@testitem "recursive" begin
     or = RecursiveOfType(out=(Number,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     o = unrecurcize(or, typeof(m))
@@ -233,6 +238,42 @@ end
     @test set([(a=1,)], o, 'y') == [(a='x',)]
     @test setall([(a=1,)], o, ['y']) == [(a='x',)]
     @test modify(-, [(a=1,)], o) == [(a=-3,)]
+end
+
+@testitem "tmp" begin
+#     data = [
+#         (a=1, bs=[10, 11, 12]),
+#         (a=2, bs=[20, 21]),
+#     ]
+#     o = @optic _ |> Elements() ...
+#     getall(data, o, o, 5) == [(a=1, b=10), (a=1, b=11), ...]
+#     modify((a, b) -> 100a + b, data, o) == [
+#         (a=1, bs=[110, 111, 112]),
+#         (a=2, bs=[220, 221]),
+#     ]
+
+#     o = @optic _ |> Elements() |> If(r -> any(>(15), r.bs)) |> _.a
+#     @test modify(a -> a * 2, data, o) == [
+#         (a=1, bs=[10, 11, 12]),
+#         (a=4, bs=[20, 21]),
+#     ]
+#     o = @optic _ |> Elements() |> If(r -> !isempty(getall(r, @optic(_.bs |> Elements() |> If(>(15)))))) |> _.a
+#     @test modify(a -> a * 2, data, o) == [
+#         (a=1, bs=[10, 11, 12]),
+#         (a=4, bs=[20, 21]),
+#     ]
+
+#     o = # bs >= 12
+#     @test modify((a, bs) -> a + length(bs), data, o) == [
+#         (a=2, bs=[10, 11, 12]),
+#         (a=4, bs=[20, 21]),
+#     ]
+
+#     @test delete(data, @optic _ |> Elements() |> _.bs |> Elements() |> If(isodd))
+#     @test delete(data, @optic _ |> Elements() |> If(r -> !isempty(getall(r, @optic _.bs |> Elements() |> If(>(15))))))
+#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Elements() |> _.bs |> Withered())
+#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Withered() |> _.bs |> Elements())
+#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Withered() |> _.bs |> Withered())
 end
 
 @testitem "replace" begin
@@ -479,6 +520,11 @@ end
 
 @testitem "keys, values, pairs" begin
     using Dictionaries
+
+    # ds = Dict(:a => 1:10,:b => 2:11)
+    # delete(If) not possible? need Filtered(cond) == If(cond) ∘ Elements()
+    # @test @delete ds |> values(_)[∗] |> If(x -> any(>=(5), x))
+    # @test @delete ds |> values(_)[∗][∗] |> If(>=(5))
 
     AccessorsExtra.@allinferred modify begin
         @test modify(cumsum, [5, 1, 4, 2, 3], sort) == [15, 1, 10, 3, 6]
