@@ -24,6 +24,7 @@ export
     OptArgs, OptCons, OptProblemSpec, solobj
 
 
+include("overrides.jl")
 include("keyvalues.jl")
 include("flexix.jl")
 include("concatoptic.jl")
