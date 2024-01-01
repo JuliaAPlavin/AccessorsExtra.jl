@@ -675,7 +675,7 @@ end
         T = (4, 5, 6)
         @test (8, 10, 12) === modify(x -> 2x, T, @o values(_)[∗])
         @test (5, 7, 9) === modify(((i, x),) -> i => i + x, T, @o pairs(_)[∗])
-        @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> @o pairs(_)[∗])
+        @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> pairs(_)[∗])
         T = (a=4, b=5, c=6)
         @test (a=8, b=10, c=12) === modify(x -> 2x, T, @o values(_)[∗])
         @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @o keys(_)[∗])  broken=VERSION < v"1.10-"
