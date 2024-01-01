@@ -334,22 +334,22 @@ end
     ) == "y:2022-m:03-d:15"
 end
 
-@testitem "All()" begin
+@testitem "PartsOf" begin
     x = (a=((b=1,), (b=2,), (b=3,)), c=4)
-    @test (@optic _.a[∗].b |> All())(x) == (1, 2, 3)
-    @test (@optic _.a[∗].b |> All() |> length)(x) == 3
+    @test (@optic _.a[∗].b |> PartsOf())(x) == (1, 2, 3)
+    @test (@optic _.a[∗].b |> PartsOf() |> length)(x) == 3
     o = @optic _.a[∗].b
-    @test getall(x, o) == (o ⨟ All())(x) == (1, 2, 3)
-    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ All()
+    @test getall(x, o) == (o ⨟ PartsOf())(x) == (1, 2, 3)
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ PartsOf()
     @test modify(reverse, x, o) == (a=((b=4,), (b=3,), (b=2,)), c=1)
-    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ @optic(_ |> All() |> _[2])
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ @optic(_ |> PartsOf() |> _[2])
     @test modify(x -> x*10, x, o) == (a=((b=1,), (b=20,), (b=3,)), c=4)
-    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ @optic(_ |> All()) ⨟ @optics _[1] _[2]
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ @optic(_ |> PartsOf()) ⨟ @optics _[1] _[2]
     @test modify(x -> x*10, x, o) == (a=((b=10,), (b=20,), (b=3,)), c=4)
     @test modify(
         xs -> round.(Int, xs ./ sum(xs) .* 100),
         "Counts: 10, 15, and 25!",
-        @optic(eachmatch(r"\d+", _)[∗] |> parse(Int, _.match) |> All())
+        @optic(eachmatch(r"\d+", _)[∗] |> parse(Int, _.match) |> PartsOf())
     ) == "Counts: 20, 30, and 50!"
 end
 

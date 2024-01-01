@@ -11,7 +11,7 @@ using Requires
 using Accessors: MacroTools
 
 export
-    ∗, ∗ₚ, All,
+    ∗, ∗ₚ, PartsOf,
     concat, ++, @optics, @optic₊,
     @replace,
     assemble, @assemble,
@@ -127,17 +127,17 @@ OpticStyle(::Type{FuncArgument}) = ModifyBased()
 modify(f, obj, ::FuncArgument) = obj ∘ f
 
 
-struct All end
-struct _AllOptic{O}
+struct PartsOf end
+struct _PartsOfOptic{O}
     o::O
 end
-OpticStyle(::Type{_AllOptic}) = ModifyBased()
-(o::_AllOptic)(obj) = getall(obj, o.o)
-set(obj, o::_AllOptic, val) = setall(obj, o.o, val)
+OpticStyle(::Type{_PartsOfOptic}) = ModifyBased()
+(o::_PartsOfOptic)(obj) = getall(obj, o.o)
+set(obj, o::_PartsOfOptic, val) = setall(obj, o.o, val)
 
-Base.:∘(i::All, o) = _AllOptic(o)
-Base.:∘(i::_AllOptic, o) = _AllOptic(i.o ∘ o)
-Base.:∘(c::ComposedFunction{<:Any, <:All}, o) = c.outer ∘ _AllOptic(o)
-Base.:∘(c::ComposedFunction{<:Any, <:_AllOptic}, o) = c.outer ∘ _AllOptic(c.inner.o ∘ o)
+Base.:∘(i::PartsOf, o) = _PartsOfOptic(o)
+Base.:∘(i::_PartsOfOptic, o) = _PartsOfOptic(i.o ∘ o)
+Base.:∘(c::ComposedFunction{<:Any, <:PartsOf}, o) = c.outer ∘ _PartsOfOptic(o)
+Base.:∘(c::ComposedFunction{<:Any, <:_PartsOfOptic}, o) = c.outer ∘ _PartsOfOptic(c.inner.o ∘ o)
 
 end
