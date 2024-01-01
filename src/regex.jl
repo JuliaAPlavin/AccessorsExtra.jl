@@ -8,6 +8,7 @@ function modify(f, s, o::Base.Fix1{typeof(match)})
         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
         @set s[FlexIx(rng)] = v
     else
+        @assert v isa RegexMatch
         @assert v === m
         return s
     end
@@ -124,6 +125,15 @@ end
 function modify(f, m::RegexMatch, ::Elements)
     foldl(reverse(m.captures); init=m.match) do s, sub
         v = f(sub)
+        rng = ((sub.offset+1):(sub.offset+sub.ncodeunits)) .- m.match.offset
+        @set s[FlexIx(rng)] = v
+    end
+end
+
+function modify(f, m::RegexMatch, ::IXed{Elements})
+    foldl(reverse(keys(m)); init=m.match) do s, k
+        sub = m[k]
+        v = modify(f, sub, _IndexedValOnly(k))
         rng = ((sub.offset+1):(sub.offset+sub.ncodeunits)) .- m.match.offset
         @set s[FlexIx(rng)] = v
     end
