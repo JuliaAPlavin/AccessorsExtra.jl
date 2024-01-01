@@ -296,7 +296,6 @@ func = AccessorsExtra.rawfunc(bops)
 
 
 # ╔═╡ b0ff9d1d-82fd-4d85-a976-2182c7ce0833
-Accessors.setall(obj::Tuple, ::Properties, vs) = Accessors.setproperties(obj, vs)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """

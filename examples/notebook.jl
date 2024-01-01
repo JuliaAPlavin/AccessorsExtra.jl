@@ -23,7 +23,7 @@ The [Accessors.jl](https://github.com/JuliaObjects/Accessors.jl) package defines
 
 This notebook showcases the more stable and widely applicable pieces of functionality defined in `AccessorsExtra`. See the source code and tests for more.
 
-As far as possible, `AccessorsExtra` operations attempt to have as little overhead as possible, with tests checking this.
+Optics and operations in `AccessorsExtra` attempt to have as little overhead as possible, often zero, with tests checking this.
 
 !!! note
     Before Julia 1.9, `AccessorsExtra` focused on `Accessors` integrations with third-party packages. With package extensions available, these integrations are put into `Accessors` itself, or into packages that define corresponding types.
@@ -257,7 +257,6 @@ The following isn't documented, see packages tests for usage examples:
 TableOfContents()
 
 # ╔═╡ edc6c86f-8106-4df1-8b7d-23986da1d22a
-Accessors.setall(obj::Tuple, ::Properties, vs) = Accessors.setproperties(obj, vs)
 
 # ╔═╡ 08adc947-2c30-43cc-8138-d126c81e76a3
 @btime setall($objr, $orec, (10, 20, 30))
