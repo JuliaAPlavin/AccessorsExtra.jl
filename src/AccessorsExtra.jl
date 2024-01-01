@@ -11,6 +11,7 @@ using Requires
 using Accessors: MacroTools
 
 export
+    @o,
     ∗, ∗ₚ, PartsOf,
     ⩓, ⩔,
     concat, ++, @optics, @optic₊,
@@ -38,6 +39,8 @@ include("construct.jl")
 include("bystep.jl")
 include("optimization.jl")
 include("testing.jl")
+
+const var"@o" = var"@optic"
 
 
 function __init__()
