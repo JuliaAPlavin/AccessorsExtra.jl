@@ -130,3 +130,20 @@ hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse), Type{T}}) where {T} = !i
 # without it: cases when hasoptic throws, but optic actually exists
 # with it: cases when hasoptic=true, but optic doesn't exist
 hasoptic(obj, o) = !isnothing(obj)
+
+
+# convenience macros
+macro oget(ref, default)
+    obj, optic = parse_obj_optic(ref)
+    return :($oget($obj, $optic, $default))
+end
+
+macro osomething(args...)
+    return :($osomething($(map(args) do arg
+        :($Accessors.@optic $arg)
+    end...)))
+end
+
+macro maybe(o, default=nothing)
+    return :($maybe($Accessors.@optic $o; default=$default))
+end

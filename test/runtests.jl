@@ -371,7 +371,6 @@ end
     # @test set(Some(1), something, 2) == Some(2)
 
     o = osomething(@o(_.a), @o(_.b))
-    # o = @osomething(_.a, _.b)
     @test o((a=1, b=2)) == 1
     @test o((c=1, b=2)) == 2
     @test_throws "no optic" o((c=1,))
@@ -513,6 +512,18 @@ end
     # @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
     # @test_throws Exception modify(x -> nothing, (;), o)
     end
+
+    @test (@maybe _.a) === maybe(@o _.a)
+    @test (@maybe _.a[∗][2]) === maybe(@o _.a[∗][2])
+    @test (@maybe exp(_.a[∗][2])) === maybe(@o exp(_.a[∗][2]))
+    @test (@maybe _.a 10) === maybe(@o _.a; default=10)
+
+    x = (a=[1, 2],)
+    @test (@oget x.a[2] 123) === 2
+    @test (@oget x.a[3] 123) === 123
+
+    @test osomething(@o(_.a)) === @osomething _.a
+    @test osomething(@o(_.a), @o(_.b)) === @osomething _.a _.b
 end
 
 @testitem "recursive" begin

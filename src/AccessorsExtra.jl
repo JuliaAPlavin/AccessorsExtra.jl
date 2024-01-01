@@ -19,7 +19,7 @@ export
     construct, @construct,
     RecursiveOfType,
     keyed, enumerated, selfcontext, stripcontext, hascontext,
-    maybe, osomething, oget, hasoptic,
+    maybe, osomething, oget, hasoptic, @maybe, @oget, @osomething,
     modifying, onget, onset, ongetset,
     FlexIx,
     get_steps, logged
