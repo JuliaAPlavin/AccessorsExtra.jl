@@ -15,10 +15,13 @@ export
     ∗,
     concat, ++, @optics,
     @replace,
-    assemble, @assemble
+    assemble, @assemble,
+    unrecurcize, RecursiveOfType
 
 
 include("concatoptic.jl")
+include("alongside.jl")
+include("recursive.jl")
 include("maybe.jl")
 include("regex.jl")
 include("replace.jl")
