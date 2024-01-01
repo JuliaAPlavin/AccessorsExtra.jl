@@ -338,10 +338,12 @@ end
 
 @testitem "context" begin
     AccessorsExtra.@allinferred modify begin
+    obj = ((a='a',), (a='b',), (a='c',))
     o = keyed(Elements()) ⨟ @optic(_.a)
-    @test modify(((i, v),) -> i => v, ((a='a',), (a='b',), (a='c',)), o) == ((a=1=>'a',), (a=2=>'b',), (a=3=>'c',))
+    @test modify(((i, v),) -> i => v, obj, o) == ((a=1=>'a',), (a=2=>'b',), (a=3=>'c',))
     o = keyed(Elements()) ⨟ @optic(_.a) ⨟ @optic(convert(Int, _) + 1)
-    @test modify(((i, v),) -> i + v, ((a='a',), (a='b',), (a='c',)), o) == ((a='b',), (a='d',), (a='f',))
+    @test_broken (map(x -> (x.i, x.v), getall(obj, o)); true)  # needs compose order fix
+    @test modify(((i, v),) -> i + v, obj, o) == ((a='b',), (a='d',), (a='f',))
     end
 
     o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)
@@ -375,14 +377,17 @@ end
         Elements() ⨟ selfcontext(r -> r.total) ⨟ @optic(_.x)
     ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
 
+    str = "abc def 5 x y z 123"
+    o = @optic(eachmatch(r"\w+", _)) ⨟ enumerated(Elements())
+    @test map(wix -> "$(wix.v.match)_$(wix.i)", getall(str, o)) == ["abc_1", "def_2", "5_3", "x_4", "y_5", "z_6", "123_7"]
     @test modify(
         wix -> "$(wix.v.match)_$(wix.i)",
-        "abc def 5 x y z 123",
-        @optic(eachmatch(r"\w+", _)) ⨟ enumerated(Elements())
+        str,
+        o
     ) == "abc_1 def_2 5_3 x_4 y_5 z_6 123_7"
     @test modify(
         wix -> wix.v + wix.i,
-        "abc def 5 x y z 123",
+        str,
         @optic(eachmatch(r"\d+", _)) ⨟ enumerated(Elements()) ⨟ @optic(parse(Int, _.match))
     ) == "abc def 6 x y z 125"
     @test modify(
@@ -391,6 +396,17 @@ end
         @optic(match(r"(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})", _)) ⨟ keyed(Elements())
     ) == "y:2022-m:03-d:15"
     end
+
+    data = [
+        (a=1, bs=[10, 11, 12]),
+        (a=2, bs=[20, 21]),
+    ]
+    o = @optic _[∗] |> selfcontext() |> _.bs[∗]
+    @test map(x -> (;x.i.a, b=x.v), getall(data, o)) == [(a = 1, b = 10), (a = 1, b = 11), (a = 1, b = 12), (a = 2, b = 20), (a = 2, b = 21)]
+    @test modify(x -> 100*x.i.a + x.v, data, o) == [
+        (a=1, bs=[110, 111, 112]),
+        (a=2, bs=[220, 221]),
+    ]
 end
 
 @testitem "PartsOf" begin
@@ -437,17 +453,6 @@ end
 end
 
 @testitem "tmp" begin
-#     data = [
-#         (a=1, bs=[10, 11, 12]),
-#         (a=2, bs=[20, 21]),
-#     ]
-#     o = @optic _ |> Elements() ...
-#     getall(data, o, o, 5) == [(a=1, b=10), (a=1, b=11), ...]
-#     modify((a, b) -> 100a + b, data, o) == [
-#         (a=1, bs=[110, 111, 112]),
-#         (a=2, bs=[220, 221]),
-#     ]
-
 #     o = @optic _ |> Elements() |> If(r -> any(>(15), r.bs)) |> _.a
 #     @test modify(a -> a * 2, data, o) == [
 #         (a=1, bs=[10, 11, 12]),

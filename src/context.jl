@@ -43,6 +43,17 @@ _unpack_val(x, i) = x
 _unpack_val(x::ValWithContext, i) = (@assert x.i == i; x.v)
 
 modify(f, obj, o::SelfContext) = modify(f, obj, _ContextValOnly(o.f(obj)))
+(o::SelfContext)(obj) = ValWithContext(o.f(obj), obj)
+
+getall(obj, ::Enumerated{Elements}) =
+    map(enumerate(obj)) do (i, v)
+        ValWithContext(i, v)
+    end
+
+getall(obj, ::Keyed{Elements}) =
+    map(keys(obj), values(obj)) do i, v
+        ValWithContext(i, v)
+    end
 
 function modify(f, obj, ::Enumerated{Elements})
     i = Ref(1)
@@ -97,6 +108,10 @@ for T in [
     @eval Base.:∘(o, c::$T) = KeepContext(o) ∘ c
 end
 
+(o::KeepContext)(obj) = o.o(obj)
+(o::KeepContext)(obj::ValWithContext) = ValWithContext(obj.i, o.o(obj.v))
+getall(obj, o::KeepContext) = getall(obj, o.o)
+getall(obj::ValWithContext, o::KeepContext) = map(x -> ValWithContext(obj.i, x), getall(obj.v, o.o))
 
 function modify(f, obj, o::KeepContext)
     modify(f, obj, o.o)
