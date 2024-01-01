@@ -100,5 +100,4 @@ set(r::AbstractUnitRange, ::typeof(last),  x) = first(r):x
 set(r::Base.OneTo, ::typeof(last), x) = Base.OneTo(x)
 set(r::Base.OneTo, ::typeof(length), x) = Base.OneTo(x)
 
-
 end

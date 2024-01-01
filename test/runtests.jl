@@ -676,6 +676,9 @@ end
     # @test @delete ds |> values(_)[∗] |> If(x -> any(>=(5), x))
     # @test @delete ds |> values(_)[∗][∗] |> If(>=(5))
 
+    # @test modify(b -> b < 15 ? b : nothing, data, @optic(_[∗].bs |> Wither())) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = Nothing[])]
+    # @test modify(b -> b < 15 ? b : nothing, data, @optic _ |> Wither() |> _.bs |> Wither()) == [(a = 1, bs = [10, 11, 12])]
+
     AccessorsExtra.@allinferred modify begin
         T = (4, 5, 6)
         @test (8, 10, 12) === modify(x -> 2x, T, @optic values(_)[∗])
