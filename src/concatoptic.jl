@@ -88,7 +88,7 @@ macro optic₊(ex)
             else
                 :( $Accessors.@optic $arg )
             end
-        end
+        end |> esc
     elseif Base.isexpr(ex, :call)
         @modify(ex.args[2:end][∗]) do arg
             if MacroTools.@capture arg (key_ => optic_)
@@ -96,7 +96,7 @@ macro optic₊(ex)
             else
                 :( $Accessors.@optic $arg )
             end
-        end
+        end |> esc
     else
         error("Unsupported expression $ex")
     end
