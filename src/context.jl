@@ -97,7 +97,7 @@ export ᵢ
 const ᵢ = Val(:ᵢ)
 Base.:(*)(o, ::typeof(ᵢ)) = KeepContext(o)
 
-OpticStyle(::Type{KeepContext{O}}) where {O} = ModifyBased() # OpticStyle(O) ???
+OpticStyle(::Type{KeepContext{O}}) where {O} = OpticStyle(O)
 Base.show(io::IO, co::KeepContext) = print(io, "(ᵢ", co.o, ")ᵢ")
 
 for T in [
