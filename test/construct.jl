@@ -32,6 +32,9 @@ end
         # @test construct((@o _[static(1)]) => 1, (@o _[static(2)]) => "") === (1, "")
         # @test construct((@o _[static(2)]) => 1, (@o _[static(1)]) => "") === (1, "")
 
+        @test construct(log10 => 1) === 10.0
+        @test construct((@o log10(_.a)) => 1, (@o _.b) => "") === (a=10.0, b="")
+
         @test construct(NamedTuple, (@o _.a.x) => 1, (@o _.a.y) => 2, (@o _.b) => "") === (a=(x=1, y=2), b="")
         @test construct((@o _.a.x) => 1, (@o _.a.y) => 2, (@o _.b) => "") === (a=(x=1, y=2), b="")
 

@@ -31,11 +31,14 @@ construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
         insert(acc, first(a), last(a))
     end
 
-# neat piece of functionality by itself!
+# insert⁺ is a neat piece of functionality by itself!
+struct InsertShouldJustInverse end
+
 insert⁺(obj, optic, val) = insert(obj, optic, val)
 insert⁺(obj, os::ConcatOptics, val) = _foldl(os.optics; init=obj) do obj, o
     insert⁺(obj, o, val)
 end
+insert⁺(obj::InsertShouldJustInverse, optic, val) = inverse(optic)(val)
 insert⁺(obj, optic::ComposedFunction, val) =
     if hasoptic(obj, optic.inner)
         modify(obj, optic.inner) do inner_obj
@@ -48,6 +51,7 @@ insert⁺(obj, optic::ComposedFunction, val) =
 default_empty_obj(::IndexLens{<:Tuple{<:Integer}}) = ()
 default_empty_obj(::PropertyLens) = (;)
 default_empty_obj(f::ComposedFunction) = default_empty_obj(f.inner)
+default_empty_obj(f) = inverse(f) isa NoInverse ? throw(MethodError(default_empty_obj, f)) : InsertShouldJustInverse()
 
 
 _propname(::PropertyLens{P}) where {P} = P
