@@ -12,10 +12,6 @@ RecursiveOfType(; out::Type{TO}, recurse::Type{TR}=Any, optic) where {TO,TR} = R
     optic,
 )
 
-# @inline _is_a_t(x, Ts::Tuple) = x isa first(Ts) || _is_a_t(x, Base.tail(Ts))
-@inline _is_a_t(x, T::Type) = x isa T
-# @inline _is_sub_t(x, Ts::Tuple) = x <: first(Ts) || _is_sub_t(x, Base.tail(Ts))
-@inline _is_sub_t(x, T::Type) = x <: T
 
 OpticStyle(::Type{<:RecursiveOfType}) = ModifyBased()
 
@@ -29,7 +25,6 @@ OpticStyle(::Type{<:RecursiveOfType}) = ModifyBased()
 # @inline _modify_rec(f, obj, or::RecursiveOfType) = obj
 
 @inline function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
-    # recurse = o -> modify(f, o, or)
     recurse(o) = _walk(var"#self#", f, o, or)
     _walk(recurse, f, obj, or)
 end
@@ -77,7 +72,7 @@ end
 
 
 function unrecurcize(or::RecursiveOfType, ::Type{T}) where {T}
-    rec_optic = if _is_sub_t(T, or.rectypes)
+    rec_optic = if T <: or.rectypes
         TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
         if TS == Union{} || !isconcretetype(TS)
             error("Cannot recurse on $T |> $(or.optic): got $TS")
@@ -92,7 +87,7 @@ function unrecurcize(or::RecursiveOfType, ::Type{T}) where {T}
     else
         EmptyOptic()
     end
-    _is_sub_t(T, or.outtypes) ?
+    T <: or.outtypes ?
         rec_optic ++ identity :
         rec_optic
 end
