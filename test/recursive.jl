@@ -64,8 +64,26 @@ end
 end
 
 # keyed:
-# or = keyed(RecursiveOfType(Number))
-# m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-# @test getall(m, or) == (1, 1, 3)
+@testitem "modify-many" begin
+    AccessorsExtra.@allinferred modify begin
 
-# aligned:
+    @test modify(+, (a=1, b=2), RecursiveOfType(Number), (a=10, b=20)) === (a=11, b=22)
+    @test modify(+, (a=1, b="", c=(d=2, e=3)), RecursiveOfType(Number), (a=10, b=20, c=(d=30, e=40))) === (a=11, b="", c=(d=32, e=43))
+    @test modify(+, (a=1, b=("", (d=2, e=3))), RecursiveOfType(Number), (a=10, b=(20, (d=30, e=40)))) === (a=11, b=("", (d=32, e=43)))
+    @test modify(+, (a=1, b=[(d=2, e=3)]), RecursiveOfType(Number), (a=10, b=[(d=30, e=40)])) == (a=11, b=[(d=32, e=43)])
+    
+    @test modify(+, (a=1, b="", c=(re=2, im=3)), RecursiveOfType(Real), (a=10, b=20, c=30+40im)) === (a=11, b="", c=(re=32, im=43))
+    @test modify(+, (a=1, b="", c=2+3im), RecursiveOfType(Real), (a=10, b=20, c=30+40im)) === (a=11, b="", c=32+43im)
+    @test modify(+, (a=1, b="", c=2+3im), RecursiveOfType(Real), (a=10, b=20, c=(re=30, im=40))) === (a=11, b="", c=32+43im)
+
+    @test modify(+, (a=1, b="", c=2+3im), RecursiveOfType(Number), (a=10, b=20, c=30+40im)) === (a=11, b="", c=32+43im)
+    @test modify(+, (a=1, b="", c=2+3im), RecursiveOfType(Number, order=:pre), (a=10, b=20, c=30+40im)) === (a=11, b="", c=62+83im)
+
+    end
+end
+
+# @testitem "keyed" begin
+    # or = keyed(RecursiveOfType(Number))
+    # m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    # @test getall(m, or) == (1, 1, 3)
+# end

@@ -4,7 +4,7 @@ struct Children end
 @inline _chooseoptic(obj::AbstractArray, ::Children) = Elements()
 @inline _chooseoptic(obj::AbstractDict, ::Children) = Elements()
 @inline getall(obj, c::Children) = getall(obj, _chooseoptic(obj, c))
-@inline modify(f, obj, c::Children) = modify(f, obj, _chooseoptic(obj, c))
+@inline modify(f, obj, c::Children, objs...) = modify(f, obj, _chooseoptic(obj, c), objs...)
 @inline setall(obj, c::Children, vals) = setall(obj, _chooseoptic(obj, c), vals)
 
 
@@ -94,6 +94,27 @@ _walk_modify(recurse, f, obj, or::RecursiveOfType{Type{OT},Type{RT},ORD}) where 
         end
     elseif obj isa RT
         modify(recurse, obj, or.optic)
+    else
+        obj
+    end
+
+function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}, objb) where {OT,RT}
+    recurse(o, b) = _walk_modify(var"#self#", f, o, or, b)
+    _walk_modify(recurse, f, obj, or, objb)
+end
+_walk_modify(recurse, f, obj, or::RecursiveOfType{Type{OT},Type{RT},ORD}, objb) where {OT,RT,ORD} =
+    if obj isa OT
+        if ORD === Val{nothing} || !(obj isa RT)
+            f(obj, objb)
+        elseif ORD === Val{:pre}
+            modify(recurse, f(obj, objb), or.optic, objb)
+        elseif ORD === Val{:post}
+            f(modify(recurse, obj, or.optic, objb), objb)
+        else
+            error("Unknown order: $ORD")
+        end
+    elseif obj isa RT
+        modify(recurse, obj, or.optic, objb)
     else
         obj
     end
