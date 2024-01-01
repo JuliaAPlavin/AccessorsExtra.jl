@@ -403,7 +403,6 @@ end
     @test_throws Exception setall(m, or, [10, 20, 30])  # setall not supported with dynamic length vectors
 
     m = (a=1, bs=SVector((c=1, d="2"), (c=3, d="xxx")))
-    @test_broken getall(m, or) === SVector(1, 1, 3)
     @test getall(m, or) === (1, 1, 3)
     @test modify(x->x+10, m, or) === (a=11, bs=SVector((c=11, d="2"), (c=13, d="xxx")))
     @test setall(m, or, (10, 20, 30)) === (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
