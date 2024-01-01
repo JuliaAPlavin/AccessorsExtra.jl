@@ -5,7 +5,9 @@ on:
             - main
             - master
         paths:
-          - 'test/notebook.jl'
+          - 'examples/notebook.jl'
+          - 'examples/optimization.jl'
+          - '.github/workflows/ExportPluto.yml'
     workflow_dispatch:
 
 env:
