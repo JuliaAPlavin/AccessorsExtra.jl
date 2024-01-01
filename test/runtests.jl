@@ -306,7 +306,8 @@ end
 end
 
 @testitem "recursive" begin
-    or = RecursiveOfType(out=(Number,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
+    AccessorsExtra.@allinferred modify begin
+    or = RecursiveOfType(out=Number, recurse=Union{Tuple,Vector,NamedTuple}, optic=Elements())
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 1, 3)
@@ -314,7 +315,7 @@ end
     @test @inferred(getall(m, o)) == getall(m, or)
     @test setall(m, o, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @test_broken @inferred(setall(m, o, (10, 20, 30))) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
-    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
 
     m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
     o = unrecurcize(or, typeof(m))
@@ -322,16 +323,16 @@ end
     @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
     @test setall(m, o, [10, 20, 30]) == (a=10, bs=[(c=20, d="2"), (c=30, d="xxx")])
     @test @inferred(getall(m, o)) == getall(m, or)
-    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-    or = RecursiveOfType(out=(NamedTuple,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
+    or = RecursiveOfType(out=NamedTuple, recurse=Union{Tuple, Vector, NamedTuple}, optic=Elements())
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
     @test_broken @inferred(getall(m, o)) == getall(m, or)
     @test getall(m, o) == getall(m, or)
-    @test @inferred(modify(Dict ∘ pairs, m, o)) == modify(Dict ∘ pairs, m, or)
+    @test modify(Dict ∘ pairs, m, o) == modify(Dict ∘ pairs, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
     o = unrecurcize(or, typeof(m))
@@ -339,13 +340,14 @@ end
     @test getall(m, o) == getall(m, or)
 
     m = (a=1, b=2+3im)
-    or = RecursiveOfType(out=(Real,), optic=∗ₚ)
+    or = RecursiveOfType(out=Real, optic=∗ₚ)
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
     @test @inferred(getall(m, o)) == getall(m, or)
     @test setall(m, o, (10, 20, 30)) == (a=10, b=20+30im)
-    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
+    end
 end
 
 @testitem "context" begin
