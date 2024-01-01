@@ -56,6 +56,23 @@ RecursiveOfType(out::Type{TO}, optic=Children(); recurse::Type{TR}=Any) where {T
 
 OpticStyle(::Type{<:RecursiveOfType}) = ModifyBased()
 
+# straightforward implementation, but suffers from recursion inference limits:
+# function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
+#     if obj isa OT && obj isa RT
+#         f(modify(obj, or.optic) do part
+#             modify(f, part, or)
+#         end)
+#     elseif obj isa RT
+#         modify(obj, or.optic) do part
+#             modify(f, part, or)
+#         end
+#     elseif obj isa OT
+#         f(obj)
+#     else
+#         obj
+#     end
+# end
+
 # see https://github.com/FluxML/Functors.jl/pull/61 for the approach and its discussion
 function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
     recurse(o) = _walk_modify(var"#self#", f, o, or)
