@@ -7,6 +7,7 @@ import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBa
 using DataPipes
 using ConstructionBase
 using InverseFunctions
+using LinearAlgebra: norm
 using Accessors: MacroTools
 
 export
@@ -17,7 +18,7 @@ export
     @replace, @push, @pushfirst, @pop, @popfirst,
     construct, @construct,
     RecursiveOfType,
-    keyed, enumerated, selfcontext,
+    keyed, enumerated, selfcontext, stripcontext,
     maybe, osomething, oget, hasoptic,
     modifying, onget, onset, ongetset,
     FlexIx,
@@ -73,6 +74,9 @@ Accessors.IndexLens(::Tuple{Elements}) = Elements()
 Accessors.IndexLens(::Tuple{Properties}) = Properties()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
+Base.show(io::IO, ::Elements) = print(io, "∗")
+Base.show(io::IO, ::Properties) = print(io, "∗ₚ")
+Base.show(io::IO, ::MIME"text/plain", optic::Union{Elements,Properties}) = show(io, optic)
 
 
 struct ⩓{F,G}
@@ -123,6 +127,8 @@ end
 ongetset(f) = onget(f) ∘ onset(f)
 
 
+# should probably try to upstream:
 set(obj, o::Base.Fix1{typeof(in)}, val::Bool) = val ? union(obj, (o.x,)) : setdiff(obj, (o.x,))
+set(obj, ::typeof(splat(atan)), val) = @set Tuple(obj) = norm(obj) .* (sin(val), cos(val))
 
 end

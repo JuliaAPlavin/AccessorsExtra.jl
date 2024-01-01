@@ -100,6 +100,13 @@ end
         @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
     end
     @test setall(obj, o, (:a, :b, :c)) == (a=:a, bs=[(c=:b, d=3), (c=:c, d=5)])
+
+    @test getall((1,2), ++()) === (;)
+    @test setall((1,2), ++(), ()) === (1,2)
+    @test setall((1,2), AccessorsExtra.ConcatOptics((;)), (;)) === (1,2)
+    @test getall((1,2), ++() ∘ identity) === ()
+    @test setall((1,2), ++() ∘ identity, ()) === (1,2)
+    @test setall((1,2), AccessorsExtra.ConcatOptics((;)) ∘ identity, (;)) === (1,2)
 end
 
 @testitem "concat container" begin
@@ -438,6 +445,9 @@ end
     o = Elements() ⨟ keyed(Elements())
     @test map(x -> (x.ctx, x.v), getall(obj, o)) == ((:a, 'a'), (:a, 'b'), (:a, 'c'))
     @test modify(((i, v),) -> v, obj, o) == obj
+    o = Elements() ⨟ keyed(Properties())
+    @test map(x -> (x.ctx, x.v), getall(obj, o)) == ((:a, 'a'), (:a, 'b'), (:a, 'c'))
+    @test modify(((i, v),) -> v, obj, o) == obj
     end
 
     o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)
@@ -511,6 +521,24 @@ end
         [(a = 1, bs = [(1, :bs, 1, 10), (1, :bs, 2, 11), (1, :bs, 3, 12)]), (a = 2, bs = [(2, :bs, 1, 20), (2, :bs, 2, 21)])]
 end
 
+@testitem "stripcontext" begin
+    using AccessorsExtra: decompose, ConcatOptics
+    (==ᶠ(x::T, y::T) where {T}) = x === y
+    ==ᶠ(x, y) = all(filter(!=(identity), decompose(x)) .==ᶠ filter(!=(identity), decompose(y)))
+    ==ᶠ(x::ConcatOptics, y::ConcatOptics) = all(x.optics .==ᶠ y.optics)
+
+    @test stripcontext((a=1, b=:x)) === (a=1, b=:x)
+    @test stripcontext(AccessorsExtra.ValWithContext(1, 2)) === 2
+    @test stripcontext(keyed(Elements())) ==ᶠ Elements()
+    @test stripcontext(keyed(Elements()) ∘ @optic(_.a)) ==ᶠ Elements() ∘ @optic(_.a)
+    @test stripcontext(keyed(Elements()) ∘ @optic(_.a) ∘ @optic(_.b)) ==ᶠ Elements() ∘ @optic(_.a) ∘ @optic(_.b)
+    @test stripcontext(Elements() ∘ keyed(Elements()) ∘ @optic(_.a) ∘ @optic(convert(Int, _) + 1)) ==ᶠ Elements() ∘ Elements() ∘ @optic(_.a) ∘ @optic(convert(Int, _) + 1)
+    @test stripcontext((keyed(@optic(_.a)) ++ keyed(@optic(_.b))) ∘ @optic(_[∗].a)ᵢ) ==ᶠ (@optic(_.a) ++ @optic(_.b)) ∘ @optic(_[∗].a)
+    @test stripcontext(Elements() ∘ selfcontext(r -> r.total) ∘ @optic(_.x)) ==ᶠ Elements() ∘ @optic(_.x)
+    re = r"\d+"
+    @test stripcontext(@optic(eachmatch(re, _)) ∘ enumerated(Elements()) ∘ @optic(parse(Int, _.match))) ==ᶠ @optic(eachmatch(re, _)) ∘ Elements() ∘ @optic(parse(Int, _.match))
+end
+
 @testitem "PartsOf" begin
     x = (a=((b=1,), (b=2,), (b=3,)), c=4)
     @test (@optic _.a[∗].b |> PartsOf())(x) == (1, 2, 3)
@@ -582,7 +610,10 @@ end
     @test @popfirst(obj.b) == (a=1, b=(3,))
 end
 
-@testitem "in" begin
+@testitem "base optics" begin
+    using StaticArrays
+    using LinearAlgebra: norm
+
     x = [1, 2, 3]
     @test (@set (2 in $x) = false) == [1, 3]
     @test (@set (5 in $x) = true) == [1, 2, 3, 5]
@@ -590,6 +621,11 @@ end
     Accessors.test_getset_laws(@optic(5 in _), [1,2,3], false, true)
     Accessors.test_getset_laws(@optic(2 in _), Set([1,2,3]), false, true)
     Accessors.test_getset_laws(@optic(5 in _), Set([1,2,3]), false, true)
+
+    ≈ₜ(x::T, y::T) where {T} = all(x .≈ y)
+    Accessors.test_getset_laws(@optic(atan(_...)), (1., 2.), 1.2, 3.4; cmp=(≈ₜ))
+    Accessors.test_getset_laws(@optic(atan(_...)), [1., 2.], 1.2, 3.4; cmp=(≈ₜ))
+    Accessors.test_getset_laws(@optic(atan(_...)), SVector(1., 2.), 1.2, 3.4; cmp=(≈ₜ))
 end
 
 @testitem "on get/set" begin
@@ -677,14 +713,19 @@ end
         test_construct_laws(NamedTuple, @optic(_.a) => 1)
         test_construct_laws(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "")
 
-        test_construct_laws(SVector{0})
-        test_construct_laws(SVector{1}, only => 2)
-        test_construct_laws(SVector{1}, first => 3)
-        test_construct_laws(SVector{1}, last => 4)
-        test_construct_laws(SVector{2}, first => 4, last => 5)
-        test_construct_laws(SVector{2}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
-        test_construct_laws(SVector{2,Float64}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
-        test_construct_laws(SVector{2,Float32}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
+        @testset for T in (Tuple{}, SVector{0}, SVector{0,String})
+            test_construct_laws(T)
+        end
+        @testset for T in (Tuple{Any}, Tuple{Int}, Tuple{Float32}, Tuple{Real}, SVector{1}, SVector{1,Int}, SVector{1,Float64})
+            test_construct_laws(T, only => 2)
+            test_construct_laws(T, first => 3)
+            test_construct_laws(T, last => 4)
+        end
+        @testset for T in (Tuple{Any,Any}, Tuple{Float64,Float32}, Tuple{Real,Real}, SVector{2}, SVector{2,Float32}, SVector{2,Float64})
+            test_construct_laws(T, first => 4, last => 5)
+            test_construct_laws(T, norm => 3, @optic(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
+            test_construct_laws(T, norm => 3, @optic(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
+        end
     end
 
     @testset "macro" begin
@@ -743,6 +784,14 @@ end
     s = StructArray(([1, 2, 3],))
     @test setproperties(s, (10:12,))::StructArray == StructArray((10:12,))
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
+end
+
+@testitem "domainsets" begin
+    using DomainSets; using DomainSets: ×
+    using StaticArrays
+
+    Accessors.test_getset_laws(components, (1..2) × (2..5), SVector((10.0..20.0), (1..0)), SVector((-1..1) × (0..2)))
+    # Accessors.test_getset_laws(components, (1..2) × (2..5), ((10.0..20.0), (1..0)), ((-1..1) × (0..2)))
 end
 
 @testitem "getfield" begin

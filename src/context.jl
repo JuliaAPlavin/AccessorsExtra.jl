@@ -15,6 +15,7 @@ Base.first(ix::ValWithContext) = ix.ctx
 Base.last(ix::ValWithContext) = ix.v
 Base.iterate(ix::ValWithContext, args...) = iterate(ix.ctx => ix.v, args...)
 Base.show(io::IO, ix::ValWithContext) = print(io, ix.ctx, " ⇒ ", ix.v)
+stripcontext(ix::ValWithContext) = stripcontext(ix.v)
 
 struct MultiContext{CS}
     contexts::CS
@@ -33,6 +34,7 @@ Base.iterate(ctx::MultiContext, args...) = iterate(ctx.contexts, args...)
 struct _ContextValOnly{C} <: ContextOptic
     ctx::C
 end
+stripcontext(o::_ContextValOnly) = identity
 (o::_ContextValOnly)(obj) = ValWithContext(o.ctx, obj)
 set(obj, o::_ContextValOnly, v) = _unpack_val(v, o(obj).ctx)
 _unpack_val(x, i) = x
@@ -42,6 +44,7 @@ _unpack_val(x::ValWithContext, i) = (@assert x.ctx == i; x.v)
 struct Keyed{O} <: ContextOptic
     o::O
 end
+stripcontext(o::Keyed) = stripcontext(o.o)
 OpticStyle(::Type{Keyed{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Keyed) = print(io, "keyed(", co.o, ")")
 
@@ -51,6 +54,7 @@ keyed(o::PropertyLens{p}) where {p} = _ContextValOnly(p) ∘ o
 struct Enumerated{O} <: ContextOptic
     o::O
 end
+stripcontext(o::Enumerated) = stripcontext(o.o)
 OpticStyle(::Type{Enumerated{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Enumerated) = print(io, "enumerated(", co.o, ")")
 
@@ -59,6 +63,7 @@ enumerated(o) = Enumerated(o)
 struct SelfContext{F} <: ContextOptic
     f::F
 end
+stripcontext(o::SelfContext) = identity
 OpticStyle(::Type{<:SelfContext}) = ModifyBased()
 Base.show(io::IO, co::SelfContext) = print(io, "selfcontext(", co.f, ")")
 selfcontext(f=identity) = SelfContext(f)
@@ -70,6 +75,7 @@ getall(obj, o::SelfContext) = (o(obj),)
 
 getall(obj, ::Enumerated{Elements}) = map(ValWithContext, _1indices(obj), values(obj))
 getall(obj, ::Keyed{Elements}) = map(ValWithContext, _keys(obj), values(obj))
+getall(obj, ::Keyed{Properties}) = getall(getproperties(obj), keyed(Elements()))
 
 # needs to call modify(obj, Elements()) and not map(...): only the former works for regex optics
 function modify(f, obj, ::Enumerated{Elements})
@@ -95,10 +101,12 @@ modify(f, obj::NamedTuple{KS}, ::Keyed{Elements}) where {KS} = @p let
         NamedTuple{KS}(__)
 end
 
+modify(f, obj, ::Keyed{Properties}) = modify(f, obj, keyed(Elements()) ∘ getproperties)
 
 struct KeepContext{O} <: ContextOptic
     o::O
 end
+stripcontext(o::KeepContext) = stripcontext(o.o)
 
 export ᵢ
 const ᵢ = Val(:ᵢ)
@@ -138,6 +146,12 @@ modify(f, obj::ValWithContext, o::KeepContext) =
     else
         modify(f, obj.v, _ContextValOnly(obj.ctx) ∘ o.o)
     end
+
+
+
+stripcontext(o::ComposedFunction) = @modify(stripcontext, decompose(o)[∗])
+stripcontext(o::ConcatOptics) = @modify(stripcontext, o.optics[∗])
+stripcontext(o) = o
 
 
 # helpers:

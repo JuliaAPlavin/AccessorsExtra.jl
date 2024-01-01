@@ -1,7 +1,7 @@
 name = "AccessorsExtra"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
 authors = ["Alexander Plavin <alexander@plav.in>"]
-version = "0.1.43"
+version = "0.1.44"
 
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
@@ -9,11 +9,13 @@ CompositionsBase = "a33af91c-f02d-484b-be07-31d278c5ca2b"
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 DataPipes = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
 InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [weakdeps]
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -21,6 +23,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [extensions]
 DictionariesExt = "Dictionaries"
 DistributionsExt = "Distributions"
+DomainSetsExt = "DomainSets"
 StaticArraysExt = "StaticArrays"
 StructArraysExt = "StructArrays"
 TestExt = "Test"
@@ -32,6 +35,7 @@ ConstructionBase = "1.5.1"
 DataPipes = "0.3.5"
 Dictionaries = "0.3"
 Distributions = "0.25"
+DomainSets = "0.6.6"
 InverseFunctions = "0.1.7"
 Reexport = "1.2.2"
 StaticArrays = "1.5.6"

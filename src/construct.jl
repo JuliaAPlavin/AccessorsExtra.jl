@@ -1,31 +1,27 @@
 function construct end
 
-function construct(::Type{T}, x::Pair{PropertyLens{:re}}, y::Pair{PropertyLens{:im}}) where {T <: Complex}
-    T(last(x), last(y))
+construct(::Type{T}, (_,x)::Pair{PropertyLens{:re}}, (_,y)::Pair{PropertyLens{:im}}) where {T<:Complex} = T(x, y)
+
+function construct(::Type{T}, (_,x)::Pair{typeof(abs)}, (_,y)::Pair{typeof(angle)}) where {T<:Complex}
+    @assert x >= zero(x)
+    convert(T, cis(y) * x)
 end
 
-function construct(::Type{T}, x::Pair{typeof(abs)}, y::Pair{typeof(angle)}) where {T <: Complex}
-    @assert last(x) >= zero(last(x))
-    convert(T, cis(last(y)) * last(x))
-end
+construct(::Type{T}, (_,x)::Pair{typeof(only)}) where {T<:Union{Tuple,Set}} = T((x,))
+construct(::Type{T}, (_,x)::Pair{typeof(only)}) where {T<:Vector} = convert(T, [x])
+construct(::Type{NamedTuple{KS}}, (_,x)::Pair{typeof(only)}) where {KS} = NamedTuple{KS}((x,))
 
-function construct(::Type{T}, x::Pair{typeof(only)}) where {T <: Union{Tuple,Set}}
-    T((last(x),))
-end
-
-function construct(::Type{T}, x::Pair{typeof(only)}) where {T <: Vector}
-    convert(T, [last(x)])
-end
-
-function construct(::Type{NamedTuple{KS}}, x::Pair{typeof(only)}) where {KS}
-    NamedTuple{KS}((last(x),))
-end
-
-function construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}})
+construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
     foldl(args; init=(;)) do acc, a
         insert(acc, first(a), last(a))
     end
-end
+
+construct(T::Type{Tuple{}})::T = T()
+construct(T::Type{<:Tuple{Any}}, (_, x)::Pair{typeof(only)})::T = T(x)
+construct(T::Type{<:Tuple{Any}}, (_, x)::Pair{typeof(first)})::T = T(x)
+construct(T::Type{<:Tuple{Any}}, (_, x)::Pair{typeof(last)})::T = T(x)
+construct(T::Type{<:Tuple{Any,Any}}, (_, x)::Pair{typeof(first)}, (_, y)::Pair{typeof(last)})::T = constructorof(T)(x, y)
+construct(T::Type{<:Tuple{Any,Any}}, (_, n)::Pair{typeof(norm)}, (_, a)::Pair{typeof(splat(atan))})::T = constructorof(T)((n .* sincos(a))...)
 
 
 function construct(T, args::Vararg{Pair})

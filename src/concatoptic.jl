@@ -48,6 +48,13 @@ function setall(obj, co::ConcatOptics{<:Tuple}, vals)
     end
 end
 
+setall(obj, co::ConcatOptics{<:NamedTuple}, vals) = 
+    if isempty(vals)
+        setall(obj, co, (;))
+    else
+        error("setall for ConcatOptic{<:NamedTuple}: expected NamedTuple as values, got $(typeof(vals))")
+    end
+
 function setall(obj, co::ConcatOptics{<:NamedTuple}, vals::NamedTuple{KS}) where {KS}
     foreach(NamedTuple{KS}(co.optics), vals) do o, vss
         @assert length(getall(obj, o)) == 1
@@ -109,6 +116,13 @@ function process_optic₊(ex)
     end
 end
 
+
+# ConcatOptic - the only optic with getall()::NamedTuple (?)
+# requires these:
+Accessors._staticlength(::NamedTuple{KS}) where {KS} = Val(length(KS))
+Accessors._concat(a::Tuple, b::NamedTuple) = (a..., b...)
+Accessors._concat(a::NamedTuple, b::Tuple) = (a..., b...)
+Accessors._concat(a::NamedTuple, b::NamedTuple) = (a..., b...)
 
 
 # works? but not sure if it's useful ie better than just using ++
