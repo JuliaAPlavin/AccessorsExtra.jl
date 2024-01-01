@@ -862,6 +862,14 @@ end
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
 end
 
+@testitem "uris" begin
+    using URIs
+
+    uri = URI("https://google.com/user?key=value")
+    @test (@set uri.host = "github.com") == URI("https://github.com/user?key=value")
+    @test (@set uri.path = "/abc/def") == URI("https://google.com/abc/def?key=value")
+end
+
 @testitem "staticarrays" begin
     using StaticArrays
 
