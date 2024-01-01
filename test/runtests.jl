@@ -536,6 +536,15 @@ end
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
 
+@testitem "push/pop/???" begin
+    obj = (a=1, b=(2, 3))
+    @test @push(obj.b, 4) == (a=1, b=(2, 3, 4))
+    @test @pushfirst(obj.b, 4) == (a=1, b=(4, 2, 3))
+    # these return obj, as in StaticArrays:
+    @test @pop(obj.b) == (a=1, b=(2,))
+    @test @popfirst(obj.b) == (a=1, b=(3,))
+end
+
 @testitem "construct" begin
     ==ₜ(_, _) = false
     ==ₜ(x::T, y::T) where T = x == y

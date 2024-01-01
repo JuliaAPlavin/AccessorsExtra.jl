@@ -14,7 +14,7 @@ export
     ∗, ∗ₚ, PartsOf,
     ⩓, ⩔,
     concat, ++, @optics, @optic₊,
-    @replace,
+    @replace, @push, @pushfirst, @pop, @popfirst,
     construct, @construct,
     RecursiveOfType,
     keyed, enumerated, selfcontext,
@@ -35,6 +35,7 @@ include("partsof.jl")
 include("funclenses.jl")
 include("regex.jl")
 include("replace.jl")
+include("moremacros.jl")
 include("construct.jl")
 include("bystep.jl")
 include("optimization.jl")
