@@ -259,7 +259,16 @@ end
     @test set((c=1, b=2), o, 10) == (c=1, b=10)
     @test_throws "no optic" set((c=1,), o, 10)
 
-    # get(...) - needs Base.Fix3
+
+    @testset for o in ((@optic get(_, :a, 0)), (@optic get(() -> 0, _, :a)))
+        @test o((a=1, b=2)) == 1
+        @test o((c=1, b=2)) == 0
+        @test set(Dict(:a=>1, :b=>2), o, 10) == Dict(:a=>10, :b=>2)
+        @test set(Dict(:c=>1, :b=>2), o, 10) == Dict(:c=>1, :b=>2, :a=>10)
+        @test modify(x->x+1, Dict(:a=>1, :b=>2), o) == Dict(:a=>2, :b=>2)
+        @test modify(x->x+1, Dict(:c=>1, :b=>2), o) == Dict(:a=>1, :c=>1, :b=>2)
+    end
+
 
     o = maybe(@optic _[2]) ∘ @optic(_.a)
     @test o((a=[1, 2],)) == 2
@@ -353,6 +362,7 @@ end
     @test oget(Returns(123), (;), o) == 123
 
     # specify default value in maybe() - semantic not totally clear...
+    # also see get(...) above
     # o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
     # @test o((a=[1, 2],)) == 2
     # @test o((a=[1],)) == 10
