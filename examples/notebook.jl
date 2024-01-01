@@ -198,7 +198,7 @@ BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
-AccessorsExtra = "~0.1.30"
+AccessorsExtra = "~0.1.31"
 BenchmarkTools = "~1.3.2"
 PlutoUI = "~0.7.50"
 """
@@ -209,7 +209,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.0-rc1"
 manifest_format = "2.0"
-project_hash = "e48914441617a38c36ba195f90ba178f4c8016a5"
+project_hash = "81ae6a4f1e84c0bb27fe6677c02a3001e719656c"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -237,9 +237,9 @@ version = "0.1.28"
 
 [[deps.AccessorsExtra]]
 deps = ["Accessors", "ConstructionBase", "DataPipes", "InverseFunctions", "Reexport", "Requires"]
-git-tree-sha1 = "ae180ac08419036da9a5066a9c7d5e9cf3fe5022"
+git-tree-sha1 = "6a210d0025c4fa7a0037386bebd6ec48f99839dd"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
-version = "0.1.30"
+version = "0.1.31"
 
     [deps.AccessorsExtra.extensions]
     DictionariesExt = "Dictionaries"
@@ -524,9 +524,9 @@ deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.Tricks]]
-git-tree-sha1 = "6bac775f2d42a611cdfcd1fb217ee719630c4175"
+git-tree-sha1 = "aadb748be58b492045b4f56166b5188aa63ce549"
 uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
-version = "0.1.6"
+version = "0.1.7"
 
 [[deps.URIs]]
 git-tree-sha1 = "074f993b0ca030848b897beff716d93aca60f06a"
