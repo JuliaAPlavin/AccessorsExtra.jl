@@ -23,7 +23,7 @@ function Accessors.setall(obj, co::ConcatOptics, vals)
         Accessors._staticlength(getall(obj, o))
     end
     vs = Accessors.to_nested_shape(vals, Val(lengths), Val(2))
-    foldl(zip(co.optics, vs); init=obj) do obj, (o, vss)
+    foldl(map(tuple, co.optics, vs); init=obj) do obj, (o, vss)
         setall(obj, o, vss)
     end
 end
