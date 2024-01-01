@@ -1,4 +1,13 @@
-"""    RecursiveOfType(out, optic; [recurse=Any])
+struct Children end
+OpticStyle(::Type{<:Children}) = ModifyBased()
+_chooseoptic(obj, ::Children) = Properties()
+_chooseoptic(obj::AbstractArray, ::Children) = Elements()
+getall(obj, c::Children) = getall(obj, _chooseoptic(obj, c))
+modify(f, obj, c::Children) = modify(f, obj, _chooseoptic(obj, c))
+setall(obj, c::Children, vals) = setall(obj, _chooseoptic(obj, c), vals)
+
+
+"""    RecursiveOfType(out::Type, [optic=Children()]; [recurse::Type=Any])
 """
 struct RecursiveOfType{OT,RT,O}
     outtypes::OT
@@ -6,7 +15,7 @@ struct RecursiveOfType{OT,RT,O}
     optic::O
 end
 Broadcast.broadcastable(o::RecursiveOfType) = Ref(o)
-RecursiveOfType(out::Type{TO}, optic=Properties(); recurse::Type{TR}=Any) where {TO,TR} =
+RecursiveOfType(out::Type{TO}, optic=Children(); recurse::Type{TR}=Any) where {TO,TR} =
     RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
 
 
