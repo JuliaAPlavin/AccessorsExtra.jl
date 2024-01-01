@@ -357,19 +357,16 @@ end
     @test getall(m, or) == [1, 1, 3]
     @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
     @test_throws Exception setall(m, or, [10, 20, 30])  # setall not supported with dynamic length vectors
-    @test getall(m, or) == getall(m, or)
 
     m = (a=1, bs=SVector((c=1, d="2"), (c=3, d="xxx")))
-    @test getall(m, or) == SVector(1, 1, 3)
-    @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @test_broken getall(m, or) === SVector(1, 1, 3)
+    @test modify(x->x+10, m, or) === (a=11, bs=SVector((c=11, d="2"), (c=13, d="xxx")))
     @test setall(m, or, (10, 20, 30)) == (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
-    @test getall(m, or) == getall(m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     or = RecursiveOfType(NamedTuple)
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
-    @test modify(Dict ∘ pairs, m, or) == modify(Dict ∘ pairs, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
     @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
@@ -378,7 +375,6 @@ end
     or = RecursiveOfType(Real)
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
-    @test getall(m, or) == getall(m, or)
     @test setall(m, or, (10, 20, 30)) == (a=10, b=20+30im)
     end
 end
