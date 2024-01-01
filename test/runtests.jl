@@ -1043,6 +1043,15 @@ end
     w = W(2)
     @test w.x === 2.0
     @test_broken set(w, (@o getfield(_, :x)), 10).x === 10.0
+
+    struct V{T,N}
+        x::T
+    end
+    V(x) = V{typeof(x), x}(x)
+
+    v = V(2)
+    @test v.x === 2
+    @test set(v, (@o getfield(_, :x)), 10).x === 10
 end
 
 @testitem "view" begin

@@ -55,7 +55,10 @@ Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view), <:Integer}, val:
     @assert fieldnames(T) == KS
     # assume that constructorof(T)(val...) gives the correct type
     # construct this type with specified field values
-    newT = :(Core.Compiler.return_type(constructorof(T), $VS))
+    newT = quote
+        newT = Core.Compiler.return_type(constructorof(T), $VS)
+        isconcretetype(newT) ? newT : typeof(constructorof(T)(val...))
+    end
     return Expr(:new, newT, map(k -> :(val.$k), KS)...)
     # return Expr(:new, :(Core.Compiler.return_type(constructorof(T), Tuple{typeof.(values(val))...})), map(k -> :(val.$k), KS)...)
 end
