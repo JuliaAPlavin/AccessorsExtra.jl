@@ -17,7 +17,7 @@ UnionCollections = "ea2a18ed-132b-4398-a457-2ce4804e5c00"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-Aqua = "0.6"
+Aqua = "0.7"
 CompatHelperLocal = "0.1.24"
 Dictionaries = "0.3.21"
 Distributions = "0.25"
