@@ -511,6 +511,24 @@ end
         [(a = 1, bs = [(1, :bs, 1, 10), (1, :bs, 2, 11), (1, :bs, 3, 12)]), (a = 2, bs = [(2, :bs, 1, 20), (2, :bs, 2, 21)])]
 end
 
+@testitem "stripcontext" begin
+    using AccessorsExtra: decompose, ConcatOptics
+    (==ᶠ(x::T, y::T) where {T}) = x === y
+    ==ᶠ(x, y) = all(filter(!=(identity), decompose(x)) .==ᶠ filter(!=(identity), decompose(y)))
+    ==ᶠ(x::ConcatOptics, y::ConcatOptics) = all(x.optics .==ᶠ y.optics)
+
+    @test stripcontext((a=1, b=:x)) === (a=1, b=:x)
+    @test stripcontext(AccessorsExtra.ValWithContext(1, 2)) === 2
+    @test stripcontext(keyed(Elements())) ==ᶠ Elements()
+    @test stripcontext(keyed(Elements()) ∘ @optic(_.a)) ==ᶠ Elements() ∘ @optic(_.a)
+    @test stripcontext(keyed(Elements()) ∘ @optic(_.a) ∘ @optic(_.b)) ==ᶠ Elements() ∘ @optic(_.a) ∘ @optic(_.b)
+    @test stripcontext(Elements() ∘ keyed(Elements()) ∘ @optic(_.a) ∘ @optic(convert(Int, _) + 1)) ==ᶠ Elements() ∘ Elements() ∘ @optic(_.a) ∘ @optic(convert(Int, _) + 1)
+    @test stripcontext((keyed(@optic(_.a)) ++ keyed(@optic(_.b))) ∘ @optic(_[∗].a)ᵢ) ==ᶠ (@optic(_.a) ++ @optic(_.b)) ∘ @optic(_[∗].a)
+    @test stripcontext(Elements() ∘ selfcontext(r -> r.total) ∘ @optic(_.x)) ==ᶠ Elements() ∘ @optic(_.x)
+    re = r"\d+"
+    @test stripcontext(@optic(eachmatch(re, _)) ∘ enumerated(Elements()) ∘ @optic(parse(Int, _.match))) ==ᶠ @optic(eachmatch(re, _)) ∘ Elements() ∘ @optic(parse(Int, _.match))
+end
+
 @testitem "PartsOf" begin
     x = (a=((b=1,), (b=2,), (b=3,)), c=4)
     @test (@optic _.a[∗].b |> PartsOf())(x) == (1, 2, 3)
