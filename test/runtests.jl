@@ -465,18 +465,6 @@ end
     @test modify(-, [(a=1,)], o) == [(a=-3,)]
 end
 
-@testitem "tmp" begin
-    data = [
-        (a=1, bs=[10, 11, 12]),
-        (a=2, bs=[20, 21]),
-    ]
-    @test_throws "not supported" delete(data, @optic _[∗].bs[∗] |> If(isodd))
-    @test delete(data, @optic _[∗].bs |> filter(isodd, _)) == [(a = 1, bs = [10, 12]), (a = 2, bs = [20])]
-    @test delete(data, @optic _[∗].bs |> filter(x -> x > 15, _)) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = [])]
-    # @test modify(b -> b < 15 ? b : nothing, data, @optic(_[∗].bs |> Wither())) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = Nothing[])]
-    # @test modify(b -> b < 15 ? b : nothing, data, @optic _ |> Wither() |> _.bs |> Wither()) == [(a = 1, bs = [10, 11, 12])]
-end
-
 @testitem "replace" begin
     nt = (a=1, b=:x)
     AccessorsExtra.@allinferred _replace begin
@@ -612,6 +600,16 @@ end
 
     @test modify(cumsum, [5, 1, 4, 2, 3], sort) == [15, 1, 10, 3, 6]
     @test modify(cumsum, [4, 1, 4, 2, 3], sort) == [10, 1, 14, 3, 6]
+
+    data = [
+        (a=1, bs=[10, 11, 12]),
+        (a=2, bs=[20, 21]),
+    ]
+    @test_throws "not supported" delete(data, @optic _[∗].bs[∗] |> If(isodd))
+    @test delete(data, @optic _[∗].bs |> filter(isodd, _)) == [(a = 1, bs = [10, 12]), (a = 2, bs = [20])]
+    @test delete(data, @optic _[∗].bs |> filter(x -> x > 15, _)) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = [])]
+    # @test modify(b -> b < 15 ? b : nothing, data, @optic(_[∗].bs |> Wither())) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = Nothing[])]
+    # @test modify(b -> b < 15 ? b : nothing, data, @optic _ |> Wither() |> _.bs |> Wither()) == [(a = 1, bs = [10, 11, 12])]
 end
 
 @testitem "keys, values, pairs" begin

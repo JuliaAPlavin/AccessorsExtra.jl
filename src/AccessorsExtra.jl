@@ -92,4 +92,8 @@ Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 Accessors.IndexLens(::Tuple{typeof(∗ₚ)}) = Properties()
 Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
 
+
+delete(obj, o::If) = error("`delete(obj, ::If)` not supported, try using `filter` as an optic instead")
+delete(obj, o::Base.Fix1{typeof(filter)}) = filter(!o.x, obj)
+
 end
