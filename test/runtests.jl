@@ -315,8 +315,10 @@ end
 end
 
 @testitem "All()" begin
-    o = @optic _.a[∗].b
     x = (a=((b=1,), (b=2,), (b=3,)), c=4)
+    @test (@optic _.a[∗].b |> All())(x) == (1, 2, 3)
+    @test (@optic _.a[∗].b |> All() |> length)(x) == 3
+    o = @optic _.a[∗].b
     @test getall(x, o) == (o ⨟ All())(x) == (1, 2, 3)
     o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ All()
     @test modify(reverse, x, o) == (a=((b=4,), (b=3,), (b=2,)), c=1)

@@ -134,5 +134,6 @@ set(obj, o::_AllOptic, val) = setall(obj, o.o, val)
 Base.:∘(i::All, o) = _AllOptic(o)
 Base.:∘(i::_AllOptic, o) = _AllOptic(i.o ∘ o)
 Base.:∘(c::ComposedFunction{<:Any, <:All}, o) = c.outer ∘ _AllOptic(o)
+Base.:∘(c::ComposedFunction{<:Any, <:_AllOptic}, o) = c.outer ∘ _AllOptic(c.inner.o ∘ o)
 
 end
