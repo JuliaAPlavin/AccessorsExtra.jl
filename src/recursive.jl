@@ -3,22 +3,54 @@ struct RecursiveOfType
     rectypes
     optic
 end
-RecursiveOfType(; out, recurse, optic) = RecursiveOfType(out, recurse, optic)
+RecursiveOfType(; out, recurse=(Any,), optic) = RecursiveOfType(out, recurse, optic)
+
+Accessors.OpticStyle(::Type{<:RecursiveOfType}) = Accessors.ModifyBased()
+
+function Accessors.modify(f, obj, or::RecursiveOfType)
+    modified = if any(t -> obj isa t, or.rectypes)
+        modify(obj, or.optic) do o
+            modify(f, o, or)
+        end
+    else
+        obj
+    end
+    # check cond(cur) == cond(obj) somewhere?
+    cur = any(t -> obj isa t, or.outtypes) ? f(modified) : modified
+end
+
+function Accessors.getall(obj, or::RecursiveOfType)
+    res_inner = if any(t -> obj isa t, or.rectypes)
+        map(getall(obj, or.optic)) do o
+            getall(o, or)
+        end |> _reduce_concat
+    else
+        ()
+    end
+    res_cur = any(t -> obj isa t, or.outtypes) ? (obj,) : ()
+    return Accessors._concat(res_inner, res_cur)
+end
+
 
 function unrecurcize(or::RecursiveOfType, ::Type{T}) where {T}
     TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
-    if TS <: Tuple
+    res_optic = if TS == Union{} || !isconcretetype(TS)
+        error("Cannot recurse on $T |> $(or.optic): got $TS")
+    elseif TS <: Tuple
         map(enumerate(fieldtypes(TS))) do (i, ET)
-            any(rt -> ET <: rt, or.rectypes) ? unrecurcize(or, ET) :
             any(rt -> ET <: rt, or.outtypes) ? identity :
+            any(rt -> ET <: rt, or.rectypes) ? unrecurcize(or, ET) :
                 EmptyOptic()
         end |> Tuple |> AlongsideOptic
     elseif TS <: AbstractVector
         ET = eltype(TS)
-        any(rt -> ET <: rt, or.rectypes) ? unrecurcize(or, ET) ∘ Elements() :
         any(rt -> ET <: rt, or.outtypes) ? Elements() :
+        any(rt -> ET <: rt, or.rectypes) ? unrecurcize(or, ET) ∘ Elements() :
             EmptyOptic()
     end
+    any(rt -> T <: rt, or.outtypes) ?
+        res_optic ++ identity :
+        res_optic
 end
 
 

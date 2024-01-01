@@ -146,18 +146,28 @@ end
 end
 
 @testitem "unrecurcize" begin
-    AccessorsExtra.@allinferred getall setall modify begin
-        m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-        or = RecursiveOfType(out=(Number,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
-        o = unrecurcize(or, typeof(m))
-        @test getall(m, o) == (1, 1, 3)
-        @test modify(x->x+10, m, o) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
+    or = RecursiveOfType(out=(Number,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
+    m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == (1, 1, 3)
+    @test modify(x->x+10, m, or) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
+    @test @inferred(getall(m, o)) == getall(m, or)
+    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
 
-        m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
-        o = If(x -> x isa Number) ∘ unrecurcize(or, typeof(m))
-        @test getall(m, o) == [1, 1, 3]
-        @test modify(x->x+10, m, o) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
-    end
+    m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == [1, 1, 3]
+    @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @test @inferred(getall(m, o)) == getall(m, or)
+    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+
+    m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    or = RecursiveOfType(out=(NamedTuple,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
+    @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
+    @test @inferred(getall(m, o)) == getall(m, or)
+    @test @inferred(modify(Dict ∘ pairs, m, o)) == modify(Dict ∘ pairs, m, or)
 end
 
 @testitem "steps" begin
