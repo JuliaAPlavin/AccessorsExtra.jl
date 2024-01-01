@@ -83,14 +83,13 @@ set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
 InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)
 
-# shortcuts, no piracy
+# shortcuts
 const ∗ = Elements()
 const ∗ₚ = Properties()
-
-Accessors.IndexLens(::Tuple{typeof(∗)}) = Elements()
+# some minor piracy:
+Accessors.IndexLens(::Tuple{Elements}) = Elements()
+Accessors.IndexLens(::Tuple{Properties}) = Properties()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
-
-Accessors.IndexLens(::Tuple{typeof(∗ₚ)}) = Properties()
 Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
 
 
