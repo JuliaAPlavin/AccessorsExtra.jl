@@ -18,6 +18,8 @@ function set(obj, lens::FuncValLens, val)
     end
 end
 
+Base.:(==)(a::FuncValLens, b::FuncValLens) = a.args == b.args && a.kwargs == b.kwargs
+
 
 struct FuncResult end
 OpticStyle(::Type{FuncResult}) = ModifyBased()

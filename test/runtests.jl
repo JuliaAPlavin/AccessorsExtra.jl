@@ -65,11 +65,15 @@ end
 
 @testitem "function value setting" begin
     o = @o _("abc")
-    @test o == AccessorsExtra.funcvallens("abc")
+    @test o === AccessorsExtra.funcvallens("abc")
     @test o(reverse) == "cba"
     myrev = set(reverse, o, "!!!")
     @test myrev("abc") == "!!!"
     @test myrev("def") == "fed"
+
+    @test (@o _([])) == AccessorsExtra.funcvallens([])
+    x = []
+    @test (@o _(x)) === AccessorsExtra.funcvallens(x)
 
     f = modify(uppercase, lowercase, first ∘ AccessorsExtra.FuncResult())
     @test f("abc") == "Abc"

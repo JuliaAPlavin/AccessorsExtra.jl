@@ -84,7 +84,7 @@ function parse_obj_optics(ex::Expr)
         f_contains_under && any(args_contain_under) && error("Either the function or the arguments can contain an underscore, not both")
         if f_contains_under
             obj, frontoptic = parse_obj_optics(f)
-            optic = funcvallens(args...)
+            optic = :($funcvallens($(esc.(args)...),))
         elseif length(args) == 1
             arg = only(args)
             if Base.isexpr(arg, :(...))
