@@ -49,6 +49,9 @@ function modify(f, obj, co::ConcatOptics)
 end
 
 delete(obj, os::ConcatOptics) = _foldl(delete, os.optics; init=obj)
+insert(obj, os::ConcatOptics, val) = _foldl(os.optics; init=obj) do obj, o
+    insert(obj, o, val)
+end
 
 function setall(obj, co::ConcatOptics{<:Tuple}, vals)
     lengths = map(co.optics) do o

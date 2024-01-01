@@ -37,6 +37,9 @@ end
 
         @test_broken construct((@o _.a) => 1, (@o _.b[1:3]) => [2, 3, 4]) == (a=1, b=[2, 3, 4])
         @test_broken construct((@o _.b[1:3][∗]) => 2, (@o _.a) => 1) == (b=[2, 2, 2], a=1)
+
+        @test construct((@o _.a) => 1, (@o _.b[1]) => 2, (@o _.b[2]) => 3) === (a=1, b=(2, 3))
+        @test construct((@o _.a) => 1, (@optics _.b[1] _.b[2]) => 2) === (a=1, b=(2, 2))
     end
     @test construct((@o _[1]) => 1, (@o _[2]) => "") === (1, "")
     @test_throws Exception construct((@o _[2]) => 1, (@o _[1]) => "") === (1, "")

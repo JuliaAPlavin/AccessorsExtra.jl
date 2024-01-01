@@ -33,6 +33,9 @@ construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
 
 # neat piece of functionality by itself!
 insert⁺(obj, optic, val) = insert(obj, optic, val)
+insert⁺(obj, os::ConcatOptics, val) = _foldl(os.optics; init=obj) do obj, o
+    insert⁺(obj, o, val)
+end
 insert⁺(obj, optic::ComposedFunction, val) =
     if hasoptic(obj, optic.inner)
         modify(obj, optic.inner) do inner_obj
