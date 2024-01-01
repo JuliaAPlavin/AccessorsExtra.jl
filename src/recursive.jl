@@ -88,7 +88,3 @@ _typelength(::Type{T}) where {T<:AbstractVector} = fieldcount(only(fieldtypes(T)
     @assert _typelength(VT) == cnt
     return expr
 end
-
-function setall(obj::Tuple, ::Properties, vs)
-    setproperties(obj, vs)
-end
