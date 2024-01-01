@@ -7,6 +7,7 @@ import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBa
 using DataPipes
 using ConstructionBase
 using InverseFunctions
+using LinearAlgebra: norm
 using Accessors: MacroTools
 
 export
@@ -128,7 +129,6 @@ ongetset(f) = onget(f) ∘ onset(f)
 
 # should probably try to upstream:
 set(obj, o::Base.Fix1{typeof(in)}, val::Bool) = val ? union(obj, (o.x,)) : setdiff(obj, (o.x,))
-using LinearAlgebra: norm
 set(obj, ::typeof(splat(atan)), val) = @set Tuple(obj) = norm(obj) .* (sin(val), cos(val))
 
 end

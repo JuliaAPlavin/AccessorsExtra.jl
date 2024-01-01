@@ -27,6 +27,13 @@ function construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}})
     end
 end
 
+construct(T::Type{Tuple{}})::T = T()
+construct(T::Type{<:Tuple{Any}}, (_, x)::Pair{typeof(only)})::T = T(x)
+construct(T::Type{<:Tuple{Any}}, (_, x)::Pair{typeof(first)})::T = T(x)
+construct(T::Type{<:Tuple{Any}}, (_, x)::Pair{typeof(last)})::T = T(x)
+construct(T::Type{<:Tuple{Any,Any}}, (_, x)::Pair{typeof(first)}, (_, y)::Pair{typeof(last)})::T = constructorof(T)(x, y)
+construct(T::Type{<:Tuple{Any,Any}}, (_, n)::Pair{typeof(norm)}, (_, a)::Pair{typeof(splat(atan))})::T = constructorof(T)((n .* sincos(a))...)
+
 
 function construct(T, args::Vararg{Pair})
     pargs = @p args |> map(_process_invertible(_[1], _[2]))

@@ -713,14 +713,19 @@ end
         test_construct_laws(NamedTuple, @optic(_.a) => 1)
         test_construct_laws(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "")
 
-        test_construct_laws(SVector{0})
-        test_construct_laws(SVector{1}, only => 2)
-        test_construct_laws(SVector{1}, first => 3)
-        test_construct_laws(SVector{1}, last => 4)
-        test_construct_laws(SVector{2}, first => 4, last => 5)
-        test_construct_laws(SVector{2}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
-        test_construct_laws(SVector{2,Float64}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
-        test_construct_laws(SVector{2,Float32}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
+        @testset for T in (Tuple{}, SVector{0}, SVector{0,String})
+            test_construct_laws(T)
+        end
+        @testset for T in (Tuple{Any}, Tuple{Int}, Tuple{Float32}, Tuple{Real}, SVector{1}, SVector{1,Int}, SVector{1,Float64})
+            test_construct_laws(T, only => 2)
+            test_construct_laws(T, first => 3)
+            test_construct_laws(T, last => 4)
+        end
+        @testset for T in (Tuple{Any,Any}, Tuple{Float64,Float32}, Tuple{Real,Real}, SVector{2}, SVector{2,Float32}, SVector{2,Float64})
+            test_construct_laws(T, first => 4, last => 5)
+            test_construct_laws(T, norm => 3, @optic(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
+            test_construct_laws(T, norm => 3, @optic(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
+        end
     end
 
     @testset "macro" begin
