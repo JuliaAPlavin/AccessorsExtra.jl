@@ -66,6 +66,12 @@ end
         _.c = 123
     end
     @test res == (a=-1, b=[10], c=123)
+    res = @assemble NamedTuple begin
+        _.a = assemble(Complex, @optic(_.re) => -1, @optic(_.im) => 0)
+        _.b = assemble(Vector, only => 10)
+        _.c = 123
+    end
+    @test res == (a=-1, b=[10], c=123)
 end
 
 @testitem "staticarrays" begin
