@@ -19,15 +19,15 @@ export
     RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, osomething, oget, hasoptic,
-    modifying,
+    modifying, onget, onset, ongetset,
     FlexIx,
-    get_steps, logged,
-    OptArgs, OptCons, OptProblemSpec, solobj
+    get_steps, logged
 
 
 include("overrides.jl")
 include("keyvalues.jl")
 include("flexix.jl")
+include("fixargs.jl")
 include("concatoptic.jl")
 include("recursive.jl")
 include("context.jl")
@@ -39,7 +39,6 @@ include("replace.jl")
 include("moremacros.jl")
 include("construct.jl")
 include("bystep.jl")
-include("optimization.jl")
 include("testing.jl")
 
 const var"@o" = var"@optic"
@@ -107,5 +106,23 @@ modifying(mo) = o -> ConstrainedLens(o, mo)
 (c::ConstrainedLens)(x) = c.o(x)
 set(obj::Complex, c::ConstrainedLens{typeof(angle),typeof(real)}, val) = set(obj, c.mo, imag(obj)/tan(val))
 set(obj::Complex, c::ConstrainedLens{typeof(angle),typeof(imag)}, val) = set(obj, c.mo, real(obj)*tan(val))
+
+
+struct onset{F}
+    f::F
+end
+@inline (o::onset)(x) = x
+@inline set(obj, o::onset, val) = o.f(val)
+
+struct onget{F}
+    f::F
+end
+@inline (o::onget)(x) = o.f(x)
+@inline set(obj, o::onget, val) = val
+
+ongetset(f) = onget(f) ∘ onset(f)
+
+
+set(obj, o::Base.Fix1{typeof(in)}, val::Bool) = val ? union(obj, (o.x,)) : setdiff(obj, (o.x,))
 
 end

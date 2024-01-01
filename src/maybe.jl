@@ -63,6 +63,12 @@ oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
 oget(obj, o, default) = hasoptic(obj, o) ? o(obj) : default
 
 
+set(obj, fa::FixArgs{typeof(get), <:Tuple{Placeholder,Any,Any}, <:NamedTuple{()}}, val) =
+    haskey(obj, fa.args[2]) ? set(obj, IndexLens((fa.args[2],)), val) : insert(obj, IndexLens((fa.args[2],)), val)
+set(obj, fa::FixArgs{typeof(get), <:Tuple{Any,Placeholder,Any}, <:NamedTuple{()}}, val) =
+    haskey(obj, fa.args[3]) ? set(obj, IndexLens((fa.args[3],)), val) : insert(obj, IndexLens((fa.args[3],)), val)
+
+
 hasoptic(obj, o::ComposedFunction) = hasoptic(obj, o.inner) && hasoptic(o.inner(obj), o.outer)
 
 hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)

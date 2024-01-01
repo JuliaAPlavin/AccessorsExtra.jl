@@ -28,6 +28,34 @@ end
     @test (1, 10, 2, 3) == @modify(x -> (10, x...), v[FlexIx(2:3)])
 end
 
+@testitem "fixargs" begin
+    AccessorsExtra.@allinferred o begin
+    o = @optic tuple(_)
+    @test o(0) === (0,)
+    o = @optic tuple(1, _)
+    @test o(0) === (1, 0)
+    o = @optic tuple(_, 1)
+    @test o(0) === (0, 1)
+
+    o = @optic tuple(1, 2, _)
+    @test o(0) === (1, 2, 0)
+    o = @optic tuple(1, _, 2)
+    @test o(0) === (1, 0, 2)
+    o = @optic tuple(_, 1, 2)
+    @test o(0) === (0, 1, 2)
+    end
+
+    o = @optic sort(_, by=identity)
+    @test o([-3, 1, 2, 0]) == [-3, 0, 1, 2]
+    o = @optic sort(_, by=abs)
+    @test o([-3, 1, 2, 0]) == [0, 1, 2, -3]
+    @test_broken @eval (@optic sort(_; by=identity))([-3, 1, 2, 0]) == [-3, 0, 1, 2]
+    @test_broken @eval (@optic sort(_; by=abs))([-3, 1, 2, 0]) == [0, 1, 2, -3]
+
+    @test (@optic atan(_...)) === splat(atan)
+    @test (@optic atan(reverse(_)...)) === splat(atan) ∘ reverse
+end
+
 @testitem "concat optics" begin
     @testset for o in (
         @optic(_.a) ++ @optic(_.b),
@@ -234,7 +262,16 @@ end
     @test set((c=1, b=2), o, 10) == (c=1, b=10)
     @test_throws "no optic" set((c=1,), o, 10)
 
-    # get(...) - needs Base.Fix3
+
+    @testset for o in ((@optic get(_, :a, 0)), (@optic get(() -> 0, _, :a)))
+        @test o((a=1, b=2)) == 1
+        @test o((c=1, b=2)) == 0
+        @test set(Dict(:a=>1, :b=>2), o, 10) == Dict(:a=>10, :b=>2)
+        @test set(Dict(:c=>1, :b=>2), o, 10) == Dict(:c=>1, :b=>2, :a=>10)
+        @test modify(x->x+1, Dict(:a=>1, :b=>2), o) == Dict(:a=>2, :b=>2)
+        @test modify(x->x+1, Dict(:c=>1, :b=>2), o) == Dict(:a=>1, :c=>1, :b=>2)
+    end
+
 
     o = maybe(@optic _[2]) ∘ @optic(_.a)
     @test o((a=[1, 2],)) == 2
@@ -328,6 +365,7 @@ end
     @test oget(Returns(123), (;), o) == 123
 
     # specify default value in maybe() - semantic not totally clear...
+    # also see get(...) above
     # o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
     # @test o((a=[1, 2],)) == 2
     # @test o((a=[1],)) == 10
@@ -355,8 +393,9 @@ end
     or = RecursiveOfType(Number)
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     @test getall(m, or) == (1, 1, 3)
-    @test modify(x->x+10, m, or) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
-    @test setall(m, or, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
+    @test modify(x->x+10, m, or) === (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
+    @test setall(m, or, (10, 20, 30)) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
+    @test setall(m, or, [10, 20, 30]) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
 
     m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
     @test getall(m, or) == [1, 1, 3]
@@ -364,19 +403,17 @@ end
     @test_throws Exception setall(m, or, [10, 20, 30])  # setall not supported with dynamic length vectors
 
     m = (a=1, bs=SVector((c=1, d="2"), (c=3, d="xxx")))
-    @test_broken getall(m, or) === SVector(1, 1, 3)
-    @test getall(m, or) == SVector(1, 1, 3)
+    @test getall(m, or) === (1, 1, 3)
     @test modify(x->x+10, m, or) === (a=11, bs=SVector((c=11, d="2"), (c=13, d="xxx")))
-    @test_broken setall(m, or, (10, 20, 30)) === (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
-    @test setall(m, or, (10, 20, 30)) == (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
+    @test setall(m, or, (10, 20, 30)) === (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     or = RecursiveOfType(NamedTuple)
-    @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
+    @test getall(m, or) === ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
-    @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
+    @test getall(m, or) === ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
 
     m = (a=1, b=2+3im)
     or = RecursiveOfType(Real)
@@ -536,13 +573,36 @@ end
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
 
-@testitem "push/pop/???" begin
+@testitem "push, pop" begin
     obj = (a=1, b=(2, 3))
     @test @push(obj.b, 4) == (a=1, b=(2, 3, 4))
     @test @pushfirst(obj.b, 4) == (a=1, b=(4, 2, 3))
     # these return obj, as in StaticArrays:
     @test @pop(obj.b) == (a=1, b=(2,))
     @test @popfirst(obj.b) == (a=1, b=(3,))
+end
+
+@testitem "in" begin
+    x = [1, 2, 3]
+    @test (@set (2 in $x) = false) == [1, 3]
+    @test (@set (5 in $x) = true) == [1, 2, 3, 5]
+    Accessors.test_getset_laws(@optic(2 in _), [1,2,3], false, true)
+    Accessors.test_getset_laws(@optic(5 in _), [1,2,3], false, true)
+    Accessors.test_getset_laws(@optic(2 in _), Set([1,2,3]), false, true)
+    Accessors.test_getset_laws(@optic(5 in _), Set([1,2,3]), false, true)
+end
+
+@testitem "on get/set" begin
+    obj = (a=1, b=2, tot=4)
+
+    o = @optic(_.a) ∘ onset(x -> @set x.tot = x.a + x.b)
+    @test o(obj) === 1
+    @test set(obj, o, 10) === (a=10, b=2, tot=12)
+    @test setall(obj, @optics(_.a, _.b) ∘ onset(x -> @set x.tot = x.a + x.b), (10, 20)) === (a=10, b=20, tot=30)
+
+    o = onget(x -> @set x.tot = x.a + x.b)
+    @test o(obj) === (a=1, b=2, tot=3)
+    @test set(obj, o, obj) === obj
 end
 
 @testitem "ConstrainedLens" begin
@@ -562,6 +622,9 @@ end
 end
 
 @testitem "construct" begin
+    using StaticArrays
+    using StaticArrays: norm
+
     ==ₜ(_, _) = false
     ==ₜ(x::T, y::T) where T = x == y
 
@@ -590,6 +653,7 @@ end
 
     @testset "laws" begin
         using AccessorsExtra: test_construct_laws
+
         test_construct_laws(Complex, @optic(_.re) => 1, @optic(_.im) => 2)
         test_construct_laws(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)
         test_construct_laws(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)
@@ -612,6 +676,15 @@ end
         test_construct_laws(NamedTuple{(:a,)}, only => 1)
         test_construct_laws(NamedTuple, @optic(_.a) => 1)
         test_construct_laws(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "")
+
+        test_construct_laws(SVector{0})
+        test_construct_laws(SVector{1}, only => 2)
+        test_construct_laws(SVector{1}, first => 3)
+        test_construct_laws(SVector{1}, last => 4)
+        test_construct_laws(SVector{2}, first => 4, last => 5)
+        test_construct_laws(SVector{2}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
+        test_construct_laws(SVector{2,Float64}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
+        test_construct_laws(SVector{2,Float32}, norm => 3, @optic(atan(_...)) => 0.123; cmp=(≈))
     end
 
     @testset "macro" begin
@@ -639,6 +712,23 @@ end
             _.c = 123
         end
         @test res == (a=-1, b=[10], c=123)
+    end
+
+    @testset "invertible pre-func" begin
+        using AccessorsExtra: test_construct_laws
+
+        AccessorsExtra.@allinferred construct begin
+
+        @test construct(Complex, abs => 3, rad2deg ∘ angle => 45) ≈ 3/√2 * (1 + 1im)
+        test_construct_laws(SVector{2,Float32}, norm => 3, @optic(atan(_...) |> rad2deg) => 0.123; cmp=(≈))
+
+        res = @construct SVector{2} begin
+            norm(_) = 3
+            atan(_...) |> rad2deg |> _ + 1 = 46
+        end
+        @test res ≈ SVector(3, 3) / √2
+        
+        end
     end
 end
 
@@ -678,9 +768,47 @@ end
 @testitem "inverses" begin
     using InverseFunctions
     using Unitful
+    using Distributions
 
     InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
     InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
+
+
+    # https://github.com/JuliaStats/Distributions.jl/pull/1685
+    using Distributions
+    @testset for d in (Normal(1.5, 2.3),)
+        # unbounded distribution: can invert cdf at any point in [0..1]
+        @testset for f in (cdf, ccdf, logcdf, logccdf)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), 1.2345)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), -Inf)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), Inf)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), -1.2345)
+            @test_throws "not defined at 5" inverse(Base.Fix1(f, d))(5)
+        end
+    end
+    @testset for d in (Uniform(1, 2), truncated(Normal(1.5, 2.3), 1, 2))
+        # bounded distribution: cannot invert cdf at 0 and 1
+        @testset for f in (cdf, ccdf, logcdf, logccdf)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), 1.2345)
+            @test_throws "not defined at 5" inverse(Base.Fix1(f, d))(5)
+            @test_throws "not defined at 0" inverse(Base.Fix1(f, d))(0)
+            @test_throws "not defined at 1" inverse(Base.Fix1(f, d))(1)
+        end
+    end
+
+    @testset for d in (Normal(1.5, 2.3), Uniform(1, 2), truncated(Normal(1.5, 2.3), 1, 2))
+        # quantile can be inverted everywhere for any continuous distribution
+        @testset for f in (quantile, cquantile)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), 0.1234)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), 0)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), 1)
+        end
+        @testset for f in (invlogcdf, invlogccdf)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), -0.1234)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), -Inf)
+            InverseFunctions.test_inverse(Base.Fix1(f, d), 0)
+        end
+    end
 end
 
 @testitem "ranges" begin
@@ -730,98 +858,6 @@ end
         @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @optic keys(_)[∗])
     end
     @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @optic keys(_)[∗])
-end
-
-@testitem "Optimization" begin
-    using IntervalSets
-    using StructArrays
-    using StaticArrays
-    using Optimization
-    using OptimizationOptimJL, OptimizationMetaheuristics
-
-    @testset "reconstruct" begin
-        of = OptimizationFunction(sin, Optimization.AutoForwardDiff())
-        @test constructorof(typeof(of))(Accessors.getfields(of)...) === of
-    end
-
-    
-    struct ExpModel{A,B}
-        scale::A
-        shift::B
-    end
-    
-    struct SumModel{T <: Tuple}
-        comps::T
-    end
-    
-    (m::ExpModel)(x) = m.scale * exp(-(x - m.shift)^2)
-    (m::SumModel)(x) = sum(c -> c(x), m.comps)
-
-    loss(m, data) = sum(r -> abs2(r.y - m(r.x)), data)
-
-    truemod = SumModel((
-        ExpModel(2, 5),
-        ExpModel(0.5, 2),
-        ExpModel(0.5, 8),
-    ))
-
-    data = let x = 0:0.2:10
-        StructArray(; x, y=truemod.(x) .+ range(-0.01, 0.01, length=length(x)))
-    end
-
-    mod0 = SumModel((
-        ExpModel(1, 1),
-        ExpModel(1, 2),
-        ExpModel(1, 3),
-    ))
-    vars = OptArgs(
-        @optic(_.comps[∗].shift) => 0..10.,
-        @optic(_.comps[∗].scale) => 0.3..10.,
-    )
-    prob = OptProblemSpec(Base.Fix2(loss, data), mod0, vars)
-    sol = solve(prob, ECA(), maxiters=300)
-    @test sol.u isa Vector{Float64}
-    @test sol.uobj isa SumModel
-    @test getall(sol.uobj, @optic _.comps[∗].shift) |> collect |> sort ≈ [2, 5, 8]  rtol=1e-2
-
-    @testset "no autodiff" begin
-    @testset "OptProblemSpec(utype=$(prob.utype))" for prob in (
-        OptProblemSpec(Base.Fix2(loss, data), mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), Vector, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), Vector{Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), SVector, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), SVector{<:Any, Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), MVector, mod0, vars),
-        OptProblemSpec(Base.Fix2(loss, data), MVector{<:Any, Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), Vector, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), Vector{Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), SVector, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), SVector{<:Any, Float64}, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), MVector, mod0, vars),
-        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), MVector{<:Any, Float64}, mod0, vars),
-    )
-        sol = solve(prob, ECA(), maxiters=300)
-        @test sol.u isa Vector{Float64}
-        @test sol.uobj isa SumModel
-    end
-    end
-
-    cons = OptCons(
-        ((x, _) -> sum(c -> c.shift, x.comps) / length(x.comps)) => 0.5..4,
-    )
-    @testset "autodiff" begin
-    @testset "OptProblemSpec(utype=$(prob.utype))" for prob in (
-        OptProblemSpec(Base.Fix2(OptimizationFunction(loss, Optimization.AutoForwardDiff()), data), Vector{Float64}, mod0, vars, cons),
-    )
-        sol = solve(prob, Optim.IPNewton(), maxiters=300)
-        @test sol.u isa Vector{Float64}
-        @test sol.uobj isa SumModel
-        for (f, int) in cons.specs
-            @test f(sol.uobj, data) ∈ int
-        end
-    end
-    end
 end
 
 @testitem "explicit target" begin

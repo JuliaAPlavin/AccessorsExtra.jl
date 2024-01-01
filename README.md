@@ -33,6 +33,5 @@ julia> o((a=1, c=3))
 nothing
 ```
 
-See the Pluto notebooks for more details:
-- [Usage examples](https://aplavin.github.io/AccessorsExtra.jl/examples/notebook.html) notebook showcases widely applicable optics defined in `AccessorsExtra`
-- [`Optimization.jl` integration](https://aplavin.github.io/AccessorsExtra.jl/examples/optimization.html) demonstrates using optics together with `Optimization.jl` to optimize functions with respect to arbitrary struct parameters
+See the [Pluto notebook](https://aplavin.github.io/AccessorsExtra.jl/examples/notebook.html) for more details and usage examples.
+

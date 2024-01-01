@@ -28,6 +28,30 @@ function construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}})
 end
 
 
+function construct(T, args::Vararg{Pair})
+    pargs = @p args |> map(_process_invertible(_[1], _[2]))
+    pargs == args && throw(MethodError(construct, Tuple{T, typeof.(args)...}))
+    construct(T, pargs...)
+end
+
+_process_invertible(f, x) = f => x
+function _process_invertible(f::ComposedFunction, x)
+    fi, fo = _split_invertible(decompose(f))
+    compose(fo...) => compose(fi...)(x)
+end
+
+_split_invertible(fs::Tuple{}) = ((), ())
+function _split_invertible(fs::Tuple)
+    first_inv = inverse(first(fs))
+    if first_inv isa NoInverse
+        ((), fs)
+    else
+        fi, fo = _split_invertible(Base.tail(fs))
+        ((fi..., first_inv), fo)
+    end
+end
+
+
 macro construct(exprs...)
     T, args... = exprs
     if length(args) == 1 && Base.isexpr(only(args), :block)
