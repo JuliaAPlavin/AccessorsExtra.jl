@@ -19,6 +19,8 @@ __Note:__ support for `default != nothing` is experimental and only implemented 
 
 Whether the referenced value is present or not, is determined by `hasoptic(obj, o)`.
 
+`@maybe` is the macro form available for convenience: `@maybe ...` is equivalent to `maybe(@o ...)`.
+
 ## Examples
 
 ```julia
