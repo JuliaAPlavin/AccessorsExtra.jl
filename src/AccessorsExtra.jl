@@ -247,4 +247,7 @@ struct FuncArgument end
 Accessors.OpticStyle(::Type{FuncArgument}) = Accessors.ModifyBased()
 Accessors.modify(f, obj, ::FuncArgument) = obj ∘ f
 
+
+Accessors.set(obj, ::typeof(sort), val) = @set obj[sortperm(obj)] = val
+
 end

@@ -448,6 +448,8 @@ end
     using Dictionaries
 
     AccessorsExtra.@allinferred modify begin
+        @test modify(cumsum, [5, 1, 4, 2, 3], sort) == [15, 1, 10, 3, 6]
+
         T = (4, 5, 6)
         @test (8, 10, 12) === modify(x -> 2x, T, @optic values(_)[∗])
         @test (5, 7, 9) === modify(((i, x),) -> i => i + x, T, @optic pairs(_)[∗])
