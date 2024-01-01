@@ -527,60 +527,81 @@ end
     ==ₜ(_, _) = false
     ==ₜ(x::T, y::T) where T = x == y
 
-    AccessorsExtra.@allinferred construct begin
-        @test construct(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
-        @test construct(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
-        @test construct(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 == 1 + 2im
-        @test construct(Complex, @optic(_.re) => 1., @optic(_.im) => 2)::ComplexF64 === 1. + 2im
-        @test construct(Complex, abs => 1., angle => π/2)::ComplexF64 ≈ 1im
-        @test construct(ComplexF32, abs => 1., angle => π/2)::ComplexF32 ≈ 1im
-        @test_throws InexactError construct(Complex{Int}, abs => 1., angle => π/2)
+    @testset "basic usage" begin
+        AccessorsExtra.@allinferred construct begin
+            @test construct(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+            @test construct(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 === 1f0 + 2f0im
+            @test_throws InexactError construct(Complex{Int}, abs => 1., angle => π/2)
 
-        @test construct(Tuple, only => 1) === (1,)
-        @test construct(Tuple{Int}, only => 1) === (1,)
-        @test construct(Tuple{Float64}, only => 1) === (1.0,)
-        @test_throws Exception construct(Tuple{String}, only => 1)
-        @test_throws Exception construct(Tuple{Int, Int}, only => 1)
+            @test construct(Tuple, only => 1) === (1,)
+            @test construct(Tuple{Float64}, only => 1) === (1.0,)
+            @test_throws Exception construct(Tuple{String}, only => 1)
+            @test_throws Exception construct(Tuple{Int, Int}, only => 1)
 
-        @test construct(Vector, only => 1) ==ₜ [1]
-        @test construct(Vector{Int}, only => 1) ==ₜ [1]
-        @test construct(Vector{Float64}, only => 1) ==ₜ [1.0]
-        @test_throws Exception construct(Vector{String}, only => 1)
+            @test construct(Vector, only => 1) ==ₜ [1]
+            @test construct(Vector{Float64}, only => 1) ==ₜ [1.0]
+            @test_throws Exception construct(Vector{String}, only => 1)
 
-        @test construct(Set, only => 1) ==ₜ Set((1,))
-        @test construct(Set{Int}, only => 1) ==ₜ Set((1,))
-        @test construct(Set{Float64}, only => 1) ==ₜ Set((1.0,))
-        @test_throws Exception construct(Set{String}, only => 1,)
+            @test construct(Set, only => 1) ==ₜ Set((1,))
+            @test construct(Set{Float64}, only => 1) ==ₜ Set((1.0,))
+            @test_throws Exception construct(Set{String}, only => 1,)
 
-        @test construct(NamedTuple{(:a,)}, only => 1) === (a=1,)
-        @test construct(NamedTuple, @optic(_.a) => 1) === (a=1,)
-        @test construct(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "") === (a=1, b="")
+            @test construct(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "") === (a=1, b="")
+        end
     end
 
-    @test @construct(Complex, _.re = 1, _.im = 2)::Complex{Int} === 1 + 2im
-    @test (@construct Complex{Int}  _.re = 1 _.im = 2)::Complex{Int} === 1 + 2im
-    res = @construct Complex begin
-        _.re = 1
-        _.im = 2
+    @testset "laws" begin
+        using AccessorsExtra: test_construct_laws
+        test_construct_laws(Complex, @optic(_.re) => 1, @optic(_.im) => 2)
+        test_construct_laws(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)
+        test_construct_laws(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)
+        test_construct_laws(Complex, @optic(_.re) => 1., @optic(_.im) => 2)
+        test_construct_laws(Complex, abs => 1., angle => π/2)
+        test_construct_laws(ComplexF32, abs => 1., angle => π/2; cmp=(≈))
+
+        test_construct_laws(Tuple, only => 1)
+        test_construct_laws(Tuple{Int}, only => 1)
+        test_construct_laws(Tuple{Float64}, only => 1)
+
+        test_construct_laws(Vector, only => 1)
+        test_construct_laws(Vector{Int}, only => 1)
+        test_construct_laws(Vector{Float64}, only => 1)
+
+        test_construct_laws(Set, only => 1)
+        test_construct_laws(Set{Int}, only => 1)
+        test_construct_laws(Set{Float64}, only => 1)
+
+        test_construct_laws(NamedTuple{(:a,)}, only => 1)
+        test_construct_laws(NamedTuple, @optic(_.a) => 1)
+        test_construct_laws(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "")
     end
-    @test res::Complex{Int} === 1 + 2im
-    res = @construct Complex{Int} begin
-        _.re = 1
-        _.im = 2
+
+    @testset "macro" begin
+        @test @construct(Complex, _.re = 1, _.im = 2)::Complex{Int} === 1 + 2im
+        @test (@construct Complex{Int}  _.re = 1 _.im = 2)::Complex{Int} === 1 + 2im
+        res = @construct Complex begin
+            _.re = 1
+            _.im = 2
+        end
+        @test res::Complex{Int} === 1 + 2im
+        res = @construct Complex{Int} begin
+            _.re = 1
+            _.im = 2
+        end
+        @test res::Complex{Int} === 1 + 2im
+        res = @construct NamedTuple begin
+            _.a = @construct Complex  abs(_) = 1 angle(_) = π
+            _.b = @construct Vector  only(_) = 10
+            _.c = 123
+        end
+        @test res == (a=-1, b=[10], c=123)
+        res = @construct NamedTuple begin
+            _.a = construct(Complex, @optic(_.re) => -1, @optic(_.im) => 0)
+            _.b = construct(Vector, only => 10)
+            _.c = 123
+        end
+        @test res == (a=-1, b=[10], c=123)
     end
-    @test res::Complex{Int} === 1 + 2im
-    res = @construct NamedTuple begin
-        _.a = @construct Complex  abs(_) = 1 angle(_) = π
-        _.b = @construct Vector  only(_) = 10
-        _.c = 123
-    end
-    @test res == (a=-1, b=[10], c=123)
-    res = @construct NamedTuple begin
-        _.a = construct(Complex, @optic(_.re) => -1, @optic(_.im) => 0)
-        _.b = construct(Vector, only => 10)
-        _.c = 123
-    end
-    @test res == (a=-1, b=[10], c=123)
 end
 
 @testitem "structarrays" begin
