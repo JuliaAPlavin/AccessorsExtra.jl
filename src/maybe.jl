@@ -59,6 +59,10 @@ set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os)
 set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
 
 
+oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
+oget(obj, o, default) = hasoptic(obj, o) ? o(obj) : default
+
+
 hasoptic(obj, o::ComposedFunction) = hasoptic(obj, o.inner) && hasoptic(o.inner(obj), o.outer)
 
 hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)

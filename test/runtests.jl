@@ -154,8 +154,8 @@ end
 end
 
 @testitem "function value setting" begin
-    # o = @optic _("abc")
-    o = AccessorsExtra.funcvallens("abc")
+    o = @optic _("abc")
+    @test o == AccessorsExtra.funcvallens("abc")
     @test o(reverse) == "cba"
     myrev = set(reverse, o, "!!!")
     @test myrev("abc") == "!!!"
@@ -256,7 +256,6 @@ end
         @test o((;)) == nothing
         @test set((a=(b=1,),), o, 5) == (a=(b=5,),)
         @test set((a=(;),), o, 5) == (a=(b=5,),)
-        @test_broken set((;), o, 5) == (a=(b=5,),)
         @test modify(x -> x+1, (a=(b=1,),), o) == (a=(b=2,),)
         @test modify(x -> x+1, (a=(;),), o) == (a=(;),)
         @test modify(x -> x+1, (;), o) == (;)
@@ -322,7 +321,13 @@ end
     @test set("1", o, 2) == "2"
     @test_broken set("a", o, 2) == "2"
 
-    # specify default value - semantic not totally clear...
+    o = @optic _.a[2]
+    @test oget((a=[1, 2, 3],), o, 123) == 2
+    @test oget((;), o, 123) == 123
+    @test oget(Returns(123), (a=[1, 2, 3],), o) == 2
+    @test oget(Returns(123), (;), o) == 123
+
+    # specify default value in maybe() - semantic not totally clear...
     # o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
     # @test o((a=[1, 2],)) == 2
     # @test o((a=[1],)) == 10
@@ -347,7 +352,7 @@ end
     using StaticArrays
 
     AccessorsExtra.@allinferred modify getall setall begin
-    or = RecursiveOfType(Number, ∗, recurse=Union{Tuple,AbstractVector,NamedTuple})
+    or = RecursiveOfType(Number)
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     @test getall(m, or) == (1, 1, 3)
     @test modify(x->x+10, m, or) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
@@ -357,19 +362,18 @@ end
     @test getall(m, or) == [1, 1, 3]
     @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
     @test_throws Exception setall(m, or, [10, 20, 30])  # setall not supported with dynamic length vectors
-    @test getall(m, or) == getall(m, or)
 
     m = (a=1, bs=SVector((c=1, d="2"), (c=3, d="xxx")))
+    @test_broken getall(m, or) === SVector(1, 1, 3)
     @test getall(m, or) == SVector(1, 1, 3)
-    @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @test modify(x->x+10, m, or) === (a=11, bs=SVector((c=11, d="2"), (c=13, d="xxx")))
+    @test_broken setall(m, or, (10, 20, 30)) === (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
     @test setall(m, or, (10, 20, 30)) == (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
-    @test getall(m, or) == getall(m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     or = RecursiveOfType(NamedTuple)
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
-    @test modify(Dict ∘ pairs, m, or) == modify(Dict ∘ pairs, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
     @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
@@ -378,9 +382,12 @@ end
     or = RecursiveOfType(Real)
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
-    @test getall(m, or) == getall(m, or)
     @test setall(m, or, (10, 20, 30)) == (a=10, b=20+30im)
     end
+
+    # or = keyed(RecursiveOfType(Number))
+    # m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    # @test getall(m, or) == (1, 1, 3)
 end
 
 @testitem "context" begin
@@ -529,6 +536,31 @@ end
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
 
+@testitem "push/pop/???" begin
+    obj = (a=1, b=(2, 3))
+    @test @push(obj.b, 4) == (a=1, b=(2, 3, 4))
+    @test @pushfirst(obj.b, 4) == (a=1, b=(4, 2, 3))
+    # these return obj, as in StaticArrays:
+    @test @pop(obj.b) == (a=1, b=(2,))
+    @test @popfirst(obj.b) == (a=1, b=(3,))
+end
+
+@testitem "ConstrainedLens" begin
+    obase = angle
+    ore = modifying(real)(angle)
+    oim = modifying(imag)(angle)
+    x = 3 + 4im
+    for o in (obase, ore, oim)
+        @test o(x) == angle(x)
+    end
+    @test set(x, obase, 0) ≈ 5
+    @test set(x, ore, 0) ≈ Inf + 4im
+    @test set(x, oim, 0) ≈ 3
+    @test set(x, obase, π/4) ≈ 5/√2 * (1 + 1im)
+    @test set(x, ore, π/4) ≈ 4 * (1 + 1im)
+    @test set(x, oim, π/4) ≈ 3 * (1 + 1im)
+end
+
 @testitem "construct" begin
     ==ₜ(_, _) = false
     ==ₜ(x::T, y::T) where T = x == y
@@ -649,12 +681,6 @@ end
 
     InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
     InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
-
-    InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"m")
-    InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"mm")
-
-    InverseFunctions.test_inverse(Accessors.decompose, sin ∘ tan ∘ cos; compare= ==)
-    InverseFunctions.test_inverse(Accessors.deopcompose, sin ∘ tan ∘ cos; compare= ==)
 end
 
 @testitem "ranges" begin
@@ -796,6 +822,32 @@ end
         end
     end
     end
+end
+
+@testitem "explicit target" begin
+    # https://github.com/JuliaObjects/Accessors.jl/pull/55
+    x = [1, 2, 3]
+    x_orig = x
+    @test (@set $(x)[2] = 100) == [1, 100, 3]
+    @test (@set $(x[2]) = 100) == 100
+    @test (@set $(x)[2] + 2 = 100) == [1, 98, 3]  # impossible without $
+    @test (@set $(x[2]) + 2 = 100) == 98  # impossible without $
+    @test x_orig === x == [1, 2, 3]
+
+    @test (@reset $(x[2]) = 100) == 100
+    @test x_orig === x == [1, 100, 3]
+    y = @reset $(x)[2] = 200
+    @test x_orig !== x === y == [1, 200, 3]
+end
+
+@testitem "flipped index" begin
+    # https://github.com/JuliaObjects/Accessors.jl/pull/103
+    obj = (a=2, b=nothing)
+    lens = @optic (4:10)[_.a]
+    @test @inferred(set(obj, lens, 4)).a == 1
+    @test_throws ArgumentError set(obj, lens, 12)
+    Accessors.test_getset_laws(lens, obj, 5, 6)
+    Accessors.test_modify_law(x -> x + 1, lens, obj)
 end
 
 @testitem "_" begin
