@@ -4,6 +4,8 @@ using TestItemRunner
 
 
 @testitem "setindex" begin
+    using Dictionaries
+
     AccessorsExtra.@allinferred set begin
     @test set((1, 2), @optic(_[1:0]), Int[]) === (1, 2)
     @test set((1, 2), @optic(_[1:1]), [10]) === (10, 2)
@@ -21,6 +23,13 @@ using TestItemRunner
     @test set((1, :a), @optic(_[[1]]), ["x"]) === ("x", :a)
     @test set((1, :a), @optic(_[[1, 2]]), ["x", "y"]) === ("x", "y")
     @test set((1, :a), @optic(_[[2, 1]]), ["x", "y"]) === ("y", "x")
+
+    dct = dictionary([:a => 1, :b => 2])
+    DT = Dictionary{Symbol,Int}
+    @test @set(dct[:a] = 10)::DT == dictionary([:a => 10, :b => 2])
+    @test @set(dct[:a] = 10.)::Dictionary{Symbol,Float64} == dictionary([:a => 10, :b => 2])
+    @test @delete(dct[:a])::DT == dictionary([:b => 2])
+    @test @insert(dct[:c] = 5)::DT == dictionary([:a => 1, :b => 2, :c => 5])
 end
 
 @testitem "concat optics" begin
