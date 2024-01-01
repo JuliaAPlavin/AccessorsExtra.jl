@@ -1,3 +1,9 @@
+# trivial setters
+set(obj::AbstractArray, ::typeof(values), vals) = @set obj[:] = vals
+set(obj::Tuple, ::typeof(values), vals) = Tuple(vals)
+set(obj::NamedTuple{KS}, ::typeof(values), vals) where {KS} = NamedTuple{KS}(Tuple(vals))
+set(obj::NamedTuple{KS}, ::typeof(keys), vals::NTuple{<:Any,Symbol}) where {KS} = NamedTuple{vals}(values(obj))
+
 # inspired by https://juliaobjects.github.io/Accessors.jl/stable/examples/custom_optics/ but cleaner? :)
 
 # special wrapper type, can only be modify'ed with Elements()
@@ -6,7 +12,8 @@ struct KVPWrapper{TO,T}
     obj::T
 end
 
-modify(f, obj, o::Union{typeof(keys),typeof(values),typeof(pairs)}) = f(KVPWrapper(o, obj))
+modify(f, obj::AbstractDict, o::Union{typeof(keys),typeof(values)}) = f(KVPWrapper(o, obj))
+modify(f, obj, o::typeof(pairs)) = f(KVPWrapper(o, obj))
 modify(f, obj::KVPWrapper, ::Elements) = error("modify(f, ::$(typeof(obj.obj)), $(obj.o ⨟ Elements())) not supported")
 
 ### keys

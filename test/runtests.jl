@@ -676,24 +676,35 @@ end
         @test (8, 10, 12) === modify(x -> 2x, T, @o values(_)[∗])
         @test (5, 7, 9) === modify(((i, x),) -> i => i + x, T, @o pairs(_)[∗])
         @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> pairs(_)[∗])
+        
         T = (a=4, b=5, c=6)
         @test (a=8, b=10, c=12) === modify(x -> 2x, T, @o values(_)[∗])
         @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @o keys(_)[∗])  broken=VERSION < v"1.10-"
         @test (a=(:a, 8), b=(:b, 10), c=(:c, 12)) === modify(((i, x),) -> i => (i, 2x), T, @o pairs(_)[∗])
+        
         A = [4, 5, 6]
         @test [8, 10, 12] == modify(x -> 2x, A, @o values(_)[∗])
         @test [5, 7, 9] == modify(((i, x),) -> i => i + x, A, @o pairs(_)[∗])
+        @test [1, 2, 3] == set(A, values, [1, 2, 3])
+        @test [6, 5, 4] == modify(reverse, A, values)
+
         D = Dict(4 => 5, 6 => 7)
         @test Dict(4 => 6, 6 => 8) == modify(x -> x+1, D, @o values(_)[∗])
         @test Dict(5 => 5, 7 => 7) == modify(x -> x+1, D, @o keys(_)[∗])
         @test Dict(8 => 9, 12 => 13) == modify(((i, x),) -> 2i => i + x, D, @o pairs(_)[∗])
+
         D = dictionary([4 => 5, 6 => 7])
         @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, @o values(_)[∗])
         @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @o keys(_)[∗])
         @test dictionary([8 => 9, 12 => 13]) == modify(((i, x),) -> 2i => i + x, D, @o pairs(_)[∗])
+        @test_broken dictionary([4 => 7, 6 => 5]) == modify(reverse, D, values)
+        @test_broken dictionary([4 => 1, 6 => 2]) == set(D, values, [1, 2])
+
         D = ArrayDictionary([4, 6], [5, 7])
         @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, @o values(_)[∗])
         @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @o keys(_)[∗])
+        @test_broken dictionary([4 => 7, 6 => 5]) == modify(reverse, D, values)
+        @test_broken dictionary([4 => 1, 6 => 2]) == set(D, values, [1, 2])
     end
     @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @o keys(_)[∗])
 end
