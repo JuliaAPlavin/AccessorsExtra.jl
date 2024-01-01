@@ -154,8 +154,8 @@ end
 end
 
 @testitem "function value setting" begin
-    # o = @optic _("abc")
-    o = AccessorsExtra.funcvallens("abc")
+    o = @optic _("abc")
+    @test o == AccessorsExtra.funcvallens("abc")
     @test o(reverse) == "cba"
     myrev = set(reverse, o, "!!!")
     @test myrev("abc") == "!!!"

@@ -66,8 +66,13 @@ function parse_obj_optics(ex::Expr)
         obj, frontoptic = parse_obj_optics(front)
         optic = :($PropertyLens{$(QuoteNode(property))}())
     elseif @capture(ex, f_(front_))
-        obj, frontoptic = parse_obj_optics(front)
-        optic = esc(f) # function optic
+        if !tree_contains(f, :_)
+            obj, frontoptic = parse_obj_optics(front)
+            optic = esc(f) # function optic
+        else
+            obj, frontoptic = parse_obj_optics(f)
+            optic = funcvallens(front)
+        end
     elseif @capture(ex, f_(args__))
         args_contain_under = map(arg -> tree_contains(arg, :_), args)
         if !any(args_contain_under)
