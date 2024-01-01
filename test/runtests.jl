@@ -100,6 +100,13 @@ end
         @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
     end
     @test setall(obj, o, (:a, :b, :c)) == (a=:a, bs=[(c=:b, d=3), (c=:c, d=5)])
+
+    @test getall((1,2), ++()) === (;)
+    @test setall((1,2), ++(), ()) === (1,2)
+    @test setall((1,2), AccessorsExtra.ConcatOptics((;)), (;)) === (1,2)
+    @test getall((1,2), ++() ∘ identity) === ()
+    @test setall((1,2), ++() ∘ identity, ()) === (1,2)
+    @test setall((1,2), AccessorsExtra.ConcatOptics((;)) ∘ identity, (;)) === (1,2)
 end
 
 @testitem "concat container" begin
