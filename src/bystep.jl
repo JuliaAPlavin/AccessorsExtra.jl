@@ -35,9 +35,11 @@ Accessors.OpticStyle(::Type{LoggedOptic{O}}) where {O} = Accessors.OpticStyle(O)
 
 logged(o::ComposedFunction; depth=0) = @modify(Accessors.deopcompose(o)) do ops
     map(enumerate(ops)) do (i, op)
-        logged(op, depth=i - 1)
+        logged(op, depth=depth + i - 1)
     end
 end
+logged(o::ConcatOptics; depth=0) = LoggedOptic(@modify(f -> logged(f; depth=depth+1), o.optics[∗]), depth)
+logged(o::AlongsideOptic; depth=0) = LoggedOptic(@modify(f -> logged(f; depth=depth+1), o.optics[∗]), depth)
 logged(o; depth=0) = LoggedOptic(o, depth)
 
 function (o::LoggedOptic)(obj)
@@ -82,5 +84,6 @@ end
 _indent(depth) = "┆ "^depth
 
 
-Base.show(io::IO, co::LoggedOptic) = print(io, "logged(", co.o, "; depth=", co.depth, ")")
+# Base.show(io::IO, co::LoggedOptic) = print(io, "logged(", co.o, "; depth=", co.depth, ")")
+Base.show(io::IO, co::LoggedOptic) = print(io, co.o)
 Base.show(io::IO, ::MIME"text/plain", optic::LoggedOptic) = show(io, optic)
