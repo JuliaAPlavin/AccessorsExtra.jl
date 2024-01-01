@@ -763,6 +763,14 @@ end
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
 end
 
+@testitem "domainsets" begin
+    using DomainSets; using DomainSets: ×
+    using StaticArrays
+
+    Accessors.test_getset_laws(components, (1..2) × (2..5), SVector((10.0..20.0), (1..0)), SVector((-1..1) × (0..2)))
+    # Accessors.test_getset_laws(components, (1..2) × (2..5), ((10.0..20.0), (1..0)), ((-1..1) × (0..2)))
+end
+
 @testitem "getfield" begin
     t = (x=1, y=2)
     @test set(t, @optic(getfield(_, :x)), :hello) === (x=:hello, y=2)
