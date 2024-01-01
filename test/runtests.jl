@@ -632,7 +632,7 @@ end
         @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> @optic pairs(_)[∗])
         T = (a=4, b=5, c=6)
         @test (a=8, b=10, c=12) === modify(x -> 2x, T, @optic values(_)[∗])
-        @test_broken (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @optic keys(_)[∗])  # doesn't infer, but result correct
+        @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @optic keys(_)[∗])  broken=VERSION < v"1.10-"
         @test (a=(:a, 8), b=(:b, 10), c=(:c, 12)) === modify(((i, x),) -> i => (i, 2x), T, @optic pairs(_)[∗])
         A = [4, 5, 6]
         @test [8, 10, 12] == modify(x -> 2x, A, @optic values(_)[∗])
