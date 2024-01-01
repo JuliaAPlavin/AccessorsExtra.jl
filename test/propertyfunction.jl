@@ -99,6 +99,16 @@ end
 
     C = @inferred mapview((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B)
     @test C[5] == (a = 51, b = 50.05, c = (y=50,))
+
+    @test findall((@o _.xy.y > 100), B) == 11:100
+    @test findall((@o _.xy.y > _.z.im + 100), B) == 11:100
+    @test filter((@o _.xy.y > 100), B).xy.y == 110:10:1000
+    @test filter((@o _.xy.y > _.z.im + 100), B).xy.y == 110:10:1000
+    @test sortperm(B, by=(@o _.xy.y ≤ 100)) == [11:100; 1:10]
+    @test sortperm(B, by=!(@o _.xy.y > _.z.im + 100)) == [11:100; 1:10]
+    # test that it throws on actual item permutation, not comparison
+    @test_throws "setindex! not defined for StepRange" sort!(B, by=(@o _.xy.y ≤ 100))
+    @test_throws "setindex! not defined for StepRange" sort!(B, by=!(@o _.xy.y > _.z.im + 100))
 end
 
 @testitem "structarrays - containeroptic" begin

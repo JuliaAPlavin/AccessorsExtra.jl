@@ -20,8 +20,39 @@ const PROPFUNCTYPES = Union{
     ComposedFunction{<:Any,<:PropertyLens},
     PROPFUNCTYPES_ONLYEXTRA,
 }
+
 Base.map(f::PROPFUNCTYPES, x) = map(rawfunc(f), extract_properties_recursive(x, propspec(f)))
 Base.map(f::PROPFUNCTYPES, x::AbstractArray) = map(rawfunc(f), extract_properties_recursive(x, propspec(f)))
+
+# almost same as in Base, but:
+# - with PROPFUNCTYPES instead of Function restriction
+Base.findall(testf::PROPFUNCTYPES, A::AbstractArray) = findall(map(testf, A))
+# - use map() no matter what the IndexStyle is
+Base.filter(f::PROPFUNCTYPES, a::AbstractArray) = a[map(f, a)::AbstractArray{Bool}]
+
+# all 2nd arg types for disambiguation
+for m in methods(Base.Sort._sort!)
+    m.sig isa UnionAll && continue
+    params = m.sig.parameters
+    params[2] === AbstractVector || continue
+    Base.Order.Perm <: params[4] || continue
+    params[3] === Any && continue
+
+    @eval function Base.Sort._sort!(v::AbstractVector, a::$(params[3]), o::Base.Order.By{<:PROPFUNCTYPES}, kw)
+        newo = modify(rawfunc, o, @o _.by)
+        return Base.Sort._sort!(extract_properties_recursive(v, propspec(o.by)), a, newo, kw)
+    end
+
+    @eval function Base.Sort._sort!(v::AbstractVector, a::$(params[3]), o::Base.Order.Perm{<:Base.Order.By{<:PROPFUNCTYPES}}, kw)
+        newo = Base.Order.Perm(
+            # @modify(rawfunc, $(o.order).by),
+            modify(rawfunc, o.order, @o _.by),
+            extract_properties_recursive(o.data, propspec(o.order.by)),
+        )
+        return Base.Sort._sort!(v, a, newo, kw)
+    end
+end
+
 
 rawfunc(f) = f
 rawfunc(f::PropertyLens{P}) where {P} = x -> f(x)
