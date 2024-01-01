@@ -5,9 +5,9 @@ struct RecursiveOfType
 end
 RecursiveOfType(; out, recurse=(Any,), optic) = RecursiveOfType(out, recurse, optic)
 
-Accessors.OpticStyle(::Type{<:RecursiveOfType}) = Accessors.ModifyBased()
+OpticStyle(::Type{<:RecursiveOfType}) = ModifyBased()
 
-function Accessors.modify(f, obj, or::RecursiveOfType)
+function modify(f, obj, or::RecursiveOfType)
     modified = if any(t -> obj isa t, or.rectypes)
         modify(obj, or.optic) do o
             modify(f, o, or)
@@ -19,7 +19,7 @@ function Accessors.modify(f, obj, or::RecursiveOfType)
     cur = any(t -> obj isa t, or.outtypes) ? f(modified) : modified
 end
 
-function Accessors.getall(obj, or::RecursiveOfType)
+function getall(obj, or::RecursiveOfType)
     res_inner = if any(t -> obj isa t, or.rectypes)
         map(getall(obj, or.optic)) do o
             getall(o, or)
@@ -55,8 +55,8 @@ end
 
 
 struct EmptyOptic end
-Accessors.OpticStyle(::Type{<:EmptyOptic}) = Accessors.ModifyBased()
-Accessors.getall(obj, ::EmptyOptic) = ()
-Accessors.modify(f, obj, ::EmptyOptic) = obj
+OpticStyle(::Type{<:EmptyOptic}) = ModifyBased()
+getall(obj, ::EmptyOptic) = ()
+modify(f, obj, ::EmptyOptic) = obj
 Base.show(io::IO, o::EmptyOptic) = print(io, "∅")
 Base.show(io::IO, ::MIME"text/plain", o::EmptyOptic) = show(io, optic)

@@ -2,15 +2,15 @@ struct AlongsideOptic{OS}
     optics::OS
 end
 
-Accessors.OpticStyle(::Type{<:AlongsideOptic}) = Accessors.ModifyBased()
+OpticStyle(::Type{<:AlongsideOptic}) = ModifyBased()
 
-Accessors.getall(obj, ao::AlongsideOptic{<:Tuple}) =
+getall(obj, ao::AlongsideOptic{<:Tuple}) =
     map(Tuple(obj), ao.optics) do obj, opt
         getall(obj, opt)
     end |> _reduce_concat
 
 # without @generated: doesn't infer when nested
-# function Accessors.modify(f, obj::Union{Tuple,NamedTuple}, ao::AlongsideOptic{<:Tuple})
+# function modify(f, obj::Union{Tuple,NamedTuple}, ao::AlongsideOptic{<:Tuple})
 #     @modify(Tuple(obj)) do tup
 #         map(tup, ao.optics) do obj, opt
 #             modify(f, obj, opt)
@@ -19,7 +19,7 @@ Accessors.getall(obj, ao::AlongsideOptic{<:Tuple}) =
 # end
 
 # with @generated:
-@generated function Accessors.modify(f, obj::Union{Tuple,NamedTuple}, ao::AlongsideOptic{OS}) where {OS<:Tuple}
+@generated function modify(f, obj::Union{Tuple,NamedTuple}, ao::AlongsideOptic{OS}) where {OS<:Tuple}
     quote
         tup = Tuple(obj)
         res = ($(ntuple(fieldcount(OS)) do i
@@ -29,11 +29,11 @@ Accessors.getall(obj, ao::AlongsideOptic{<:Tuple}) =
     end
 end
 
-Accessors.set(obj::Tuple, ::Type{Tuple}, val::Tuple) = val
-Accessors.set(obj::NamedTuple{KS}, ::Type{Tuple}, val::Tuple) where {KS} = NamedTuple{KS}(val)
+set(obj::Tuple, ::Type{Tuple}, val::Tuple) = val
+set(obj::NamedTuple{KS}, ::Type{Tuple}, val::Tuple) where {KS} = NamedTuple{KS}(val)
 
-Accessors.getall(obj, ao::AlongsideOptic) = error("not supported")
-Accessors.modify(f, obj, ao::AlongsideOptic) = error("not supported")
+getall(obj, ao::AlongsideOptic) = error("not supported")
+modify(f, obj, ao::AlongsideOptic) = error("not supported")
 
 function Base.show(io::IO, co::AlongsideOptic{<:Tuple})
     print(io, "along(")

@@ -31,9 +31,9 @@ struct LoggedOptic{O}
     o::O
     depth::Int
 end
-Accessors.OpticStyle(::Type{LoggedOptic{O}}) where {O} = Accessors.OpticStyle(O)
+OpticStyle(::Type{LoggedOptic{O}}) where {O} = OpticStyle(O)
 
-logged(o::ComposedFunction; depth=0) = @modify(Accessors.deopcompose(o)) do ops
+logged(o::ComposedFunction; depth=0) = @modify(deopcompose(o)) do ops
     map(enumerate(ops)) do (i, op)
         logged(op, depth=depth + i - 1)
     end
@@ -49,8 +49,8 @@ function (o::LoggedOptic)(obj)
     res
 end
 
-function Accessors.set(obj, o::LoggedOptic, value)
-    prev_str = Accessors.OpticStyle(o) isa Accessors.SetBased ?
+function set(obj, o::LoggedOptic, value)
+    prev_str = OpticStyle(o) isa SetBased ?
         repr(o.o(obj)) : "<…>"
     @info _indent(o.depth) * "┌ set $(repr(obj)) |> $(repr(o.o)): $prev_str => $(repr(value))"
     res = set(obj, o.o, value)
@@ -58,8 +58,8 @@ function Accessors.set(obj, o::LoggedOptic, value)
     res
 end
 
-function Accessors.modify(f, obj, o::LoggedOptic)
-    prev_str = Accessors.OpticStyle(o) isa Accessors.SetBased ?
+function modify(f, obj, o::LoggedOptic)
+    prev_str = OpticStyle(o) isa SetBased ?
         "; prev = $(repr(o.o(obj)))" : ""
     @info(_indent(o.depth) * "┌ modify $(repr(obj)) |> $(repr(o.o)) with $f $prev_str")
     res = modify(f, obj, o.o)
@@ -67,14 +67,14 @@ function Accessors.modify(f, obj, o::LoggedOptic)
     res
 end
 
-function Accessors.getall(obj, o::LoggedOptic)
+function getall(obj, o::LoggedOptic)
     @info _indent(o.depth) * "┌ getall $(repr(obj)) |> $(repr(o.o))"
     res = getall(obj, o.o)
     @info _indent(o.depth) * "└ $(repr(res))"
     res
 end
 
-function Accessors.setall(obj, o::LoggedOptic, values)
+function setall(obj, o::LoggedOptic, values)
     @info _indent(o.depth) * "┌ setall $(repr(obj)) |> $(repr(o.o)): $(repr(getall(obj, o.o))) => $(repr(values))"
     res = setall(obj, o.o, values)
     @info _indent(o.depth) * "└ $(repr(res))"

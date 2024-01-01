@@ -7,7 +7,7 @@ end
 export maybe
 maybe(o; default=nothing) = MaybeOptic(o, default)
 
-Accessors.OpticStyle(::Type{<:MaybeOptic}) = Val(:maybe)
+OpticStyle(::Type{<:MaybeOptic}) = Val(:maybe)
 
 Accessors.composed_optic_style(m::Val{:maybe}, ::Any) = m
 Accessors.composed_optic_style(::Any, m::Val{:maybe}) = m
@@ -31,7 +31,7 @@ end
 (o::MaybeOptic{<:IndexLens})(obj::AbstractArray) =
     checkbounds(Bool, obj, o.o.indices...) ? o.o(obj) : o.default
 
-function Accessors.set(obj::AbstractArray, o::MaybeOptic{<:IndexLens}, val)
+function set(obj::AbstractArray, o::MaybeOptic{<:IndexLens}, val)
     if isnothing(val)
         checkbounds(Bool, obj, o.o.indices...) ? delete(obj, o.o) : obj
     else
@@ -39,7 +39,7 @@ function Accessors.set(obj::AbstractArray, o::MaybeOptic{<:IndexLens}, val)
     end
 end
 
-function Accessors.modify(f, obj::AbstractArray, o::MaybeOptic{<:IndexLens})
+function modify(f, obj::AbstractArray, o::MaybeOptic{<:IndexLens})
     if checkbounds(Bool, obj, o.o.indices...)
         # like modify(f, obj, o.o), but can delete
         oldv = o.o(obj)

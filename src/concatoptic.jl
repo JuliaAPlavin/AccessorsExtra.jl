@@ -6,7 +6,7 @@ concat(optics...) = ConcatOptics(optics)
 concat(; optics...) = ConcatOptics(values(optics))
 const ++ = concat
 
-Accessors.OpticStyle(::Type{<:ConcatOptics}) = Accessors.ModifyBased()
+OpticStyle(::Type{<:ConcatOptics}) = ModifyBased()
 
 macro optics(exs...)
     optic_exs = map(exs) do ex
@@ -16,7 +16,7 @@ macro optics(exs...)
 end
 
 
-function Accessors.getall(obj, co::ConcatOptics)
+function getall(obj, co::ConcatOptics)
     map(co.optics) do o
         getall(obj, o)
     end |> _reduce_concat
@@ -25,13 +25,13 @@ end
 _reduce_concat(xs) = Accessors._reduce_concat(xs)
 _reduce_concat(xs::NamedTuple) = map(only, xs)
 
-function Accessors.modify(f, obj, co::ConcatOptics)
+function modify(f, obj, co::ConcatOptics)
     foldl(co.optics; init=obj) do obj, o
         modify(f, obj, o)
     end
 end
 
-function Accessors.setall(obj, co::ConcatOptics{<:Tuple}, vals)
+function setall(obj, co::ConcatOptics{<:Tuple}, vals)
     lengths = map(co.optics) do o
         Accessors._staticlength(getall(obj, o))
     end
@@ -41,7 +41,7 @@ function Accessors.setall(obj, co::ConcatOptics{<:Tuple}, vals)
     end
 end
 
-function Accessors.setall(obj, co::ConcatOptics{<:NamedTuple}, vals::NamedTuple{KS}) where {KS}
+function setall(obj, co::ConcatOptics{<:NamedTuple}, vals::NamedTuple{KS}) where {KS}
     foreach(NamedTuple{KS}(co.optics), vals) do o, vss
         @assert length(getall(obj, o)) == 1
     end
