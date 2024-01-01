@@ -15,6 +15,7 @@ Base.first(ix::ValWithContext) = ix.ctx
 Base.last(ix::ValWithContext) = ix.v
 Base.iterate(ix::ValWithContext, args...) = iterate(ix.ctx => ix.v, args...)
 Base.show(io::IO, ix::ValWithContext) = print(io, ix.ctx, " ⇒ ", ix.v)
+hascontext(::ValWithContext) = true
 stripcontext(ix::ValWithContext) = stripcontext(ix.v)
 
 struct MultiContext{CS}
@@ -34,6 +35,7 @@ Base.iterate(ctx::MultiContext, args...) = iterate(ctx.contexts, args...)
 struct _ContextValOnly{C} <: ContextOptic
     ctx::C
 end
+hascontext(::_ContextValOnly) = true
 stripcontext(o::_ContextValOnly) = identity
 (o::_ContextValOnly)(obj) = ValWithContext(o.ctx, obj)
 set(obj, o::_ContextValOnly, v) = _unpack_val(v, o(obj).ctx)
@@ -44,6 +46,7 @@ _unpack_val(x::ValWithContext, i) = (@assert x.ctx == i; x.v)
 struct Keyed{O} <: ContextOptic
     o::O
 end
+hascontext(::Keyed) = true
 stripcontext(o::Keyed) = stripcontext(o.o)
 OpticStyle(::Type{Keyed{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Keyed) = print(io, "keyed(", co.o, ")")
@@ -55,6 +58,7 @@ keyed(o::PropertyLens{p}) where {p} = _ContextValOnly(p) ∘ o
 struct Enumerated{O} <: ContextOptic
     o::O
 end
+hascontext(::Enumerated) = true
 stripcontext(o::Enumerated) = stripcontext(o.o)
 OpticStyle(::Type{Enumerated{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Enumerated) = print(io, "enumerated(", co.o, ")")
@@ -65,6 +69,7 @@ enumerated(o) = Enumerated(o)
 struct SelfContext{F} <: ContextOptic
     f::F
 end
+hascontext(::SelfContext) = true
 stripcontext(o::SelfContext) = identity
 OpticStyle(::Type{<:SelfContext}) = ModifyBased()
 Base.show(io::IO, co::SelfContext) = print(io, "selfcontext(", co.f, ")")
@@ -110,6 +115,7 @@ modify(f, obj, ::Keyed{Properties}) = modify(f, obj, keyed(Elements()) ∘ getpr
 struct KeepContext{O} <: ContextOptic
     o::O
 end
+hascontext(::KeepContext) = true
 stripcontext(o::KeepContext) = stripcontext(o.o)
 
 export ᵢ
@@ -156,6 +162,13 @@ modify(f, obj::ValWithContext, o::KeepContext) =
 stripcontext(o::ComposedFunction) = @modify(stripcontext, decompose(o)[∗])
 stripcontext(o::ConcatOptics) = @modify(stripcontext, o.optics[∗])
 stripcontext(o) = o
+
+hascontext(o::ComposedFunction) = any(hascontext, decompose(o))
+function hascontext(o::ConcatOptics)
+    @assert allequal(map(hascontext, o.optics))
+    return hascontext(first(o.optics))
+end
+hascontext(o) = false
 
 
 # helpers:

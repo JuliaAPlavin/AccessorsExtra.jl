@@ -553,6 +553,29 @@ end
     ==ᶠ(x, y) = all(filter(!=(identity), decompose(x)) .==ᶠ filter(!=(identity), decompose(y)))
     ==ᶠ(x::ConcatOptics, y::ConcatOptics) = all(x.optics .==ᶠ y.optics)
 
+    @testset for o in (
+        log,
+        (@optic _.a),
+        (@optic _[∗].a),
+        (@optic _[∗].a) ++ (@optic _[1]),
+    )
+        @test !hascontext(o)
+        @test stripcontext(o) === o
+    end
+    @testset for o in (
+        (@optic _.a) |> enumerated,
+        (@optic _[∗].a) |> enumerated,
+        (@optic _ |> enumerated(∗) |> _.a),
+        (@optic _ |> keyed(∗) |> _.a),
+        ((@optic _[∗].a) ++ (@optic _[1])) |> enumerated,
+        ((@optic _[∗].a) ++ (@optic _[1])) |> selfcontext,
+        ((@optic _ |> keyed(∗) |> _.a) ++ keyed(@optic _[1])) |> enumerated,
+        ((@optic _ |> keyed(∗) |> _.a) ++ keyed(@optic _[1])),
+    )
+        @test hascontext(o)
+        @test stripcontext(o) != o
+    end
+
     @test stripcontext((a=1, b=:x)) === (a=1, b=:x)
     @test stripcontext(AccessorsExtra.ValWithContext(1, 2)) === 2
     @test stripcontext(keyed(Elements())) ==ᶠ Elements()
