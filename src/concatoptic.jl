@@ -61,3 +61,30 @@ function Base.show(io::IO, co::ConcatOptics{<:Tuple})
 end
 Base.show(io::IO, ::MIME"text/plain", optic::ConcatOptics{<:Tuple}) = show(io, optic)
 
+
+# works? but not sure if it's useful ie better than just using ++
+
+# using FlexiGroups
+# using Accessors: deopcompose
+# import Accessors: opcompose
+
+# opcompose() = identity
+
+# export batchize
+# function batchize(co::ConcatOptics)
+#     @p let
+#         co.optics
+#         map() do _
+#             parts = deopcompose(_)
+#             (; first=first(parts), rest=opcompose(Base.tail(parts)...))
+#         end
+#         group(_.first)
+#         map() do __
+#             map(_.rest)
+#             Tuple
+#             ConcatOptics
+#         end
+#         values(__) .∘ keys(__)
+#         concat(__...)
+#     end
+# end
