@@ -51,8 +51,10 @@ end
 
 @testitem "replace" begin
     nt = (a=1, b=:x)
-    @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (c=1, b=:x)
-    @test AccessorsExtra._replace(nt, (@optic(_.a) => @optic(_.c)) ∘ identity) === (c=1, b=:x)
+    AccessorsExtra.@allinferred _replace begin
+        @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (c=1, b=:x)
+        @test AccessorsExtra._replace(nt, (@optic(_.a) => @optic(_.c)) ∘ identity) === (c=1, b=:x)
+    end
     @test @replace(nt.c = nt.a) === (c=1, b=:x)
     @test @replace(nt.c = _.a) === (c=1, b=:x)
     @test @replace(_.c = nt.a) === (c=1, b=:x)
@@ -66,33 +68,35 @@ end
     ==ₜ(_, _) = false
     ==ₜ(x::T, y::T) where T = x == y
 
-    @test assemble(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
-    @test assemble(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
-    @test assemble(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 == 1 + 2im
-    @test assemble(Complex, @optic(_.re) => 1., @optic(_.im) => 2)::ComplexF64 === 1. + 2im
-    @test assemble(Complex, abs => 1., angle => π/2)::ComplexF64 ≈ 1im
-    @test assemble(ComplexF32, abs => 1., angle => π/2)::ComplexF32 ≈ 1im
-    @test_throws InexactError assemble(Complex{Int}, abs => 1., angle => π/2)
+    AccessorsExtra.@allinferred assemble begin
+        @test assemble(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+        @test assemble(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+        @test assemble(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 == 1 + 2im
+        @test assemble(Complex, @optic(_.re) => 1., @optic(_.im) => 2)::ComplexF64 === 1. + 2im
+        @test assemble(Complex, abs => 1., angle => π/2)::ComplexF64 ≈ 1im
+        @test assemble(ComplexF32, abs => 1., angle => π/2)::ComplexF32 ≈ 1im
+        @test_throws InexactError assemble(Complex{Int}, abs => 1., angle => π/2)
 
-    @test assemble(Tuple, only => 1) === (1,)
-    @test assemble(Tuple{Int}, only => 1) === (1,)
-    @test assemble(Tuple{Float64}, only => 1) === (1.0,)
-    @test_throws Exception assemble(Tuple{String}, only => 1)
-    @test_throws Exception assemble(Tuple{Int, Int}, only => 1)
+        @test assemble(Tuple, only => 1) === (1,)
+        @test assemble(Tuple{Int}, only => 1) === (1,)
+        @test assemble(Tuple{Float64}, only => 1) === (1.0,)
+        @test_throws Exception assemble(Tuple{String}, only => 1)
+        @test_throws Exception assemble(Tuple{Int, Int}, only => 1)
 
-    @test assemble(Vector, only => 1) ==ₜ [1]
-    @test assemble(Vector{Int}, only => 1) ==ₜ [1]
-    @test assemble(Vector{Float64}, only => 1) ==ₜ [1.0]
-    @test_throws Exception assemble(Vector{String}, only => 1)
+        @test assemble(Vector, only => 1) ==ₜ [1]
+        @test assemble(Vector{Int}, only => 1) ==ₜ [1]
+        @test assemble(Vector{Float64}, only => 1) ==ₜ [1.0]
+        @test_throws Exception assemble(Vector{String}, only => 1)
 
-    @test assemble(Set, only => 1) ==ₜ Set((1,))
-    @test assemble(Set{Int}, only => 1) ==ₜ Set((1,))
-    @test assemble(Set{Float64}, only => 1) ==ₜ Set((1.0,))
-    @test_throws Exception assemble(Set{String}, only => 1,)
+        @test assemble(Set, only => 1) ==ₜ Set((1,))
+        @test assemble(Set{Int}, only => 1) ==ₜ Set((1,))
+        @test assemble(Set{Float64}, only => 1) ==ₜ Set((1.0,))
+        @test_throws Exception assemble(Set{String}, only => 1,)
 
-    @test assemble(NamedTuple{(:a,)}, only => 1) === (a=1,)
-    @test assemble(NamedTuple, @optic(_.a) => 1) === (a=1,)
-    @test assemble(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "") === (a=1, b="")
+        @test assemble(NamedTuple{(:a,)}, only => 1) === (a=1,)
+        @test assemble(NamedTuple, @optic(_.a) => 1) === (a=1,)
+        @test assemble(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "") === (a=1, b="")
+    end
 
     @test @assemble(Complex, _.re = 1, _.im = 2)::Complex{Int} === 1 + 2im
     @test (@assemble Complex{Int}  _.re = 1 _.im = 2)::Complex{Int} === 1 + 2im
@@ -339,27 +343,30 @@ end
 @testitem "other optics" begin
     using Dictionaries
 
-    T = (4, 5, 6)
-    @test (8, 10, 12) === @inferred modify(x -> 2x, T, Values())
-    @test (5, 7, 9) === @inferred modify(((i, x),) -> i => i + x, T, Pairs())
-    @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> Pairs())
-    T = (a=4, b=5, c=6)
-    @test (a=8, b=10, c=12) === @inferred modify(x -> 2x, T, Values())
-    @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), T, Keys())
-    @test (a=(:a, 8), b=(:b, 10), c=(:c, 12)) === @inferred modify(((i, x),) -> i => (i, 2x), T, Pairs())
-    A = [4, 5, 6]
-    @test [8, 10, 12] == @inferred modify(x -> 2x, A, Values())
-    @test [5, 7, 9] == @inferred modify(((i, x),) -> i => i + x, A, Pairs())
-    D = Dict(4 => 5, 6 => 7)
-    @test Dict(4 => 6, 6 => 8) == @inferred modify(x -> x+1, D, Values())
-    @test Dict(5 => 5, 7 => 7) == @inferred modify(x -> x+1, D, Keys())
-    @test Dict(8 => 9, 12 => 13) == @inferred modify(((i, x),) -> 2i => i + x, D, Pairs())
-    D = dictionary([4 => 5, 6 => 7])
-    @test dictionary([4 => 6, 6 => 8]) == @inferred modify(x -> x+1, D, Values())
-    @test dictionary([5 => 5, 7 => 7]) == @inferred modify(x -> x+1, D, Keys())
-    D = ArrayDictionary([4, 6], [5, 7])
-    @test dictionary([4 => 6, 6 => 8]) == @inferred modify(x -> x+1, D, Values())
-    @test dictionary([5 => 5, 7 => 7]) == @inferred modify(x -> x+1, D, Keys())
+    AccessorsExtra.@allinferred modify begin
+        T = (4, 5, 6)
+        @test (8, 10, 12) === modify(x -> 2x, T, Values())
+        @test (5, 7, 9) === modify(((i, x),) -> i => i + x, T, Pairs())
+        @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> Pairs())
+        T = (a=4, b=5, c=6)
+        @test (a=8, b=10, c=12) === modify(x -> 2x, T, Values())
+        @test_broken (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), Keys())  # doesn't infer, but result correct
+        @test (a=(:a, 8), b=(:b, 10), c=(:c, 12)) === modify(((i, x),) -> i => (i, 2x), T, Pairs())
+        A = [4, 5, 6]
+        @test [8, 10, 12] == modify(x -> 2x, A, Values())
+        @test [5, 7, 9] == modify(((i, x),) -> i => i + x, A, Pairs())
+        D = Dict(4 => 5, 6 => 7)
+        @test Dict(4 => 6, 6 => 8) == modify(x -> x+1, D, Values())
+        @test Dict(5 => 5, 7 => 7) == modify(x -> x+1, D, Keys())
+        @test Dict(8 => 9, 12 => 13) == modify(((i, x),) -> 2i => i + x, D, Pairs())
+        D = dictionary([4 => 5, 6 => 7])
+        @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, Values())
+        @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, Keys())
+        D = ArrayDictionary([4, 6], [5, 7])
+        @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, Values())
+        @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, Keys())
+    end
+    @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), Keys())
 end
 
 @testitem "skycoords" begin
