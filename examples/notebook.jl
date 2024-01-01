@@ -23,7 +23,7 @@ The [Accessors.jl](https://github.com/JuliaObjects/Accessors.jl) package defines
 
 This notebook showcases the more stable and widely applicable pieces of functionality defined in `AccessorsExtra`. See the source code and tests for more.
 
-As far as possible, `AccessorsExtra` operations attempt to have as little overhead as possible, with tests checking this.
+Optics and operations in `AccessorsExtra` attempt to have as little overhead as possible, often zero, with tests checking this.
 
 !!! note
     Before Julia 1.9, `AccessorsExtra` focused on `Accessors` integrations with third-party packages. With package extensions available, these integrations are put into `Accessors` itself, or into packages that define corresponding types.
