@@ -280,12 +280,12 @@ end
     @test modify(
         wix -> wix.v / wix.i.total,
         ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
-        Elements() ⨟ selfindexed() ⨟ @optic(_.x)ᵢ
+        Elements() ⨟ selfcontext() ⨟ @optic(_.x)ᵢ
     ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
     @test modify(
         wix -> wix.v / wix.i,
         ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
-        Elements() ⨟ selfindexed(r -> r.total) ⨟ @optic(_.x)ᵢ
+        Elements() ⨟ selfcontext(r -> r.total) ⨟ @optic(_.x)ᵢ
     ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
 
     @test modify(

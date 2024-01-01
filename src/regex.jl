@@ -87,10 +87,10 @@ function modify(f, m::RegexMatch, ::Elements)
     end
 end
 
-function modify(f, m::RegexMatch, ::IXed{Elements})
+function modify(f, m::RegexMatch, ::Keyed{Elements})
     foldl(reverse(keys(m)); init=m.match) do s, k
         sub = m[k]
-        v = modify(f, sub, _IndexedValOnly(k))
+        v = modify(f, sub, _ContextValOnly(k))
         rng = ((sub.offset+1):(sub.offset+sub.ncodeunits)) .- m.match.offset
         @set s[FlexIx(rng)] = v
     end
