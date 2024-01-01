@@ -25,8 +25,8 @@ construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
 
 
 _propname(::PropertyLens{P}) where {P} = P
-construct(::Type{T}, arg1::Pair{<:PropertyLens}, args::Vararg{<:Pair{<:PropertyLens}}) where {T} = _construct(T, arg1, args...)
-function _construct(::Type{T}, args::Vararg{<:Pair{<:PropertyLens}})::T where {T}
+construct(::Type{T}, arg1::Pair{<:PropertyLens}, args::Vararg{Pair{<:PropertyLens}}) where {T} = _construct(T, arg1, args...)
+function _construct(::Type{T}, args::Vararg{Pair{<:PropertyLens}})::T where {T}
     @assert fieldnames(T) == map(_propname ∘ first, args)
     constructorof(T)(map(last, args)...)
 end
