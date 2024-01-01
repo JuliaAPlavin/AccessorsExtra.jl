@@ -57,6 +57,13 @@ set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
 InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)
 
+# https://github.com/JuliaObjects/Accessors.jl/pull/103
+function set(obj, f::Base.Fix1{typeof(getindex)}, val)
+    ix = findfirst(isequal(val), f.x)
+    ix === nothing && throw(ArgumentError("value $val not found in $(f.x)"))
+    return ix
+end
+
 # shortcuts
 const ∗ = Elements()
 const ∗ₚ = Properties()

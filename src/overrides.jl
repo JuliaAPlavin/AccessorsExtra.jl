@@ -2,7 +2,13 @@ using Accessors: @capture, foldtree, postwalk, need_dynamic_optic, replace_under
 import Accessors: parse_obj_optics
 
 
+# https://github.com/JuliaObjects/Accessors.jl/pull/103
+tree_contains(ex, parts::Tuple) = foldtree((yes, x) -> yes || x ∈ parts, false, ex)
+tree_contains(ex, part) = tree_contains(ex, (part,))
+
+
 # https://github.com/JuliaObjects/Accessors.jl/pull/55
+# https://github.com/JuliaObjects/Accessors.jl/pull/103
 function parse_obj_optics(ex::Expr)
     dollar_exprs = foldtree([], ex) do exs, x
         x isa Expr && x.head == :$ ?
@@ -33,16 +39,24 @@ function parse_obj_optics(ex::Expr)
         end
         return obj, tuple(frontoptic..., backoptic...)
     elseif @capture(ex, front_[indices__])
-        obj, frontoptic = parse_obj_optics(front)
-        if any(need_dynamic_optic, indices)
-            @gensym collection
-            indices = replace_underscore.(indices, collection)
-            dims = length(indices) == 1 ? nothing : 1:length(indices)
-            lindices = esc.(lower_index.(collection, indices, dims))
-            optic = :($DynamicIndexLens($(esc(collection)) -> ($(lindices...),)))
+        if !tree_contains(front, :_) && any(ind -> tree_contains(ind, :_), indices)
+            ind = only(indices)
+            if tree_contains(ind, :_)
+                obj, frontoptic = parse_obj_optics(ind)
+                optic = :(Base.Fix1(getindex, $(esc(front))))
+            end
         else
-            index = esc(Expr(:tuple, indices...))
-            optic = :($IndexLens($index))
+            obj, frontoptic = parse_obj_optics(front)
+            if any(need_dynamic_optic, indices)
+                @gensym collection
+                indices = replace_underscore.(indices, collection)
+                dims = length(indices) == 1 ? nothing : 1:length(indices)
+                lindices = esc.(lower_index.(collection, indices, dims))
+                optic = :($DynamicIndexLens($(esc(collection)) -> ($(lindices...),)))
+            else
+                index = esc(Expr(:tuple, indices...))
+                optic = :($IndexLens($index))
+            end
         end
     elseif @capture(ex, front_.property_)
         property isa Union{Int,Symbol,String} || throw(ArgumentError(
@@ -55,9 +69,7 @@ function parse_obj_optics(ex::Expr)
         obj, frontoptic = parse_obj_optics(front)
         optic = esc(f) # function optic
     elseif @capture(ex, f_(args__))
-        args_contain_under = map(args) do arg
-            foldtree((yes, x) -> yes || x === :_, false, arg)
-        end
+        args_contain_under = map(arg -> tree_contains(arg, :_), args)
         if !any(args_contain_under)
             # as if f(args...) didn't match
             obj = esc(ex)
