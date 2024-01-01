@@ -204,6 +204,18 @@ end
         (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
         @optic(_.b)ᵢ ⨟ keyed(Elements()) ⨟ Elements()ᵢ
     ) == (a=1, b=(x=(a=:x=>'a',), y=(a=:y=>'b',), z=(a=:z=>'c',)))
+
+    @test modify(
+        wix -> wix.v / wix.i.total,
+        ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
+        Elements() ⨟ selfindexed() ⨟ @optic(_.x)ᵢ
+    ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
+    @test modify(
+        wix -> wix.v / wix.i,
+        ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
+        Elements() ⨟ selfindexed(r -> r.total) ⨟ @optic(_.x)ᵢ
+    ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
+
     @test modify(
         wix -> "$(wix.v.match)_$(wix.i)",
         "abc def 5 x y z 123",

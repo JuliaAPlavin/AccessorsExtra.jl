@@ -14,6 +14,13 @@ OpticStyle(::Type{Enumerated{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Enumerated) = print(io, "ixed(", co.o, ")")
 
 enumerated(o) = Enumerated(o)
+
+struct SelfIndexed{F}
+    f::F
+end
+OpticStyle(::Type{<:SelfIndexed}) = ModifyBased()
+Base.show(io::IO, co::SelfIndexed) = print(io, "ixed(", co.f, ")")
+selfindexed(f=identity) = SelfIndexed(f)
  
 struct WithIndex
     i
@@ -31,6 +38,8 @@ OpticStyle(::Type{<:_IndexedValOnly}) = ModifyBased()
 modify(f, obj, o::_IndexedValOnly) = _unpack_val(f(WithIndex(o.i, obj)), o.i)
 _unpack_val(x, i) = x
 _unpack_val(x::WithIndex, i) = (@assert x.i == i; x.v)
+
+modify(f, obj, o::SelfIndexed) = modify(f, obj, _IndexedValOnly(o.f(obj)))
 
 function modify(f, obj, ::Enumerated{Elements})
     i = Ref(1)

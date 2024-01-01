@@ -19,7 +19,7 @@ export
     @replace,
     assemble, @assemble,
     unrecurcize, RecursiveOfType,
-    keyed, enumerated,
+    keyed, enumerated, selfindexed,
     get_steps, logged
 
 
