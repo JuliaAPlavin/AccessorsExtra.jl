@@ -16,7 +16,7 @@ export
     concat, ++, @optics, @optic₊,
     @replace,
     construct, @construct,
-    unrecurcize, RecursiveOfType,
+    RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, osomething, hasoptic,
     FlexIx,
@@ -28,7 +28,6 @@ include("setindex.jl")
 include("keyvalues.jl")
 include("flexix.jl")
 include("concatoptic.jl")
-include("alongside.jl")
 include("recursive.jl")
 include("context.jl")
 include("maybe.jl")

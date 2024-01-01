@@ -226,7 +226,7 @@ Optimize scales and shifts of all components - specified via a recursive optic:
 # ╔═╡ 52baa97e-dcd4-4ba7-8492-6f1179522562
 let
 	vars = OptArgs(
-		unrecurcize(RecursiveOfType(Number, ∗ₚ), typeof(mod0)) => 0..10.,
+		RecursiveOfType(Number) => 0..10.,
 	)
 	mod = solmod_from_vars(vars)
 	plot_datamod(data, mod), mod

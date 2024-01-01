@@ -353,46 +353,42 @@ end
 end
 
 @testitem "recursive" begin
-    AccessorsExtra.@allinferred modify getall begin
-    or = RecursiveOfType(Number, ∗, recurse=Union{Tuple,Vector,NamedTuple})
+    using StaticArrays
+
+    AccessorsExtra.@allinferred modify getall setall begin
+    or = RecursiveOfType(Number, ∗, recurse=Union{Tuple,AbstractVector,NamedTuple})
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-    o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 1, 3)
     @test modify(x->x+10, m, or) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
-    @test getall(m, o) == getall(m, or)
-    @test setall(m, o, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
-    @test_broken @inferred(setall(m, o, (10, 20, 30))) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
-    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
+    @test setall(m, or, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
 
     m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
-    o = unrecurcize(or, typeof(m))
     @test getall(m, or) == [1, 1, 3]
     @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
-    @test setall(m, o, [10, 20, 30]) == (a=10, bs=[(c=20, d="2"), (c=30, d="xxx")])
-    @test getall(m, o) == getall(m, or)
-    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
+    @test_throws Exception setall(m, or, [10, 20, 30])  # setall not supported with dynamic length vectors
+    @test getall(m, or) == getall(m, or)
+
+    m = (a=1, bs=SVector((c=1, d="2"), (c=3, d="xxx")))
+    @test getall(m, or) == SVector(1, 1, 3)
+    @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @test setall(m, or, (10, 20, 30)) == (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
+    @test getall(m, or) == getall(m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     or = RecursiveOfType(NamedTuple)
-    o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
-    @test_broken getall(m, o) == getall(m, or)
-    @test modify(Dict ∘ pairs, m, o) == modify(Dict ∘ pairs, m, or)
+    @test modify(Dict ∘ pairs, m, or) == modify(Dict ∘ pairs, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
-    o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
-    @test_broken getall(m, o) == getall(m, or)
 
     m = (a=1, b=2+3im)
     or = RecursiveOfType(Real)
-    o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
-    @test getall(m, o) == getall(m, or)
-    @test setall(m, o, (10, 20, 30)) == (a=10, b=20+30im)
-    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
+    @test getall(m, or) == getall(m, or)
+    @test setall(m, or, (10, 20, 30)) == (a=10, b=20+30im)
     end
 end
 
