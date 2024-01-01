@@ -214,6 +214,28 @@ end
         "abc def 5 x y z 123",
         @optic(eachmatch(r"\d+", _)) ⨟ enumerated(Elements()) ⨟ @optic(parse(Int, _.match))ᵢ
     ) == "abc def 6 x y z 125"
+    @test modify(
+        wix -> "$(wix.i):$(wix.v)",
+        "2022-03-15",
+        @optic(match(r"(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})", _)) ⨟ keyed(Elements())
+    ) == "y:2022-m:03-d:15"
+end
+
+@testitem "All()" begin
+    o = @optic _.a[∗].b
+    x = (a=((b=1,), (b=2,), (b=3,)), c=4)
+    @test getall(x, o) == (o ⨟ All())(x) == (1, 2, 3)
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ All()
+    @test modify(reverse, x, o) == (a=((b=4,), (b=3,), (b=2,)), c=1)
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ @optic(_ |> All() |> _[2])
+    @test modify(x -> x*10, x, o) == (a=((b=1,), (b=20,), (b=3,)), c=4)
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ @optic(_ |> All()) ⨟ @optics _[1] _[2]
+    @test modify(x -> x*10, x, o) == (a=((b=10,), (b=20,), (b=3,)), c=4)
+    @test modify(
+        xs -> round.(Int, xs ./ sum(xs) .* 100),
+        "Counts: 10, 15, and 25!",
+        @optic(eachmatch(r"\d+", _)[∗] |> parse(Int, _.match) |> All())
+    ) == "Counts: 20, 30, and 50!"
 end
 
 @testitem "steps" begin

@@ -14,7 +14,7 @@ using Requires
 
 export
     ViewLens,
-    ∗, ∗ₚ,
+    ∗, ∗ₚ, All,
     concat, ++, @optics,
     @replace,
     assemble, @assemble,
@@ -253,5 +253,19 @@ modify(f, obj, ::FuncArgument) = obj ∘ f
 
 
 set(obj, ::typeof(sort), val) = @set obj[sortperm(obj)] = val
+
+
+
+struct All end
+struct _AllOptic{O}
+    o::O
+end
+OpticStyle(::Type{_AllOptic}) = ModifyBased()
+(o::_AllOptic)(obj) = getall(obj, o.o)
+set(obj, o::_AllOptic, val) = setall(obj, o.o, val)
+
+Base.:∘(i::All, o) = _AllOptic(o)
+Base.:∘(i::_AllOptic, o) = _AllOptic(i.o ∘ o)
+Base.:∘(c::ComposedFunction{<:Any, <:All}, o) = c.outer ∘ _AllOptic(o)
 
 end
