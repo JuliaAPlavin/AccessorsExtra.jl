@@ -31,15 +31,14 @@ function assemble(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}})
     end
 end
 
-using Accessors.MacroTools: @capture, rmlines, striplines, isline
 
 macro assemble(exprs...)
     T, args... = exprs
     if length(args) == 1 && Base.isexpr(only(args), :block)
-        args = filter(!isline, only(args).args)
+        args = filter(!MacroTools.isline, only(args).args)
     end
     ov_pairs = map(args) do arg
-        @assert @capture arg (optic_ = value_)
+        @assert MacroTools.@capture arg (optic_ = value_)
         :($Accessors.@optic($optic) => $value)
     end
     return :(

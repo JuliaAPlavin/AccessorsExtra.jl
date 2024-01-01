@@ -83,7 +83,7 @@ set(obj, os::Dict, vals) =
 macro optic₊(ex)
     if Base.isexpr(ex, :tuple) || Base.isexpr(ex, :vect)
         @modify(ex.args[∗]) do arg
-            if @capture arg (key_ = optic_)
+            if MacroTools.@capture arg (key_ = optic_)
                 :( $key = $Accessors.@optic $optic )
             else
                 :( $Accessors.@optic $arg )
@@ -91,7 +91,7 @@ macro optic₊(ex)
         end
     elseif Base.isexpr(ex, :call)
         @modify(ex.args[2:end][∗]) do arg
-            if @capture arg (key_ => optic_)
+            if MacroTools.@capture arg (key_ => optic_)
                 :( $key => $Accessors.@optic $optic )
             else
                 :( $Accessors.@optic $arg )

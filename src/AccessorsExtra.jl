@@ -11,6 +11,7 @@ using ConstructionBaseExtras
 using InverseFunctions
 using StaticArraysCore: SVector, MVector
 using Requires
+using Accessors: MacroTools
 
 export
     ViewLens,
