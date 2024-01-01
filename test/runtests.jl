@@ -188,8 +188,9 @@ end
     @test sprint(show, @o(sort(_, 1, by=abs))) == "(@optic sort(_, 1, by=abs))"
     @test sprint(show, @o(_ |> keyed(∗))) == "keyed(∗)"
     @test sprint(show, @o(_.a |> enumerated(∗ₚ))) == "(@optic _.a |> enumerated(∗ₚ))"
-    @test sprint(show, @o(_.a |> selfcontext(∗ₚ) |> _.b)) == "(ᵢ(@optic _.b))ᵢ ∘ (@optic _.a |> selfcontext(∗ₚ))"
-    @test_broken sprint(show, @o(_.a[∗].b[∗ₚ].c[2]); context=:compact => true) == "_.a[∗].b[∗ₚ].c[2]"
+    @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b)) == "(ᵢ(@optic _.b))ᵢ ∘ (@optic _.a[∗ₚ] |> selfcontext(identity))"
+    @test sprint(show, @o(_.a[∗].b[∗ₚ].c[2]); context=:compact => true) == "_.a[∗].b[∗ₚ].c[2]"
+    @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b); context=:compact => true) == "(_.b)ᵢ ∘ _.a[∗ₚ] |> selfcontext(identity)"
 end
 
 @testitem "and/or/..." begin
