@@ -56,8 +56,9 @@ end
         x=mapview(_ -> error("Shouldn't happen"), 1:100),
         y=10:10:1000
     )
-    @test A.x === @inferred map((@o _.x), A)
-    @test A.y === @inferred map((@o _.y), A)
+    @test A.x === @inferred mapview((@o _.x), A)
+    @test A.y === @inferred mapview((@o _.y), A)
+    @test 11:10:1001 == @inferred mapview((@o _.y + 1), A)
     @test 11:10:1001 == @inferred map((@o _.y + 1), A)
     @test_throws "Shouldn't happen" @inferred map((@o _.x + 1), A)
 
@@ -68,10 +69,57 @@ end
             im=0.01:0.01:1.0,
         )
     )
-    @test B.xy.y === @inferred map((@o _.xy.y), B)
+    @test B.xy.y === @inferred mapview((@o _.xy.y), B)
     @test 11:10:1001 == @inferred map((@o _.xy.y + 1), B)
     @test_throws "Shouldn't happen" @inferred map((@o _.xy.x + 1), B)
 
     @test 20:20:2000 == @inferred map((@o _.xy.y + _.xy.y), B)
     @test 10.01:10.01:1001.0 == @inferred map((@o _.xy.y + _.z.im), B)
+
+    C = @inferred map((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B)
+    @test C[5] == (a = 51, b = 50.05, c = (y=50,))
+    @test C.a == 11:10:1001
+    @test C.c.y == 10:10:1000
+
+    # C = @inferred mapview((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B)
+    # @test C[5] == (a = 51, b = 50.05, c = (y=50,))
+end
+
+@testitem "dictarrays" begin
+    using StructArrays
+    using DictArrays
+    using FlexiMaps
+
+    A = DictArray(
+        x=mapview(_ -> error("Shouldn't happen"), 1:100),
+        y=10:10:1000
+    )
+    @test A.x === mapview((@o _.x), A)
+    @test A.y === mapview((@o _.y), A)
+    @test A.y == map((@o _.y), A)
+    @test 11:10:1001 == map((@o _.y + 1), A)
+    @test_throws "Shouldn't happen" map((@o _.x + 1), A)
+
+    B = StructArray(
+        xy=A,
+        z=DictArray(
+            re=mapview(_ -> error("Shouldn't happen"), 1:100),
+            im=0.01:0.01:1.0,
+            a=StructArray(
+                u=mapview(_ -> error("Shouldn't happen"), 1:100),
+                v=1:100,
+            )
+        )
+    )
+    @test B.xy.y === mapview((@o _.xy.y), B)
+    @test 11:10:1001 == map((@o _.xy.y + 1), B)
+    @test_throws "Shouldn't happen" map((@o _.xy.x + 1), B)
+
+    @test 20:20:2000 == map((@o _.xy.y + _.xy.y), B)
+    @test 10.01:10.01:1001.0 == map((@o _.xy.y + _.z.im), B)
+
+    C = map((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.z.a.v,))), B)
+    @test C[5] == (a = 51, b = 50.05, c = (v=5,))
+    @test C.a == 11:10:1001
+    @test C.c.v == 1:100
 end
