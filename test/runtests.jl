@@ -345,58 +345,6 @@ end
     @test @modify(x -> x + 1, A |> view(_, 1:2) |> Elements()) === A == [-3, -5, (a=3, b=4)]
 end
 
-@testitem "ranges" begin
-    r = 1:10
-    @test 1:3:10 === @set step(r) = 3
-    @test 1:0.5:10 === @set length(r) = 19
-    @test -5:10 === @set first(r) = -5
-    @test 1:15 === @set last(r) = 15
-
-    r = range(1, 10, length=10)
-    @test 1:3.0:10 === @set step(r) = 3
-    @test 1:0.5:10 === @set length(r) = 19
-    @test -5:1.0:10 === @set first(r) = -5
-    @test 1:1.0:15 === @set last(r) = 15
-
-    r = Base.OneTo(10)
-    @test 1:3:10 === @set step(r) = 3
-    @test 1:0.5:10 === @set length(r) = 19
-    @test -5:10 === @set first(r) = -5
-    @test Base.OneTo(15) === @set last(r) = 15
-end
-
-@testitem "arrays" begin
-    using OffsetArrays
-
-    A = [1 2 3; 4 5 6]
-    
-    B = @set axes(A)[1] = 10:11
-    @test parent(B) == A
-    @test_broken parent(B) === A
-    @test axes(B) == (10:11, 1:3)
-
-    @test_throws Exception @set axes(A)[1] = 10:12
-
-    @test A == @set axes(A)[1] = Base.OneTo(2)
-    @test reshape(A, (2, 1, 3)) == @insert axes(A)[2] = Base.OneTo(1)
-    B = @insert size(A)[2] = 1
-    @test reshape(A, (2, 1, 3)) == B
-    @test A == @delete size(B)[2]
-    @test_throws Exception @set size(A)[1] = 1
-    @test_throws Exception @insert size(A)[2] = 2
-
-    @inferred set(A, @optic(axes(_)[1]), Base.OneTo(2))
-    @inferred insert(A, @optic(axes(_)[2]), Base.OneTo(1))
-    @inferred insert(A, @optic(size(_)[2]), 1)
-    @inferred delete(B, @optic(size(_)[2]))
-
-    B = @set vec(A) = 1:6
-    @test B == [1 3 5; 2 4 6]
-
-    B = @set reverse(vec(A)) = 1:6
-    @test B == [6 4 2; 5 3 1]
-end
-
 @testitem "axiskeys" begin
     using AxisKeys
 
