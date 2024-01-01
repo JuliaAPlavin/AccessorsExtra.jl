@@ -5,7 +5,6 @@ using Reexport
 using Accessors: compose, opcompose, decompose, deopcompose
 import Accessors: set, modify, getall, setall, OpticStyle, SetBased, ModifyBased
 using DataPipes
-using FlexiMaps: filtermap
 using ConstructionBase
 using InverseFunctions
 using Requires

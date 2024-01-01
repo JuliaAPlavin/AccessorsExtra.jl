@@ -26,7 +26,7 @@ end
 
 
 macro allinferred(exprs...)
-    funcs = @p Base.front(exprs) |> filtermap(_expr_to_symb)
+    funcs = @p Base.front(exprs) |> map(_expr_to_symb) |> filter(!isnothing)
     expr = last(exprs)
     expr = prewalk(expr) do ex
         if Base.isexpr(ex, :macrocall) && ex.args[1] == Symbol("@noinf")
