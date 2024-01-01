@@ -39,6 +39,7 @@ propspec(f::ComposedFunction) = propspec(f.inner)
 propspec(f::ComposedFunction{<:Any,PropertyLens{P}}) where {P} = NamedTuple{(P,)}((propspec(f.outer),))
 
 
+extract_properties_recursive(x, _) = x
 extract_properties_recursive(x, ::Placeholder) = x
 extract_properties_recursive(x::NamedTuple, props_nt::NamedTuple{KS}) where {KS} = NamedTuple{KS}(map(extract_properties_recursive, values(x[KS]), values(props_nt)))
 # should work equally well, but hits inference recursion limit:

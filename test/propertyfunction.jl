@@ -75,6 +75,7 @@ end
     @test 11:10:1001 == @inferred map((@o _.xy.y + 1), B)
     @test_throws "Shouldn't happen" @inferred map((@o _.xy.x + 1), B)
 
+    @test 2:2:200 == @inferred map((@optic₊ _.xy.y + _.xy.y), [(xy=(y=i,),) for i in 1:100])
     @test 20:20:2000 == @inferred map((@o _.xy.y + _.xy.y), B)
     @test 10.01:10.01:1001.0 == @inferred map((@o _.xy.y + _.z.im), B)
 
