@@ -23,3 +23,64 @@ function _get_steps(obj, o::ComposedFunction)
     oobj, vcat(isteps, osteps)
 end
 _get_steps(obj::Thrown, o::ComposedFunction) = Base.@invoke _get_steps(obj::Any, o::ComposedFunction)
+
+
+
+
+struct LoggedOptic{O}
+    o::O
+    depth::Int
+end
+Accessors.OpticStyle(::Type{LoggedOptic{O}}) where {O} = Accessors.OpticStyle(O)
+
+logged(o::ComposedFunction; depth=0) = @modify(Accessors.deopcompose(o)) do ops
+    map(enumerate(ops)) do (i, op)
+        logged(op, depth=i - 1)
+    end
+end
+logged(o; depth=0) = LoggedOptic(o, depth)
+
+function (o::LoggedOptic)(obj)
+    @info _indent(o.depth) * "┌ get $(repr(obj)) |> $(repr(o.o))"
+    res = o.o(obj)
+    @info _indent(o.depth) * "└ $(repr(res))"
+    res
+end
+
+function Accessors.set(obj, o::LoggedOptic, value)
+    prev_str = Accessors.OpticStyle(o) isa Accessors.SetBased ?
+        repr(o.o(obj)) : "<…>"
+    @info _indent(o.depth) * "┌ set $(repr(obj)) |> $(repr(o.o)): $prev_str => $(repr(value))"
+    res = set(obj, o.o, value)
+    @info _indent(o.depth) * "└ $(repr(res))"
+    res
+end
+
+function Accessors.modify(f, obj, o::LoggedOptic)
+    prev_str = Accessors.OpticStyle(o) isa Accessors.SetBased ?
+        "; prev = $(repr(o.o(obj)))" : ""
+    @info(_indent(o.depth) * "┌ modify $(repr(obj)) |> $(repr(o.o)) with $f $prev_str")
+    res = modify(f, obj, o.o)
+    @info _indent(o.depth) * "└ $(repr(res))"
+    res
+end
+
+function Accessors.getall(obj, o::LoggedOptic)
+    @info _indent(o.depth) * "┌ getall $(repr(obj)) |> $(repr(o.o))"
+    res = getall(obj, o.o)
+    @info _indent(o.depth) * "└ $(repr(res))"
+    res
+end
+
+function Accessors.setall(obj, o::LoggedOptic, values)
+    @info _indent(o.depth) * "┌ setall $(repr(obj)) |> $(repr(o.o)): $(repr(getall(obj, o.o))) => $(repr(values))"
+    res = setall(obj, o.o, values)
+    @info _indent(o.depth) * "└ $(repr(res))"
+    res
+end
+
+_indent(depth) = "┆ "^depth
+
+
+Base.show(io::IO, co::LoggedOptic) = print(io, "logged(", co.o, "; depth=", co.depth, ")")
+Base.show(io::IO, ::MIME"text/plain", optic::LoggedOptic) = show(io, optic)

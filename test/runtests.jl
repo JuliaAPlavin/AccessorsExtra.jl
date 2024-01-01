@@ -172,6 +172,16 @@ end
         (o = @optic(_ + 1), g = nothing),
         (o = @optic(_ - 2), g = nothing)
     ]
+
+    o = logged(@optic first(_).a |> _ + 1)
+    @test o([(a=1,)]) == 2
+    @test set([(a=1,)], o, 'y') == [(a='x',)]
+    @test modify(-, [(a=1,)], o) == [(a=-3,)]
+    o = logged(@optic _[∗].a + 1)
+    @test getall([(a=1,)], o) == [2]
+    @test set([(a=1,)], o, 'y') == [(a='x',)]
+    @test setall([(a=1,)], o, ['y']) == [(a='x',)]
+    @test modify(-, [(a=1,)], o) == [(a=-3,)]
 end
 
 @testitem "replace" begin

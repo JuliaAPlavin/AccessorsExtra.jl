@@ -17,7 +17,7 @@ export
     @replace,
     assemble, @assemble,
     unrecurcize, RecursiveOfType,
-    get_steps
+    get_steps, logged
 
 
 include("flexix.jl")
