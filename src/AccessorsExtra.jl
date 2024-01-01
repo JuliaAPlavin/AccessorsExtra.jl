@@ -3,7 +3,7 @@ module AccessorsExtra
 using Reexport
 @reexport using Accessors
 using Accessors: compose, opcompose, decompose, deopcompose
-import Accessors: set, modify, getall, setall, OpticStyle, SetBased, ModifyBased
+import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBased, ModifyBased
 using DataPipes
 using ConstructionBase
 using InverseFunctions

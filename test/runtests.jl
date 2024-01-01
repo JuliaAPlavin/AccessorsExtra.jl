@@ -45,14 +45,17 @@ end
         Accessors.test_getsetall_laws(o, obj, (3, 4), (:a, :b))
     end
 
-    AccessorsExtra.@allinferred getall modify if VERSION >= v"1.10-"; :setall end begin
-        obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
-        o = concat(a=@optic(_.a), c=@optic(first(_.bs) |> _.c))
+    obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
+    o = concat(a=@optic(_.a), c=@optic(first(_.bs) |> _.c))
+    AccessorsExtra.@allinferred getall modify delete if VERSION >= v"1.10-"; :setall end begin
         @test getall(obj, o) === (a=1, c=2)
         @test setall(obj, o, (a="10", c="11")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
         @test setall(obj, o, (c="11", a="10")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
-        @test modify(-, obj, o) === (a=-1, bs=((c=-2, d=3), (c=4, d=5)))
+        @test modify(float, obj, o) === (a=1.0, bs=((c=2.0, d=3), (c=4, d=5)))
     end
+    # doesn't infer due to "bounded recursion
+    @test delete(obj, o) === (bs=((d=3,), (c=4, d=5)),)
+    
 
     AccessorsExtra.@allinferred getall setall modify begin
         obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
@@ -314,8 +317,7 @@ end
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
     @test_broken @inferred(getall(m, o)) == getall(m, or)
     @test getall(m, o) == getall(m, or)
-    @test_broken @inferred(modify(Dict ∘ pairs, m, o)) == modify(Dict ∘ pairs, m, or)
-    @test modify(Dict ∘ pairs, m, o) == modify(Dict ∘ pairs, m, or)
+    @test @inferred(modify(Dict ∘ pairs, m, o)) == modify(Dict ∘ pairs, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
     o = unrecurcize(or, typeof(m))

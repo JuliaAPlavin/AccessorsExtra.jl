@@ -25,11 +25,17 @@ end
 _reduce_concat(xs) = Accessors._reduce_concat(xs)
 _reduce_concat(xs::NamedTuple) = map(only, xs)
 
+_foldl(f, xs::NamedTuple; init) = _foldl(f, values(xs); init)
+_foldl(f, xs::Tuple{}; init) = init
+_foldl(f, xs::Tuple; init) = _foldl(f, Base.tail(xs); init=f(init, first(xs)))
+
 function modify(f, obj, co::ConcatOptics)
-    foldl(co.optics; init=obj) do obj, o
+    _foldl(co.optics; init=obj) do obj, o
         modify(f, obj, o)
     end
 end
+
+delete(obj, os::ConcatOptics) = _foldl(delete, os.optics; init=obj)
 
 function setall(obj, co::ConcatOptics{<:Tuple}, vals)
     lengths = map(co.optics) do o
