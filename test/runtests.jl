@@ -631,6 +631,7 @@ end
 
     @testset "laws" begin
         using AccessorsExtra: test_construct_laws
+
         test_construct_laws(Complex, @optic(_.re) => 1, @optic(_.im) => 2)
         test_construct_laws(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)
         test_construct_laws(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)
@@ -689,6 +690,23 @@ end
             _.c = 123
         end
         @test res == (a=-1, b=[10], c=123)
+    end
+
+    @testset "invertible pre-func" begin
+        using AccessorsExtra: test_construct_laws
+
+        AccessorsExtra.@allinferred construct begin
+
+        @test construct(Complex, abs => 3, rad2deg ∘ angle => 45) ≈ 3/√2 * (1 + 1im)
+        test_construct_laws(SVector{2,Float32}, norm => 3, @optic(atan(_...) |> rad2deg) => 0.123; cmp=(≈))
+
+        res = @construct SVector{2} begin
+            norm(_) = 3
+            atan(_...) |> rad2deg |> _ + 1 = 46
+        end
+        @test res ≈ SVector(3, 3) / √2
+        
+        end
     end
 end
 
