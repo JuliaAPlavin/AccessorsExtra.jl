@@ -256,7 +256,6 @@ end
         @test o((;)) == nothing
         @test set((a=(b=1,),), o, 5) == (a=(b=5,),)
         @test set((a=(;),), o, 5) == (a=(b=5,),)
-        @test_broken set((;), o, 5) == (a=(b=5,),)
         @test modify(x -> x+1, (a=(b=1,),), o) == (a=(b=2,),)
         @test modify(x -> x+1, (a=(;),), o) == (a=(;),)
         @test modify(x -> x+1, (;), o) == (;)
@@ -379,6 +378,10 @@ end
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
     @test setall(m, or, (10, 20, 30)) == (a=10, b=20+30im)
     end
+
+    # or = keyed(RecursiveOfType(Number))
+    # m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    # @test getall(m, or) == (1, 1, 3)
 end
 
 @testitem "context" begin
