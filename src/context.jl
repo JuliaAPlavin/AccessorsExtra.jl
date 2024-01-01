@@ -64,26 +64,24 @@ function modify(f, obj, ::Enumerated{Elements})
     end
 end
 
-function modify(f, obj, ::Keyed{Elements})
+modify(f, obj, ::Keyed{Elements}) =
     map(keys(obj), values(obj)) do i, v
         modify(f, v, _ContextValOnly(i))
     end
-end
 
-function modify(f, obj::Tuple, ::Keyed{Elements})
+modify(f, obj::Tuple, ::Keyed{Elements}) =
     ntuple(length(obj)) do i
         v = obj[i]
         modify(f, v, _ContextValOnly(i))
     end
-end
 
-function modify(f, obj::NamedTuple{KS}, ::Keyed{Elements}) where {KS}
-    res = map(keys(obj), values(obj)) do i, v
+modify(f, obj::NamedTuple{KS}, ::Keyed{Elements}) where {KS} = @p let
+    map(keys(obj), values(obj)) do i, v
         f(ValWithContext(i, v))
     end
-    all(x -> x isa ValWithContext, res) ?
-        NamedTuple{first.(res)}(last.(res)) :
-        NamedTuple{KS}(res)
+    all(x -> x isa ValWithContext, __) ?
+        NamedTuple{first.(__)}(last.(__)) :
+        NamedTuple{KS}(__)
 end
 
 
@@ -109,14 +107,12 @@ for T in [
 end
 
 (o::KeepContext)(obj) = o.o(obj)
-(o::KeepContext)(obj::ValWithContext) = ValWithContext(obj.i, o.o(obj.v))
+(o::KeepContext)(obj::ValWithContext) = @modify(o.o, obj.v)
 getall(obj, o::KeepContext) = getall(obj, o.o)
-getall(obj::ValWithContext, o::KeepContext) = map(x -> ValWithContext(obj.i, x), getall(obj.v, o.o))
+getall(obj::ValWithContext, o::KeepContext) = map(x -> @set(obj.v = x), getall(obj.v, o.o))
 
-function modify(f, obj, o::KeepContext)
-    modify(f, obj, o.o)
-end
-function modify(f, obj::ValWithContext, o::KeepContext)
+modify(f, obj, o::KeepContext) = modify(f, obj, o.o)
+modify(f, obj::ValWithContext, o::KeepContext) =
     if OpticStyle(o.o) isa SetBased
         x = o.o(obj.v)
         fx = f(ValWithContext(obj.i, x))
@@ -126,4 +122,3 @@ function modify(f, obj::ValWithContext, o::KeepContext)
     else
         modify(f, obj.v, _ContextValOnly(obj.i) ∘ o.o)
     end
-end
