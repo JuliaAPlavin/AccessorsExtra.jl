@@ -545,6 +545,22 @@ end
     @test @popfirst(obj.b) == (a=1, b=(3,))
 end
 
+@testitem "ConstrainedLens" begin
+    obase = angle
+    ore = modifying(real)(angle)
+    oim = modifying(imag)(angle)
+    x = 3 + 4im
+    for o in (obase, ore, oim)
+        @test o(x) == angle(x)
+    end
+    @test set(x, obase, 0) ≈ 5
+    @test set(x, ore, 0) ≈ Inf + 4im
+    @test set(x, oim, 0) ≈ 3
+    @test set(x, obase, π/4) ≈ 5/√2 * (1 + 1im)
+    @test set(x, ore, π/4) ≈ 4 * (1 + 1im)
+    @test set(x, oim, π/4) ≈ 3 * (1 + 1im)
+end
+
 @testitem "construct" begin
     ==ₜ(_, _) = false
     ==ₜ(x::T, y::T) where T = x == y

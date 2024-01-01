@@ -19,6 +19,7 @@ export
     RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, osomething, oget, hasoptic,
+    modifying,
     FlexIx,
     get_steps, logged,
     OptArgs, OptCons, OptProblemSpec, solobj
@@ -94,5 +95,17 @@ set(r::AbstractUnitRange, ::typeof(first), x) = x:last(r)
 set(r::AbstractUnitRange, ::typeof(last),  x) = first(r):x
 set(r::Base.OneTo, ::typeof(last), x) = Base.OneTo(x)
 set(r::Base.OneTo, ::typeof(length), x) = Base.OneTo(x)
+
+
+struct ConstrainedLens{O,MO}
+    o::O
+    mo::MO
+end
+
+modifying(mo) = o -> ConstrainedLens(o, mo)
+
+(c::ConstrainedLens)(x) = c.o(x)
+set(obj::Complex, c::ConstrainedLens{typeof(angle),typeof(real)}, val) = set(obj, c.mo, imag(obj)/tan(val))
+set(obj::Complex, c::ConstrainedLens{typeof(angle),typeof(imag)}, val) = set(obj, c.mo, real(obj)*tan(val))
 
 end
