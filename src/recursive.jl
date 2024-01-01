@@ -1,8 +1,10 @@
 struct Children end
 @inline OpticStyle(::Type{<:Children}) = ModifyBased()
-@inline _chooseoptic(obj, ::Children) = Properties()
-@inline _chooseoptic(obj::AbstractArray, ::Children) = Elements()
-@inline _chooseoptic(obj::AbstractDict, ::Children) = Elements()
+@inline _chooseoptic(obj, c::Children) = _chooseoptic(typeof(obj), c)
+@inline _chooseoptic(::Type, ::Children) = Properties()
+@inline _chooseoptic(::Type{<:Tuple}, ::Children) = Elements()
+@inline _chooseoptic(::Type{<:AbstractArray}, ::Children) = Elements()
+@inline _chooseoptic(::Type{<:AbstractDict}, ::Children) = Elements()
 @inline getall(obj, c::Children) = getall(obj, _chooseoptic(obj, c))
 @inline modify(f, obj, c::Children, objs...) = modify(f, obj, _chooseoptic(obj, c), objs...)
 @inline setall(obj, c::Children, vals) = setall(obj, _chooseoptic(obj, c), vals)
@@ -184,3 +186,39 @@ _typelength(::Type{T}) where {T<:AbstractVector} = fieldcount(only(fieldtypes(T)
         $expr
     end
 end
+
+
+ConcatOptics(obj, or::RecursiveOfType) = ConcatOptics(typeof(obj), or)
+
+ConcatOptics(::Type{T}, or::RecursiveOfType{<:Any,<:Any,Val{nothing}}) where {T} =
+    if T <: or.outtypes
+        identity
+    elseif T <: or.rectypes
+        TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
+        if _chooseoptic(T, or.optic) === Properties()
+            NT = Core.Compiler.return_type(getproperties, Tuple{T})
+            opts = map(_propnames(NT), fieldtypes(TS)) do name, ET
+                ConcatOptics(ET, or) ∘ᵢ PropertyLens(name)
+            end |> Tuple
+            concat(opts...)
+        elseif _chooseoptic(T, or.optic) === Elements()
+            if TS <: Tuple
+                opts = map(ntuple(identity, fieldcount(TS)), fieldtypes(TS)) do name, ET
+                    ConcatOptics(ET, or) ∘ᵢ IndexLens(name)
+                end |> Tuple
+                concat(opts...)
+            elseif T <: AbstractVector
+                ET = eltype(T)
+                ConcatOptics(ET, or) ∘ᵢ Elements()
+            end
+        end
+    else
+        concat()
+    end
+
+∘ᵢ(args...) = ∘(args...)
+∘ᵢ(::typeof(identity), args...) = ∘ᵢ(args...)
+∘ᵢ(co::ConcatOptics, args...) = concat(map(o -> ∘ᵢ(o, args...), co.optics)...)
+
+_propnames(::Type{T}) where {T<:Tuple} = fieldnames(T)
+_propnames(::Type{T}) where {T<:NamedTuple} = fieldnames(T)

@@ -63,7 +63,13 @@ end
     end
 end
 
-# keyed:
+@testitem "unrecurcize" begin
+    obj = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    @test ConcatOptics(obj, RecursiveOfType(Number)) === @optics _.a _.bs[1].c _.bs[2].c
+    @test ConcatOptics(obj, RecursiveOfType(NamedTuple)) === identity
+    @test ConcatOptics((a=1, b=[2,3], c=""), RecursiveOfType(Number)) === @optics _.a _.b[∗]
+end
+
 @testitem "modify-many" begin
     AccessorsExtra.@allinferred modify begin
 

@@ -13,7 +13,7 @@ export
     @o,
     ∗, ∗ₚ, PartsOf,
     ⩓, ⩔,
-    concat, ++, @optics, @optic₊,
+    concat, ++, @optics, @optic₊, ConcatOptics,
     @replace, @push, @pushfirst, @pop, @popfirst,
     @getall, @setall,
     construct, @construct,
