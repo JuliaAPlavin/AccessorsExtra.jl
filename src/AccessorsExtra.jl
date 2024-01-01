@@ -5,7 +5,7 @@ using Reexport
 using CompositionsBase
 import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBased, ModifyBased
 using DataPipes
-using ConstructionBase
+@reexport using ConstructionBase
 using InverseFunctions
 using LinearAlgebra: norm
 using Accessors: MacroTools
@@ -32,6 +32,7 @@ include("fixargs.jl")
 include("concatoptic.jl")
 include("recursive.jl")
 include("context.jl")
+include("modifymany.jl")
 include("maybe.jl")
 include("partsof.jl")
 include("funclenses.jl")

@@ -211,6 +211,53 @@ end
     @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b); context=:compact => true) == "(_.b)ᵢ ∘ _.a[∗ₚ] |> selfcontext(identity)"
 end
 
+@testitem "modify-many" begin
+    using Dictionaries
+    using UnionCollections
+
+    # function Dictionaries.checkindices(indices, inds::AbstractIndices)
+    #     if !(inds ⊆ indices)
+    #         short_ind = repr(indices, context=:limit => true)
+    #         throw(IndexError("Indices $inds are not a subset of $short_ind"))
+    #     end
+    # end
+
+    # Base.view(d::AbstractDictionary, inds::AbstractArray) = Dictionaries.Indexing.ViewArray{eltype(d), ndims(inds)}(@show(d), @show inds)
+
+    const UnionDictionary = Base.get_extension(UnionCollections, :DictionariesExt).UnionDictionary
+
+    AccessorsExtra.@allinferred modify begin
+    @test modify(+, (1, 2.), ∗, (3, 4)) === (4, 6.)
+    @test modify(+, (1, 2.), ∗, (a=3, b=4.)) === (4, 6.)
+    @test modify(+, (1, 2.), ∗, [3, 4, 5]) === (4, 6.)
+    @test modify(+, (x=1, y=2.), ∗, (3, 4.)) === (x=4, y=6.)
+    @test modify(+, (x=1, y=2.), ∗, (a=3, b=4.)) === (x=4, y=6.)
+    @test modify(+, (x=1, y=2.), ∗, [3, 4]) === (x=4, y=6.)
+    @test modify(+, [1, 2], ∗, (3, 4, 5)) == [4, 6]
+    @test modify(+, [1, 2], ∗, (a=3, b=4)) == [4, 6]
+    @test modify(+, [1, 2], ∗, [3, 4]) == [4, 6]
+
+    @test modify(+, (1, 2), keyed(∗), (3, 4)) === (4, 6)
+    @test modify(+, (1, 2), keyed(∗), [3, 4, 5]) === (4, 6)
+    @test modify(+, [1, 2], keyed(∗), (3, 4, 5)) == [4, 6]
+    @test modify(+, [1, 2], keyed(∗), [3, 4]) == [4, 6]
+    @test modify(+, (x=1, y=2), keyed(∗), (x=3, y=4, z=5)) === (x=4, y=6)
+    @test modify(+, (x=1, y=2), keyed(∗), (y=4, x=3, z=5)) === (x=4, y=6)
+    @test modify(+, (x=1, y=2), keyed(∗), Dict(:y=>4, :x=>3, :z=>5)) === (x=4, y=6)
+    @test modify(+, (x=1, y=2), keyed(∗), dictionary([:y=>4, :x=>3])) === (x=4, y=6)
+    @test_throws Exception modify(+, (1, 2), keyed(∗), (a=3, b=4))
+    @test_throws Exception modify(+, (x=1, y=2), keyed(∗), (3, 4))
+    @test_throws Exception modify(+, (x=1, y=2), keyed(∗), (a=3, b=4))
+
+    @test modify(+, Dictionary([2, 3], [10, 20]), ∗, 1:5)::Dictionary == Dictionary([2, 3], [11, 22])
+    @test modify(+, Dictionary([2, 3], [10, 20]), keyed(∗), 1:5)::Dictionary == Dictionary([2, 3], [12, 23])
+    @test modify(+, ArrayDictionary([2, 3], [10, 20]), ∗, 1:5)::ArrayDictionary == Dictionary([2, 3], [11, 22])
+    @test_broken modify(+, ArrayDictionary([2, 3], [10, 20]), keyed(∗), 1:5)::ArrayDictionary == Dictionary([2, 3], [12, 23])
+    @test modify(+, unioncollection(Dictionary([2, 3], [10, 20])), ∗, 1:5)::UnionDictionary == Dictionary([2, 3], [11, 22])
+    @test modify(+, unioncollection(Dictionary([2, 3], [10, 20])), keyed(∗), 1:5)::UnionDictionary == Dictionary([2, 3], [12, 23])
+    end
+end
+
 @testitem "and/or/..." begin
     @test (<(5) ⩓ >(1) ⩓ >(2))(3)
     @test !(<(5) ⩓ >(1) ⩓ >(2))(2)

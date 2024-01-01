@@ -1,15 +1,36 @@
 module DictionariesExt
 using Dictionaries
 using AccessorsExtra
-using AccessorsExtra: KVPWrapper, constructorof, IndexLens
+using AccessorsExtra: KVPWrapper, constructorof, IndexLens, Keyed
 import AccessorsExtra: modify, Accessors
 
 modify(f, obj::KVPWrapper{typeof(keys), <:AbstractDictionary}, ::Elements) =
     constructorof(typeof(obj.obj))(map(f, keys(obj.obj)), values(obj.obj))
 
-modify(f, obj::KVPWrapper{typeof(pairs), <:Dictionary}, ::Elements) =
-    dictionary(f(p)::Pair for p in pairs(obj.obj))
+function modify(f, obj::KVPWrapper{typeof(pairs), <:AbstractDictionary}, ::Elements)
+    try
+        newvals = modify(getfield(obj.obj, :values), ∗, getfield(keys(obj.obj), :values)) do v, k
+            _k, _v = f(k => v)
+            @assert _k == k
+            _v
+        end
+        constructorof(typeof(obj.obj))(keys(obj.obj), newvals)
+    catch e
+        e isa AssertionError || rethrow()
+        dictionary(f(p)::Pair for p in pairs(obj.obj))::constructorof(typeof(obj.obj))
+    end
+end
 
+
+modify(f, A::AbstractDictionary, ::Elements, Bs...) =
+    constructorof(typeof(A))(
+        keys(A),
+        modify(f, getfield(A, :values), ∗, Bs...),
+    )
+modify(f, A::AbstractDictionary, ::Keyed{Elements}, B) =
+    @modify(pairs(A)[∗]) do (k, v)
+        k => f(v, B[k])
+    end
 
 # can upstream? Dictionaries or Accessors?
 function Accessors.setindex(d::AbstractDictionary{I}, v, k::I) where {I}
