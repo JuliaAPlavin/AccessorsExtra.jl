@@ -721,6 +721,7 @@ end
     @testset "basic usage" begin
         AccessorsExtra.@allinferred construct begin
             @test construct(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+            @test_broken construct(Complex, @optic(_.im) => 1, @optic(_.re) => 2)::Complex{Int} === 1 + 2im
             @test construct(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 === 1f0 + 2f0im
             @test_throws InexactError construct(Complex{Int}, abs => 1., angle => π/2)
 
@@ -780,6 +781,9 @@ end
             test_construct_laws(T, norm => 3, @optic(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
             test_construct_laws(T, norm => 3, @optic(atan(_...)) => 0.123; cmp=(x,y) -> isapprox(x,y,rtol=√eps(Float32)))
         end
+        test_construct_laws(SVector{2}, @optic(_.x) => 4, @optic(_.y) => 5)
+        test_construct_laws(SVector{2}, @optic(_.y) => 4, @optic(_.x) => 5)
+        test_construct_laws(SVector{2,Float32}, @optic(_.x) => 4, @optic(_.y) => 5)
     end
 
     @testset "macro" begin
