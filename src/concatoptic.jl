@@ -62,7 +62,6 @@ end
 Base.show(io::IO, ::MIME"text/plain", optic::ConcatOptics{<:Tuple}) = show(io, optic)
 
 
-
 (os::Union{Tuple,NamedTuple,AbstractArray})(obj) = map(o -> o(obj), os)
 (os::Dict)(obj) = @modify(o -> o(obj), values(os)[∗])
 (os::Pair)(obj) = first(os)(obj) => last(os)(obj)
@@ -83,24 +82,24 @@ set(obj, os::Dict, vals) =
     end
 
 macro optic₊(ex)
+    process_optic₊(ex) |> esc
+end
+
+function process_optic₊(ex)
     if Base.isexpr(ex, :tuple) || Base.isexpr(ex, :vect)
         @modify(ex.args[∗]) do arg
             if MacroTools.@capture arg (key_ = optic_)
-                :( $key = $Accessors.@optic $optic )
+                :( $key = $(process_optic₊(optic)) )
             else
-                :( $Accessors.@optic $arg )
+                process_optic₊(arg)
             end
-        end |> esc
+        end
     elseif Base.isexpr(ex, :call)
         @modify(ex.args[2:end][∗]) do arg
-            if MacroTools.@capture arg (key_ => optic_)
-                :( $key => $Accessors.@optic $optic )
-            else
-                :( $Accessors.@optic $arg )
-            end
-        end |> esc
+            process_optic₊(arg)
+        end
     else
-        error("Unsupported expression $ex")
+        :( $Accessors.@optic $ex )
     end
 end
 

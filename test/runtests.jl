@@ -69,6 +69,7 @@ end
 @testitem "concat container" begin
     using StaticArrays
 
+    AccessorsExtra.@allinferred o set modify begin
     o = @optic₊ (_.a.b, _.c)
     m = (a=(b=1, c=2), c=3)
     @test o(m) == (1, 3)
@@ -81,6 +82,7 @@ end
     @test set(m, o, (x=4, y=5)) == (a=(b=4, c=2), c=5)
     @test set(m, o, (y=5, x=4)) == (a=(b=4, c=2), c=5)
     @test modify(xs -> map(x -> x - xs.x, xs), m, o) == (a=(b=0, c=2), c=2)
+    end
     
     o = @optic₊ SVector(_.a.b, _.c)
     m = (a=(b=1, c=2), c=3)
@@ -92,6 +94,11 @@ end
     m = (a=(b=1, c=2), c=3)
     @test o(m) == (1 => 3)
     @test set(m, o, 4 => 5) == (a=(b=4, c=2), c=5)
+
+    o = @optic₊ _.a.b => _.c
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (1 => 3)
+    @test set(m, o, 4 => 5) == (a=(b=4, c=2), c=5)
     
     o = @optic₊ [_.a.b, _.c]
     m = (a=(b=1, c=2), c=3)
@@ -99,11 +106,21 @@ end
     @test set(m, o, [4, 5]) == (a=(b=4, c=2), c=5)
     @test modify(xs -> 2*xs, m, o) == (a=(b=2, c=2), c=6)
     
-    o = @optic₊ Dict("x" => _.a.b, "y" => _.c)
+    # o = @optic₊ Dict("x" => _.a.b, "y" => _.c)
+    # m = (a=(b=1, c=2), c=3)
+    # @test o(m) == Dict("x" => 1, "y" => 3)
+    # @test set(m, o, Dict("x" => 4, "y" => 5)) == (a=(b=4, c=2), c=5)
+    # @test set(m, o, Dict("y" => 5, "x" => 4)) == (a=(b=4, c=2), c=5)
+
+    o = @optic₊ (x=(u=_.a.b, v=_.c), y=_.a.c)
     m = (a=(b=1, c=2), c=3)
-    @test o(m) == Dict("x" => 1, "y" => 3)
-    @test set(m, o, Dict("x" => 4, "y" => 5)) == (a=(b=4, c=2), c=5)
-    @test set(m, o, Dict("y" => 5, "x" => 4)) == (a=(b=4, c=2), c=5)
+    @test o(m) == (x=(u=1, v=3), y=2)
+    @test set(m, o, (x=(u=5, v=6), y=7)) == (a=(b=5, c=7), c=6)
+
+    o = @optic₊ (x=[_.a.b, _.c], y=_.a.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (x=[1, 3], y=2)
+    @test set(m, o, (x=[5, 6], y=7)) == (a=(b=5, c=7), c=6)
 end
 
 @testitem "shorter forms" begin
