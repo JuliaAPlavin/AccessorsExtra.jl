@@ -603,7 +603,10 @@ end
     @test @popfirst(obj.b) == (a=1, b=(3,))
 end
 
-@testitem "in" begin
+@testitem "base optics" begin
+    using StaticArrays
+    using LinearAlgebra: norm
+
     x = [1, 2, 3]
     @test (@set (2 in $x) = false) == [1, 3]
     @test (@set (5 in $x) = true) == [1, 2, 3, 5]
@@ -611,6 +614,11 @@ end
     Accessors.test_getset_laws(@optic(5 in _), [1,2,3], false, true)
     Accessors.test_getset_laws(@optic(2 in _), Set([1,2,3]), false, true)
     Accessors.test_getset_laws(@optic(5 in _), Set([1,2,3]), false, true)
+
+    ≈ₜ(x::T, y::T) where {T} = all(x .≈ y)
+    Accessors.test_getset_laws(@optic(atan(_...)), (1., 2.), 1.2, 3.4; cmp=(≈ₜ))
+    Accessors.test_getset_laws(@optic(atan(_...)), [1., 2.], 1.2, 3.4; cmp=(≈ₜ))
+    Accessors.test_getset_laws(@optic(atan(_...)), SVector(1., 2.), 1.2, 3.4; cmp=(≈ₜ))
 end
 
 @testitem "on get/set" begin
