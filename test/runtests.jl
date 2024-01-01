@@ -389,8 +389,11 @@ end
     o = keyed(Elements()) ⨟ @optic(_.a)
     @test modify(((i, v),) -> i => v, obj, o) == ((a=1=>'a',), (a=2=>'b',), (a=3=>'c',))
     o = keyed(Elements()) ⨟ @optic(_.a) ⨟ @optic(convert(Int, _) + 1)
-    @test map(x -> (x.i, x.v), getall(obj, o)) == [(1, 98), (2, 99), (3, 100)]
+    @test map(x -> (x.i, x.v), getall(obj, o)) == ((1, 98), (2, 99), (3, 100))
     @test modify(((i, v),) -> i + v, obj, o) == ((a='b',), (a='d',), (a='f',))
+    o = Elements() ⨟ keyed(Elements())
+    @test map(x -> (x.i, x.v), getall(obj, o)) == ((:a, 'a'), (:a, 'b'), (:a, 'c'))
+    @test modify(((i, v),) -> v, obj, o) == obj
     end
 
     o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)

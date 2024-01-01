@@ -55,7 +55,7 @@ getall(obj, ::Enumerated{Elements}) =
     end
 
 getall(obj, ::Keyed{Elements}) =
-    map(keys(obj), values(obj)) do i, v
+    map(_keys(obj), values(obj)) do i, v
         ValWithContext(i, v)
     end
 
@@ -69,13 +69,7 @@ function modify(f, obj, ::Enumerated{Elements})
 end
 
 modify(f, obj, ::Keyed{Elements}) =
-    map(keys(obj), values(obj)) do i, v
-        modify(f, v, _ContextValOnly(i))
-    end
-
-modify(f, obj::Tuple, ::Keyed{Elements}) =
-    ntuple(length(obj)) do i
-        v = obj[i]
+    map(_keys(obj), values(obj)) do i, v
         modify(f, v, _ContextValOnly(i))
     end
 
@@ -126,3 +120,10 @@ modify(f, obj::ValWithContext, o::KeepContext) =
     else
         modify(f, obj.v, _ContextValOnly(obj.i) ∘ o.o)
     end
+
+
+# helpers:
+# should be the same kind of type as values(obj) if possible, eg AbstractVector, Tuple
+# so that map(keys, values) returns the same kind of type
+_keys(obj) = keys(obj)
+_keys(::NTuple{N,Any}) where {N} = ntuple(identity, N)
