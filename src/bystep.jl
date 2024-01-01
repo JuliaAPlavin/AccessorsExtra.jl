@@ -1,3 +1,10 @@
+struct Thrown
+    e
+end
+Base.show(io::IO, t::Thrown) = print(io, "Thrown(", t.e, ")")
+Base.show(io::IO, ::MIME"text/plain", t::Thrown) = show(io, t)
+
+
 get_steps(obj, o) = last(_get_steps(obj, o))
 
 function _get_steps(obj, o)
@@ -16,9 +23,3 @@ function _get_steps(obj, o::ComposedFunction)
     oobj, vcat(isteps, osteps)
 end
 _get_steps(obj::Thrown, o::ComposedFunction) = Base.@invoke _get_steps(obj::Any, o::ComposedFunction)
-
-struct Thrown
-    e
-end
-Base.show(io::IO, t::Thrown) = print(io, "Thrown(", t.e, ")")
-Base.show(io::IO, ::MIME"text/plain", t::Thrown) = show(io, t)
