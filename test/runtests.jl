@@ -1072,19 +1072,24 @@ end
     using InverseFunctions
 
     A = [1 2 3; 4 5 6]
-    InverseFunctions.test_inverse(@o(eachslice(_, dims=1)), A)
-    InverseFunctions.test_inverse(@o(eachslice(_, dims=2)), A)
-    InverseFunctions.test_inverse(@o(eachslice(_, dims=2, drop=true)), A)
-    InverseFunctions.test_inverse(@o(eachslice(_, dims=2, drop=false)), A)
+    InverseFunctions.test_inverse(@o(eachslice(_, dims=1)), A; compare=(==))
+    InverseFunctions.test_inverse(@o(eachslice(_, dims=2)), A; compare=(==))
+    InverseFunctions.test_inverse(@o(eachslice(_, dims=2, drop=true)), A; compare=(==))
+    InverseFunctions.test_inverse(@o(eachslice(_, dims=2, drop=false)), A; compare=(==))
+
+    InverseFunctions.test_inverse(eachrow, A; compare=(==))
+    InverseFunctions.test_inverse(eachcol, A; compare=(==))
+    # InverseFunctions.test_inverse(eachrow, A[1, :]; compare=(==))
+    # InverseFunctions.test_inverse(eachcol, A[1, :]; compare=(==))
 
     @test @modify(x -> x / sum(x), A |> eachslice(_, dims=1)[∗]) == [1/6 2/6 3/6; 4/15 5/15 6/15]
     @test @modify(x -> x / sum(x), A |> eachslice(_, dims=2)[∗]) == [1/5 2/7 3/9; 4/5 5/7 6/9]
 
     A = reshape(1:24, 2, 1, 3, 4)
     for d in 1:4
-        InverseFunctions.test_inverse(@o(eachslice(_, dims=d)), A)
-        InverseFunctions.test_inverse(@o(eachslice(_, dims=d, drop=true)), A)
-        InverseFunctions.test_inverse(@o(eachslice(_, dims=d, drop=false)), A)
+        InverseFunctions.test_inverse(@o(eachslice(_, dims=d)), A; compare=(==))
+        InverseFunctions.test_inverse(@o(eachslice(_, dims=d, drop=true)), A; compare=(==))
+        InverseFunctions.test_inverse(@o(eachslice(_, dims=d, drop=false)), A; compare=(==))
     end
 end
 
