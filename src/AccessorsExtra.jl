@@ -21,8 +21,7 @@ export
     maybe, osomething, oget, hasoptic,
     modifying, onget, onset, ongetset,
     FlexIx,
-    get_steps, logged,
-    OptArgs, OptCons, OptProblemSpec, solobj
+    get_steps, logged
 
 
 include("overrides.jl")
@@ -40,7 +39,6 @@ include("replace.jl")
 include("moremacros.jl")
 include("construct.jl")
 include("bystep.jl")
-include("optimization.jl")
 include("testing.jl")
 
 const var"@o" = var"@optic"

@@ -212,13 +212,6 @@ modify(x -> x+1, dct, @optic keys(_)[∗])
 # ╔═╡ 06690850-de63-4217-b619-8838f524bcc5
 modify(((i, x),) -> 2i => i + x, dct, @optic pairs(_)[∗])
 
-# ╔═╡ abdece8e-ca4d-4045-8bd2-670931d1ceb7
-md"""
-## Integration with `Optimization.jl`
-
-See a separate notebook with examples.
-"""
-
 # ╔═╡ 2fe6a54a-e914-430b-9703-a48ad172b0bf
 md"""
 ## ... and more!
@@ -663,7 +656,6 @@ version = "17.4.0+0"
 # ╠═a6b8c4fc-9555-4ddc-a2d8-9c2c4e65344e
 # ╠═a3387faf-20df-4f3d-bf6c-f0e409ded011
 # ╠═06690850-de63-4217-b619-8838f524bcc5
-# ╟─abdece8e-ca4d-4045-8bd2-670931d1ceb7
 # ╟─2fe6a54a-e914-430b-9703-a48ad172b0bf
 # ╠═c4fe8f56-2287-4fee-8c27-f23a2a3c4c40
 # ╟─a0313d3a-73a5-4a0a-92e0-1f862e95cb70
