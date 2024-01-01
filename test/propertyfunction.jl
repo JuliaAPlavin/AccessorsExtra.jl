@@ -1,26 +1,27 @@
 @testitem "basic" begin
-    using AccessorsExtra: needed_properties
+    using AccessorsExtra: propspec, Placeholder as P
     o = @o _.a + 1
-    @test needed_properties(o) == (:a,)
+    @test propspec(o) == (a=P(),)
     @test o((a=2,)) == 3
 
-    @test_throws "Cannot determine" needed_properties(@o _ + 1)
-    @test_throws "Cannot determine" needed_properties(@o _[1] + 1)
+    @test propspec(@o _ + 1) == P()
+    @test propspec(@o _[1] + 1) == P()
 
     o = @o _.a + _.b.c
-    @test needed_properties(o) == needed_properties(typeof(o)) == (:a, :b)
+    @test propspec(o) == (a=P(), b=(c=P(),))
+    @test_broken propspec(o) == propspec(typeof(o))
     @test o((a=2, b=(c=3,))) == 5
 
     o = @o exp10(_.a + _.b.c)
-    @test needed_properties(o) == (:a, :b)
+    @test propspec(o) == (a=P(), b=(c=P(),))
     @test o((a=2, b=(c=3,))) == 10^5
 
     o = @o round(Int, _.a + _.b.c)
-    @test needed_properties(o) == (:a, :b)
+    @test propspec(o) == (a=P(), b=(c=P(),))
     @test o((a=2.6, b=(c=3,))) == 6
 
     o = @o round(Int, _.a.b + _.a.c + _.b.d + _.b.d)
-    @test needed_properties(o) == (:a, :b)
+    @test propspec(o) == (a=(b=P(), c=P()), b=(d=P(),))
     @test o((a=(b=1, c=2), b=(d=3,))) == 9
 
     macro mym_str(expr)
@@ -28,7 +29,7 @@
     end
     begin
         o = @o _.a + _.b + parse(Int, mym"3")
-        @test needed_properties(o) == (:a, :b)
+        @test propspec(o) == (a=P(), b=P())
         @test o((a=1, b=2)) == 6
     end
 
@@ -39,12 +40,15 @@
     o = @o (;a=_.xy.y+1, b=_.z.im + _.xy.y)
     @test o((xy=(x=1, y=2), z=ComplexF64(0, 3))) == (a=3, b=5)
 
+    @test (!@o _.a)((a=true,)) == false
+    @test (!@o _.a > _.b)((a=1, b=2)) == true
+
     o = @o _ + _ + 1
-    @test_throws "Cannot determine" needed_properties(o)
+    @test propspec(o) == P()
     @test o(2) == 5
 
     o = @o _.a + _[2] + 1
-    @test_throws "Cannot determine" needed_properties(o)
+    @test propspec(o) == P()
     @test o((a=10, b=100)) == 111
 end
 

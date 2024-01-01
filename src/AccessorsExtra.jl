@@ -156,4 +156,6 @@ getall(obj::AbstractDict, ::Elements) = collect(obj)
 getall(obj::AbstractSet, ::Elements) = collect(obj)
 modify(f, obj::Dict, ::Elements) = Dict(f(p)::Pair for p in obj)
 
+Base.:(!)(f::Union{PropertyLens,IndexLens,DynamicIndexLens}) = (!) ∘ f
+
 end
