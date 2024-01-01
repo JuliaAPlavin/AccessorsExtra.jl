@@ -2,6 +2,7 @@ struct Children end
 @inline OpticStyle(::Type{<:Children}) = ModifyBased()
 @inline _chooseoptic(obj, ::Children) = Properties()
 @inline _chooseoptic(obj::AbstractArray, ::Children) = Elements()
+@inline _chooseoptic(obj::AbstractDict, ::Children) = Elements()
 @inline getall(obj, c::Children) = getall(obj, _chooseoptic(obj, c))
 @inline modify(f, obj, c::Children) = modify(f, obj, _chooseoptic(obj, c))
 @inline setall(obj, c::Children, vals) = setall(obj, _chooseoptic(obj, c), vals)

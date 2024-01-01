@@ -22,6 +22,7 @@ end
 # https://github.com/JuliaObjects/Accessors.jl/pull/55
 # https://github.com/JuliaObjects/Accessors.jl/pull/103
 # FixArgs handling
+# PropertyFunction handling
 function parse_obj_optics(ex::Expr)
     dollar_exprs = foldtree([], ex) do exs, x
         x isa Expr && x.head == :$ ?

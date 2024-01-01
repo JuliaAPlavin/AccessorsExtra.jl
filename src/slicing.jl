@@ -1,4 +1,4 @@
-# XXX: should upstream all of these
+# XXX: piracy, should upstream all of these
 
 InverseFunctions.inverse(f::FixArgs{typeof(eachslice), <:Tuple{Placeholder}, <:NamedTuple{(:dims,)}}) =
     @o stack(_, dims=f.kwargs.dims)

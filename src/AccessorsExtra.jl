@@ -151,4 +151,9 @@ ongetset(f) = onget(f) ∘ onset(f)
 # should probably try to upstream:
 set(obj, o::Base.Fix1{typeof(in)}, val::Bool) = val ? union(obj, (o.x,)) : setdiff(obj, (o.x,))
 
+# some piracy - should upstream:
+getall(obj::AbstractDict, ::Elements) = collect(obj)
+getall(obj::AbstractSet, ::Elements) = collect(obj)
+modify(f, obj::Dict, ::Elements) = Dict(f(p)::Pair for p in obj)
+
 end

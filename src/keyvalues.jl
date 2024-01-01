@@ -17,6 +17,7 @@ end
 
 modify(f, obj::AbstractDict, o::Union{typeof(keys),typeof(values)}) = f(KVPWrapper(o, obj))
 modify(f, obj, o::typeof(pairs)) = f(KVPWrapper(o, obj))
+modify(f, obj::AbstractDict, o::typeof(pairs)) = f(obj)
 modify(f, obj::KVPWrapper, ::Elements) = error("modify(f, ::$(typeof(obj.obj)), $(obj.o ⨟ Elements())) not supported")
 
 ### keys
@@ -61,7 +62,6 @@ modify(f, obj::KVPWrapper{typeof(pairs), <:NamedTuple{NS}}, ::Elements) where {N
         @assert first(p) == k
         last(p)
     end |> NamedTuple{NS}
-modify(f, obj::KVPWrapper{typeof(pairs), <:Dict}, ::Elements) = Dict(f(p)::Pair for p in pairs(obj.obj))
 
 
 # see https://github.com/JuliaObjects/ConstructionBase.jl/pull/47

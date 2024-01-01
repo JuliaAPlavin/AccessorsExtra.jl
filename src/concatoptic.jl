@@ -125,7 +125,7 @@ end
 
 
 # ConcatOptic - the only optic with getall()::NamedTuple (?)
-# requires these:
+# requires this (a bit of piracy):
 Accessors._staticlength(::NamedTuple{KS}) where {KS} = Val(length(KS))
 Accessors._concat(a::Tuple, b::NamedTuple) = (a..., b...)
 Accessors._concat(a::NamedTuple, b::Tuple) = (a..., b...)
