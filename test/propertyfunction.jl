@@ -51,6 +51,7 @@ end
 @testitem "structarrays" begin
     using StructArrays
     using FlexiMaps
+    using FlexiGroups
 
     A = StructArray(
         x=mapview(_ -> error("Shouldn't happen"), 1:100),
@@ -86,6 +87,11 @@ end
     @test C.xy === B.xy
     @test C.x == 11:10:1001
 
+    @test mapview((@o _.xy.y > _.z.im), B) == fill(true, 100)
+
+    @test groupview((@o _.xy.y), B) |> length == 100
+    @test groupview((@o _.xy.y > _.z.im), B)[true].xy.y == 10:10:1000
+
     # C = @inferred mapview((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B)
     # @test C[5] == (a = 51, b = 50.05, c = (y=50,))
 end
@@ -103,6 +109,7 @@ end
     @test A.y === mapview((@o _.y), A)
     @test A.y == map((@o _.y), A)
     @test 11:10:1001 == map((@o _.y + 1), A)
+    @test 20:20:2000 == map((@o _.y + _.y), A)
     @test_throws "Shouldn't happen" map((@o _.x + 1), A)
 
     B = StructArray(

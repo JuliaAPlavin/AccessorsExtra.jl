@@ -18,6 +18,26 @@ needed_properties(::Type{PropertyLens{P}}) where {P} = (P,)
 needed_properties(::F) where {F} = needed_properties(F)
 needed_properties(::Type{F}) where {F} = error("Cannot determine needed properties for function $F")
 
+const PROPFUNCTYPES = Union{
+    PropertyLens,
+    PropertyFunction,
+    ComposedFunction{<:Any,<:PropertyLens},
+    ComposedFunction{<:Any,<:PropertyFunction},
+}
+Base.map(f::PROPFUNCTYPES, x) = map(rawfunc(f), extract_properties_recursive(x, propspec(f)))
+Base.map(f::PROPFUNCTYPES, x::AbstractArray) = map(rawfunc(f), extract_properties_recursive(x, propspec(f)))
+
+rawfunc(f) = f
+rawfunc(f::PropertyLens{P}) where {P} = x -> f(x)
+rawfunc(f::PropertyFunction) = f.func
+rawfunc(f::ComposedFunction) = @modify(rawfunc, decompose(f)[∗])
+
+propspec(f) = Placeholder()
+propspec(f::PropertyLens{P}) where {P} = NamedTuple{(P,)}((Placeholder(),))
+propspec(f::PropertyFunction) = f.props_nt
+propspec(f::ComposedFunction) = propspec(f.inner)
+propspec(f::ComposedFunction{<:Any,PropertyLens{P}}) where {P} = NamedTuple{(P,)}((propspec(f.outer),))
+
 
 extract_properties_recursive(x, ::Placeholder) = x
 extract_properties_recursive(x::NamedTuple, props_nt::NamedTuple{KS}) where {KS} = NamedTuple{KS}(map(extract_properties_recursive, values(x[KS]), values(props_nt)))
