@@ -3,14 +3,14 @@ OpticStyle(::Type{<:Base.Fix1{typeof(match)}}) = ModifyBased()
 function modify(f, s, o::Base.Fix1{typeof(match)})
     m = match(o.x, s)
     v = f(m)
-    repl = if v isa AbstractString
+    repl = if v === m
+        s
+    elseif v isa AbstractString
         sub = m.match
         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
         @set s[FlexIx(rng)] = v
     else
-        v isa RegexMatch || error("Expected RegexMatch or AbstractString, got $(typeof(v))")
-        @assert v === m
-        return s
+        error("Expected AbstractString or $m, got $v")
     end
 end
 
@@ -35,13 +35,13 @@ function modify(f, obj::EachMatchWrapper, ::Elements)
     replacements = map(obj.mi) do m
         sub = m.match
         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
-        x = f(m)
-        repl = if x isa AbstractString
-            x
-        else
-            x isa RegexMatch || error("Expected RegexMatch or AbstractString, got $(typeof(x))")
-            @assert x === m
+        v = f(m)
+        repl = if v === m
             m.match
+        elseif v isa AbstractString
+            v
+        else
+            error("Expected AbstractString or $m, got $v")
         end
         rng => repl::AbstractString
     end
