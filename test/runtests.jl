@@ -540,6 +540,9 @@ end
     @test modify([1, -2, 3, -4, 5, -6], o) do x
         x .+ sum(x)
     end == [10, -2, 12, -4, 14, -6]
+
+    @test modify(cumsum, [5, 1, 4, 2, 3], sort) == [15, 1, 10, 3, 6]
+    @test modify(cumsum, [4, 1, 4, 2, 3], sort) == [10, 1, 14, 3, 6]
 end
 
 @testitem "keys, values, pairs" begin
@@ -551,8 +554,6 @@ end
     # @test @delete ds |> values(_)[∗][∗] |> If(>=(5))
 
     AccessorsExtra.@allinferred modify begin
-        @test modify(cumsum, [5, 1, 4, 2, 3], sort) == [15, 1, 10, 3, 6]
-
         T = (4, 5, 6)
         @test (8, 10, 12) === modify(x -> 2x, T, @optic values(_)[∗])
         @test (5, 7, 9) === modify(((i, x),) -> i => i + x, T, @optic pairs(_)[∗])
