@@ -236,6 +236,7 @@ end
 end
 
 @testitem "maybe" begin
+    AccessorsExtra.@allinferred modify set begin
     # @test set(1, something, 2) == 2
     # @test set(Some(1), something, 2) == Some(2)
 
@@ -264,19 +265,20 @@ end
     @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
     @test_throws Exception modify(x -> nothing, (;), o)
 
-    o = maybe(@optic _.a) ⨟ maybe(@optic(_.b))
-    @test o((a=(b=1,),)) == 1
-    @test o((a=(;),)) == nothing
-    @test o((;)) == nothing
-    @test set((a=(b=1,),), o, 5) == (a=(b=5,),)
-    @test set((a=(;),), o, 5) == (a=(b=5,),)
-    @test_broken set((;), o, 5) == (a=(b=5,),)
-    @test modify(x -> x+1, (a=(b=1,),), o) == (a=(b=2,),)
-    @test modify(x -> x+1, (a=(;),), o) == (a=(;),)
-    @test modify(x -> x+1, (;), o) == (;)
-    @test modify(x -> nothing, (a=(b=1,),), o) == (a=(;),)
-    @test modify(x -> nothing, (a=(;),), o) == (a=(;),)
-    @test modify(x -> nothing, (;), o) == (;)
+    for o in (maybe(@optic _.a) ⨟ maybe(@optic(_.b)), maybe(@optic _.a.b))
+        @test o((a=(b=1,),)) == 1
+        @test o((a=(;),)) == nothing
+        @test o((;)) == nothing
+        @test set((a=(b=1,),), o, 5) == (a=(b=5,),)
+        @test set((a=(;),), o, 5) == (a=(b=5,),)
+        @test_broken set((;), o, 5) == (a=(b=5,),)
+        @test modify(x -> x+1, (a=(b=1,),), o) == (a=(b=2,),)
+        @test modify(x -> x+1, (a=(;),), o) == (a=(;),)
+        @test modify(x -> x+1, (;), o) == (;)
+        @test modify(x -> nothing, (a=(b=1,),), o) == (a=(;),)
+        @test modify(x -> nothing, (a=(;),), o) == (a=(;),)
+        @test modify(x -> nothing, (;), o) == (;)
+    end
 
     for obj in ((5,), (a=5,), [5], Dict(1 => 5),)
         o = maybe(@optic _[1])
@@ -296,6 +298,35 @@ end
         Accessors.test_getset_laws(o, obj, 10, 20)
     end
 
+    for o in [maybe(@optic first(_).a), maybe(@optic last(_).a)]
+        for obj in ([(a=1,)], [(b=1,)], [(a=1,), (b=2,)], [(b=1,), (a=2,)],)
+            Accessors.test_getset_laws(o, obj, 10, 20)
+        end
+        @test o([]) === nothing
+        @test modify(x -> x+1, [], o) == []
+    end
+    o = maybe(@optic only(_).a)
+    @test o([(a=1,)]) == 1
+    @test o([(a=1,), (a=2,)]) === nothing
+
+    o = maybe(@optic last(_.a, 3))
+    @test o((a=[1, 2, 3, 4, 5],)) == [3, 4, 5]
+    @test o((a=[4, 5],)) == [4, 5]
+    @test o((a=[],)) == []
+    @test o((a=nothing,)) === nothing
+    @test o(()) === nothing
+    @test o(nothing) === nothing
+
+    o = maybe(@optic parse(Int, _))
+    @test o("1") == 1
+    @test o("a") === nothing
+    @test o(nothing) === nothing
+    @test modify(x -> x+1, "1", o) == "2"
+    @test modify(x -> x+1, "a", o) == "a"
+    @test set("1", o, 2) == "2"
+    @test_broken set("a", o, 2) == "2"
+
+    # specify default value - semantic not totally clear...
     # o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
     # @test o((a=[1, 2],)) == 2
     # @test o((a=[1],)) == 10
@@ -313,11 +344,12 @@ end
     # @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
     # @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
     # @test_throws Exception modify(x -> nothing, (;), o)
+    end
 end
 
 @testitem "recursive" begin
     AccessorsExtra.@allinferred modify getall begin
-    or = RecursiveOfType(out=Number, recurse=Union{Tuple,Vector,NamedTuple}, optic=Elements())
+    or = RecursiveOfType(Number, ∗, recurse=Union{Tuple,Vector,NamedTuple})
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 1, 3)
@@ -336,7 +368,7 @@ end
     @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-    or = RecursiveOfType(out=NamedTuple, recurse=Union{Tuple, Vector, NamedTuple}, optic=Elements())
+    or = RecursiveOfType(NamedTuple, ∗, recurse=Union{Tuple, Vector, NamedTuple})
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
@@ -349,7 +381,7 @@ end
     @test_broken getall(m, o) == getall(m, or)
 
     m = (a=1, b=2+3im)
-    or = RecursiveOfType(out=Real, optic=∗ₚ)
+    or = RecursiveOfType(Real, ∗ₚ)
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)

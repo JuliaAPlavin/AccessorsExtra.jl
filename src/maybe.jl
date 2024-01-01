@@ -55,8 +55,23 @@ osomething(optics...) = OSomething(optics)
 set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os), val) : set(obj, (@delete first(o.os)), val)
 set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
 
+hasoptic(obj, o::ComposedFunction) = hasoptic(obj, o.inner) && hasoptic(o.inner(obj), o.outer)
 
 hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
 hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
 hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))
+
 hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)
+
+hasoptic(obj, ::typeof(first)) = hasoptic(obj, @optic _[firstindex(obj)])
+hasoptic(obj, ::typeof(last)) = hasoptic(obj, @optic _[lastindex(obj)])
+hasoptic(obj, ::typeof(only)) = length(obj) == 1
+
+# should override call, set, modify for efficiency?
+hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse), Type{T}}) where {T} = !isnothing(tryparse(T, x))
+# hasoptic(x::AbstractString, o::Base.Fix2{Type{T}}) where {T <: Union{Date, Time, DateTime}} = # XXX - what to put here?
+
+# fallback definition
+# without it: cases when hasoptic throws, but optic actually exists
+# with it: cases when hasoptic=true, but optic doesn't exist
+hasoptic(obj, o) = !isnothing(obj)
