@@ -1,4 +1,4 @@
-"""    RecursiveOfType(; out, [recurse,] optic)
+"""    RecursiveOfType(out, optic; [recurse=Any])
 """
 struct RecursiveOfType{OT,RT,O}
     outtypes::OT
@@ -6,57 +6,17 @@ struct RecursiveOfType{OT,RT,O}
     optic::O
 end
 Broadcast.broadcastable(o::RecursiveOfType) = Ref(o)
-RecursiveOfType(; out::Type{TO}, recurse::Type{TR}=Any, optic) where {TO,TR} = RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(
-    out,
-    recurse,
-    optic,
-)
+RecursiveOfType(; out::Type{TO}, recurse::Type{TR}=Any, optic) where {TO,TR} =
+    RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
+RecursiveOfType(out::Type{TO}; recurse::Type{TR}=Any, optic) where {TO,TR} =
+    RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
+RecursiveOfType(out::Type{TO}, optic; recurse::Type{TR}=Any) where {TO,TR} =
+    RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
 
 
 OpticStyle(::Type{<:RecursiveOfType}) = ModifyBased()
 
-# @inline modify(f, obj::OT, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT} =
-#     f(_modify_rec(f, obj, or))
-# @inline modify(f, obj, or::RecursiveOfType) = _modify_rec(f, obj, or)
-# @inline _modify_rec(f, obj::RT, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT} =
-#     modify(obj, or.optic) do o
-#         modify(f, o, or)
-#     end
-# @inline _modify_rec(f, obj, or::RecursiveOfType) = obj
-
-# @inline function modify(f, obj::OT, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
-#     if obj isa RT
-#         modify(obj, or.optic) do o
-#             modify(f, o, or)
-#         end |> f
-#     else
-#         f(obj)
-#     end
-# end
-# @inline function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
-#     if obj isa RT
-#         modify(obj, or.optic) do o
-#             modify(f, o, or)
-#         end
-#     else
-#         obj
-#     end
-# end
-
-# function getall(obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
-#     res_inner = if obj isa RT
-#         map(getall(obj, or.optic)) do o
-#             getall(o, or)
-#         end #|> _reduce_concat
-#     else
-#         ()
-#     end
-#     res_cur = obj isa OT ? (obj,) : ()
-#     return Accessors._concat(res_inner, res_cur)
-# end
-
 # see https://github.com/FluxML/Functors.jl/pull/61 for the approach and its discussion
-
 function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
     recurse(o) = _walk_modify(var"#self#", f, o, or)
     _walk_modify(recurse, f, obj, or)

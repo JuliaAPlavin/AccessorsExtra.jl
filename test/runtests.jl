@@ -349,7 +349,7 @@ end
 
 @testitem "recursive" begin
     AccessorsExtra.@allinferred modify getall begin
-    or = RecursiveOfType(out=Number, recurse=Union{Tuple,Vector,NamedTuple}, optic=Elements())
+    or = RecursiveOfType(Number, ∗, recurse=Union{Tuple,Vector,NamedTuple})
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 1, 3)
@@ -368,7 +368,7 @@ end
     @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-    or = RecursiveOfType(out=NamedTuple, recurse=Union{Tuple, Vector, NamedTuple}, optic=Elements())
+    or = RecursiveOfType(NamedTuple, ∗, recurse=Union{Tuple, Vector, NamedTuple})
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
@@ -381,7 +381,7 @@ end
     @test_broken getall(m, o) == getall(m, or)
 
     m = (a=1, b=2+3im)
-    or = RecursiveOfType(out=Real, optic=∗ₚ)
+    or = RecursiveOfType(Real, ∗ₚ)
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
