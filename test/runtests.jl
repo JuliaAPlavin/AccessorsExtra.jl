@@ -629,6 +629,17 @@ end
     InverseFunctions.test_inverse(Accessors.deopcompose, sin ∘ tan ∘ cos; compare= ==)
 end
 
+@testitem "ranges" begin
+    r = 1:10
+    @test -5:10 === @set first(r) = -5
+    @test 1:15 === @set last(r) = 15
+
+    r = Base.OneTo(10)
+    @test Base.OneTo(19) === @set length(r) = 19
+    @test -5:10 === @set first(r) = -5
+    @test Base.OneTo(15) === @set last(r) = 15
+end
+
 @testitem "collections" begin
     o = @optic map(-, _)  # invertible
     Accessors.test_getset_laws(o, [1, 2], [3, 4], [5, 6])

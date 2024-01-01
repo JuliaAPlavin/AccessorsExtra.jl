@@ -111,4 +111,11 @@ end
 (c::⩔)(x) = c.f(x) || c.g(x)
 
 
+# unambiguous for unitranges, but tension with general array @set first(x)...
+set(r::AbstractUnitRange, ::typeof(first), x) = x:last(r)
+set(r::AbstractUnitRange, ::typeof(last),  x) = first(r):x
+set(r::Base.OneTo, ::typeof(last), x) = Base.OneTo(x)
+set(r::Base.OneTo, ::typeof(length), x) = Base.OneTo(x)
+
+
 end
