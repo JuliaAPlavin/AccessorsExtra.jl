@@ -135,6 +135,11 @@ InverseFunctions.inverse(::typeof(Base.splat(compose))) = decompose
 Accessors.constructorof(::Type{<:Expr}) = (head, args) -> Expr(head, args...)
 
 
+set(obj, o::Base.Fix1{typeof(map)}, val) = map((ob, v) -> set(ob, o.x, v), obj, val)
+set(obj, o::Base.Fix1{typeof(filter)}, val) = @set obj[findall(o.x, obj)] = val
+modify(f, obj, o::Base.Fix1{typeof(filter)}) = @modify(f, obj[findall(o.x, obj)])
+
+
 # set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57
 set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
 set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val

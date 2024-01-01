@@ -624,6 +624,18 @@ end
     InverseFunctions.test_inverse(Accessors.deopcompose, sin ∘ tan ∘ cos; compare= ==)
 end
 
+@testitem "collections" begin
+    o = @optic map(-, _)  # invertible
+    Accessors.test_getset_laws(o, [1, 2], [3, 4], [5, 6])
+    o = @optic map(only, _)  # non-invertible
+    Accessors.test_getset_laws(o, [(1,), (2,)], [(3,), (4,)], [(5,), (6,)])
+    o = @optic filter(>(0), _)
+    Accessors.test_getset_laws(o, [1, -2, 3, -4, 5, -6], [1, 2, 3], [1, 3, 5])
+    @test modify([1, -2, 3, -4, 5, -6], o) do x
+        x .+ sum(x)
+    end == [10, -2, 12, -4, 14, -6]
+end
+
 @testitem "keys, values, pairs" begin
     using Dictionaries
 
