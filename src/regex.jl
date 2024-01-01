@@ -8,7 +8,7 @@ function modify(f, s, o::Base.Fix1{typeof(match)})
         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
         @set s[FlexIx(rng)] = v
     else
-        @assert v isa RegexMatch
+        v isa RegexMatch || error("Expected RegexMatch or AbstractString, got $(typeof(v))")
         @assert v === m
         return s
     end
@@ -39,6 +39,7 @@ function modify(f, obj::EachMatchWrapper, ::Elements)
         repl = if x isa AbstractString
             x
         else
+            x isa RegexMatch || error("Expected RegexMatch or AbstractString, got $(typeof(x))")
             @assert x === m
             m.match
         end
