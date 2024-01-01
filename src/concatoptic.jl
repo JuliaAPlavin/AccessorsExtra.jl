@@ -8,6 +8,13 @@ const ++ = concat
 
 Accessors.OpticStyle(::Type{<:ConcatOptics}) = Accessors.ModifyBased()
 
+macro optics(exs...)
+    optic_exs = map(exs) do ex
+        :($Accessors.@optic($ex))
+    end
+    :( $concat($(optic_exs...)) ) |> esc
+end
+
 
 function Accessors.getall(obj, co::ConcatOptics)
     map(co.optics) do o

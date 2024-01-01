@@ -6,6 +6,7 @@ using TestItemRunner
 @testitem "concat optics" begin
     @testset for o in (
         @optic(_.a) ++ @optic(_.b),
+        @optics(_.a, _.b),
         @optic(_[(:a, :b)] |> Elements()),
     )
         obj = (a=1, b=2, c=3)
@@ -26,19 +27,19 @@ using TestItemRunner
 
     AccessorsExtra.@allinferred getall setall modify begin
         obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
-        o = @optic(_.a) ++ @optic(_.bs |> Elements() |> _.c)
+        o = @optics _.a  _.bs |> Elements() |> _.c
         @test getall(obj, o) === (1, 2, 4)
         @test setall(obj, o, (:a, :b, :c)) === (a=:a, bs=((c=:b, d=3), (c=:c, d=5)))
         @test modify(-, obj, o) === (a=-1, bs=((c=-2, d=3), (c=-4, d=5)))
         Accessors.test_getsetall_laws(o, obj, (3, 4, 5), (:a, :b, :c))
 
-        o = @optic(_ - 1) ∘ (@optic(_.a) ++ @optic(_.bs |> Elements() |> _.c))
+        o = @optic(_ - 1) ∘ (@optics _.a  _.bs |> Elements() |> _.c)
         @test getall(obj, o) === (0, 1, 3)
         @test modify(-, obj, o) === (a=1, bs=((c=0, d=3), (c=-2, d=5)))
         Accessors.test_getsetall_laws(o, obj, (3, 4, 5), (10, 20, 30))
 
         obj = (a=1, bs=[(c=2, d=3), (c=4, d=5)])
-        o = @optic(_.a) ++ @optic(_.bs |> Elements() |> _.c)
+        o = @optics _.a  _.bs |> Elements() |> _.c
         @test getall(obj, o) == [1, 2, 4]
         @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
     end

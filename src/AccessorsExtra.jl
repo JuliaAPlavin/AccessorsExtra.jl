@@ -13,7 +13,7 @@ using Requires
 export
     ViewLens,
     ∗,
-    concat, ++,
+    concat, ++, @optics,
     @replace,
     assemble, @assemble
 
