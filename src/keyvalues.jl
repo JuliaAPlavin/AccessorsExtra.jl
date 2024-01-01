@@ -1,5 +1,7 @@
 # trivial setters
-set(obj::AbstractArray, ::typeof(values), vals) = setall(obj, Elements(), vals)
+set(obj::AbstractArray, ::typeof(values), vals::AbstractArray) = (@assert axes(obj) == axes(vals); vals)
+# XXX: setall should be improved in Accessors, see OffsetArrays tests
+# set(obj::AbstractArray, ::typeof(values), vals) = setall(obj, Elements(), vals)
 set(obj::Tuple, ::typeof(values), vals) = Tuple(vals)
 set(obj::Pair, ::typeof(values), vals) = Pair(vals...)
 set(obj::NamedTuple{KS}, ::typeof(values), vals) where {KS} = NamedTuple{KS}(Tuple(vals))

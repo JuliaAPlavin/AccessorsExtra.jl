@@ -661,6 +661,7 @@ end
 end
 
 @testitem "keys, values, pairs" begin
+    using OffsetArrays
     using Dictionaries
 
     # ds = Dict(:a => 1:10,:b => 2:11)
@@ -687,6 +688,12 @@ end
         @test [5, 7, 9] == modify(((i, x),) -> i => i + x, A, @o pairs(_)[∗])
         @test [1, 2, 3] == set(A, values, [1, 2, 3])
         @test [6, 5, 4] == modify(reverse, A, values)
+        
+        A = OffsetArray([4, 5, 6], -1:1)
+        @test OffsetArray([8, 10, 12], -1:1) == modify(x -> 2x, A, @o values(_)[∗])
+        @test OffsetArray([3, 5, 7], -1:1) == modify(((i, x),) -> i => i + x, A, @o pairs(_)[∗])
+        @test_broken OffsetArray([1, 2, 3], -1:1) == set(A, values, [1, 2, 3])  # XXX: should it work?
+        @test OffsetArray([6, 5, 4], -1:1) == modify(reverse, A, values)
 
         D = Dict(4 => 5, 6 => 7)
         @test Dict(4 => 6, 6 => 8) == modify(x -> x+1, D, @o values(_)[∗])
