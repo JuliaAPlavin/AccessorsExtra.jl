@@ -15,7 +15,6 @@ TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 URIs = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
 UnionCollections = "ea2a18ed-132b-4398-a457-2ce4804e5c00"
-Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 Aqua = "0.7"
@@ -31,5 +30,4 @@ TestItemRunner = "0.2.0"
 TestItems = "0.1.0"
 URIs = "1.4"
 UnionCollections = "0.1.5"
-Unitful = "1.14"
 julia = "1.7"
