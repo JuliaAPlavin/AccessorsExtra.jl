@@ -200,6 +200,15 @@ end
     # @test set(1, something, 2) == 2
     # @test set(Some(1), something, 2) == Some(2)
 
+    # o = somethingo(@optic(_.a), @optic(_.b))
+    # o = @somethingo(_.a, _.b)
+    # @test o((a=1, b=2)) == 1
+    # @test o((c=1, b=2)) == 2
+    # @test o((c=1,))
+    # @test set((a=1, b=2), o, 10) == (a=10, b=2)
+    # @test set((c=1, b=2), o, 10) == (c=1, b=10)
+    # @test set((c=1,), o, 10)
+
     # get(...) - needs Base.Fix3
 
     o = maybe(@optic _[2]) ∘ @optic(_.a)
