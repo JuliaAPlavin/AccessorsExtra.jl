@@ -34,8 +34,8 @@ using TestItemRunner
     @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
 end
 
-@testitem "Elements" begin
-    @test @optic(_.a[∗].b) === @optic(_.a |> Elements() |> _.b)
+@testitem "shorter forms" begin
+    @test @optic(_.a[∗].b.:∗.c[2]) === @optic(_.a |> Elements() |> _.b |> Properties() |> _.c[2])
 end
 
 @testitem "replace" begin

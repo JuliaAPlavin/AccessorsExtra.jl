@@ -203,4 +203,7 @@ const ∗ = Val(:∗)
 Accessors.IndexLens(::Tuple{typeof(∗)}) = Elements()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 
+@generated Accessors.PropertyLens{P}() where {P} = P == :∗ ? Properties() : Expr(:new, PropertyLens{P})
+Accessors._shortstring(prev, o::Properties) = "$prev.:∗"
+
 end
