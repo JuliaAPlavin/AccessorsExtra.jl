@@ -59,6 +59,14 @@ end
     myrev = set(reverse, o, "!!!")
     @test myrev("abc") == "!!!"
     @test myrev("def") == "fed"
+
+    f = modify(uppercase, lowercase, first ∘ AccessorsExtra.FuncResult())
+    @test f("abc") == "Abc"
+    @test f("ABC") == "Abc"
+    f = modify(uppercase, reverse, first ∘ AccessorsExtra.FuncArgument())
+    @test f("abc") == "cbA"
+    f = modify(uppercase, (func=lowercase, x=1), @optic _.func |> AccessorsExtra.FuncResult() |> first)
+    @test f.func("abc") == "Abc"
 end
 
 @testitem "regex" begin

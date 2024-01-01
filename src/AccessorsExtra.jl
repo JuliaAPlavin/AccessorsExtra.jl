@@ -255,4 +255,13 @@ function Accessors.set(obj, lens::FuncValLens, val)
     end
 end
 
+
+struct FuncResult end
+Accessors.OpticStyle(::Type{FuncResult}) = Accessors.ModifyBased()
+Accessors.modify(f, obj, ::FuncResult) = f ∘ obj
+
+struct FuncArgument end
+Accessors.OpticStyle(::Type{FuncArgument}) = Accessors.ModifyBased()
+Accessors.modify(f, obj, ::FuncArgument) = obj ∘ f
+
 end
