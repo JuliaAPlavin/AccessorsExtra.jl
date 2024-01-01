@@ -13,8 +13,8 @@ modify(f, obj::KVPWrapper, ::Elements) = error("modify(f, ::$(typeof(obj.obj)), 
 modify(f, obj::KVPWrapper{typeof(keys), <:Dict}, ::Elements) = Dict(f(k) => v for (k, v) in pairs(obj.obj))
 modify(f, obj::KVPWrapper{typeof(keys), <:NamedTuple{NS}}, ::Elements) where {NS} = NamedTuple{map(f, NS)}(values(obj.obj))
 
-### values
-modify(f, obj::KVPWrapper{typeof(values), <:Union{AbstractArray, Tuple, NamedTuple}}, ::Elements) = map(f, obj.obj)
+### values - just map by default
+modify(f, obj::KVPWrapper{typeof(values)}, ::Elements) = map(f, obj.obj)
 
 function modify(f, obj::KVPWrapper{typeof(values), <:Dict}, ::Elements)
     dict = obj.obj
