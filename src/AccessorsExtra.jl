@@ -31,6 +31,8 @@ include("alongside.jl")
 include("recursive.jl")
 include("context.jl")
 include("maybe.jl")
+include("partsof.jl")
+include("funclenses.jl")
 include("regex.jl")
 include("replace.jl")
 include("assemble.jl")
@@ -78,7 +80,7 @@ set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
 InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typeof(isequal)}) = Base.Fix1(getindex, f.outer.x)
 
-
+# shortcuts, no piracy
 const ∗ = Elements()
 const ∗ₚ = Properties()
 
@@ -87,50 +89,5 @@ Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 
 Accessors.IndexLens(::Tuple{typeof(∗ₚ)}) = Properties()
 Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
-
-
-struct FuncValLens{A <: Tuple, KA <: NamedTuple}
-    args::A
-    kwargs::KA
-end
-
-function funcvallens(args...; kwargs...)
-    @assert args == args
-    @assert values(kwargs) == values(kwargs)
-    FuncValLens(args, values(kwargs))
-end
-
-(lens::FuncValLens)(obj) = obj(lens.args...; lens.kwargs...)
-function set(obj, lens::FuncValLens, val)
-    func(args...; kwargs...) = if args == lens.args && values(kwargs) == lens.kwargs
-        val
-    else
-        obj(args...; kwargs...)
-    end
-end
-
-
-struct FuncResult end
-OpticStyle(::Type{FuncResult}) = ModifyBased()
-modify(f, obj, ::FuncResult) = f ∘ obj
-
-struct FuncArgument end
-OpticStyle(::Type{FuncArgument}) = ModifyBased()
-modify(f, obj, ::FuncArgument) = obj ∘ f
-
-
-struct PartsOf end
-Broadcast.broadcastable(o::PartsOf) = Ref(o)
-struct _PartsOfOptic{O}
-    o::O
-end
-OpticStyle(::Type{_PartsOfOptic}) = ModifyBased()
-(o::_PartsOfOptic)(obj) = getall(obj, o.o)
-set(obj, o::_PartsOfOptic, val) = setall(obj, o.o, val)
-
-Base.:∘(i::PartsOf, o) = _PartsOfOptic(o)
-Base.:∘(i::_PartsOfOptic, o) = _PartsOfOptic(i.o ∘ o)
-Base.:∘(c::ComposedFunction{<:Any, <:PartsOf}, o) = c.outer ∘ _PartsOfOptic(o)
-Base.:∘(c::ComposedFunction{<:Any, <:_PartsOfOptic}, o) = c.outer ∘ _PartsOfOptic(c.inner.o ∘ o)
 
 end
