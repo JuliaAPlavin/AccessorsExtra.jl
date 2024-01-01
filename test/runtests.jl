@@ -800,6 +800,14 @@ end
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
 end
 
+@testitem "staticarrays" begin
+    using StaticArrays
+
+    Accessors.test_getset_laws(Tuple, SVector(1, 2, 3), (4., 5, 6), (:a, :b, :c))
+    Accessors.test_getset_laws(SVector, (1, 2, 3), SVector(4., 5, 6), SVector(:a, :b, :c))
+    Accessors.test_getset_laws(SVector, (1., 2, 3), SVector(4., 5, 6), SVector(:a, :b, :c))
+end
+
 @testitem "domainsets" begin
     using DomainSets; using DomainSets: ×
     using StaticArrays
