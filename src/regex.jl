@@ -1,3 +1,19 @@
+Accessors.OpticStyle(::Type{<:Base.Fix1{typeof(match)}}) = Accessors.ModifyBased()
+
+function Accessors.modify(f, s, o::Base.Fix1{typeof(match)})
+    m = match(o.x, s)
+    v = f(m)
+    repl = if v isa AbstractString
+        sub = m.match
+        rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
+        @views s[begin:prevind(s, first(rng))] * v * s[nextind(s, last(rng)):end]
+    else
+        @assert v === m
+        return s
+    end
+end
+
+
 struct EachmatchElements
     r::Regex
 end

@@ -59,6 +59,17 @@ end
 end
 
 @testitem "regex" begin
+    s = "name_2020_03_10.ext"
+    o = @optic match(r"(?<y>\d{4})_(\d{2})_(\d{2})", _).match
+    @test o(s) == "2020_03_10"
+    @test set(s, o, "2021_04_11") == "name_2021_04_11.ext"
+    @test modify(d -> d + 20, s, @optic match(r"(?<y>\d{4})_\d{2}_\d{2}", _)[:y] |> parse(Int, _)) == "name_2040_03_10.ext"
+    o = @optic match(r"\d", _) |> If(!isnothing) |> _.match |> parse(Int, _)
+    @test getall("a 1", o) == (1,)
+    @test getall("a b", o) == ()
+    @test modify(x -> x + 1, "a 1", o) == "a 2"
+    @test modify(x -> x + 1, "a b", o) == "a b"
+
     s = "abc def dxyz"
     @test getall(s, @optic eachmatch(r"d\w+", _)[∗].match) == ["def", "dxyz"]
     @test setall(s, @optic(eachmatch(r"d\w+", _)[∗].match), ["aa", "ooo"]) == "abc aa ooo"
