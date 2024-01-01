@@ -59,12 +59,13 @@ end
     @test o(0) === (1, 0, 2)
     o = @optic tuple(_, 1, 2)
     @test o(0) === (0, 1, 2)
-    end
 
     o = @optic sort(_, by=identity)
     @test o([-3, 1, 2, 0]) == [-3, 0, 1, 2]
     o = @optic sort(_, by=abs)
     @test o([-3, 1, 2, 0]) == [0, 1, 2, -3]
+    end
+
     @test_broken @eval (@optic sort(_; by=identity))([-3, 1, 2, 0]) == [-3, 0, 1, 2]
     @test_broken @eval (@optic sort(_; by=abs))([-3, 1, 2, 0]) == [0, 1, 2, -3]
 
@@ -92,8 +93,9 @@ end
         @test setall(obj, o, (a="10", c="11")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
         @test setall(obj, o, (c="11", a="10")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
         @test modify(float, obj, o) === (a=1.0, bs=((c=2.0, d=3), (c=4, d=5)))
+        # doesn't infer due to "bounded recursion
+        @test_broken delete(obj, o) === (bs=((d=3,), (c=4, d=5)),)
     end
-    # doesn't infer due to "bounded recursion
     @test delete(obj, o) === (bs=((d=3,), (c=4, d=5)),)
     
 
