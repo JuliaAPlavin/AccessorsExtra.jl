@@ -1,16 +1,15 @@
-
 struct MaybeOptic{O,D}
     o::O
     default::D
 end
 
-export maybe
 maybe(o; default=nothing) = MaybeOptic(o, default)
 
 OpticStyle(::Type{<:MaybeOptic}) = Val(:maybe)
 
 Accessors.composed_optic_style(m::Val{:maybe}, ::Any) = m
 Accessors.composed_optic_style(::Any, m::Val{:maybe}) = m
+Accessors.composed_optic_style(::Val{:maybe}, m::Val{:maybe}) = m
 
 @inline function Accessors._set(obj, optic::ComposedFunction, val, ::Val{:maybe})
     inner_obj = optic.inner(obj)
@@ -25,22 +24,13 @@ function Accessors._modify(f, obj, optic::ComposedFunction, ::Val{:maybe})
         modify(f, o1, otr)
     end
 end
-    
 
+(o::MaybeOptic)(obj) = hasoptic(obj, o.o) ? o.o(obj) : o.default
+set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
+set(obj, o::MaybeOptic, val) = hasoptic(obj, o.o) ? set(obj, o.o, val) : insert(obj, o.o, val)
 
-(o::MaybeOptic{<:IndexLens})(obj::AbstractArray) =
-    checkbounds(Bool, obj, o.o.indices...) ? o.o(obj) : o.default
-
-function set(obj::AbstractArray, o::MaybeOptic{<:IndexLens}, val)
-    if isnothing(val)
-        checkbounds(Bool, obj, o.o.indices...) ? delete(obj, o.o) : obj
-    else
-        checkbounds(Bool, obj, o.o.indices...) ? set(obj, o.o, val) : insert(obj, o.o, val)
-    end
-end
-
-function modify(f, obj::AbstractArray, o::MaybeOptic{<:IndexLens})
-    if checkbounds(Bool, obj, o.o.indices...)
+function modify(f, obj, o::MaybeOptic)
+    if hasoptic(obj, o.o)
         # like modify(f, obj, o.o), but can delete
         oldv = o.o(obj)
         @assert !isnothing(oldv)
@@ -52,3 +42,8 @@ function modify(f, obj::AbstractArray, o::MaybeOptic{<:IndexLens})
         obj
     end
 end
+
+hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
+hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
+hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))
+hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)

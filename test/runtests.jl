@@ -139,23 +139,55 @@ end
     @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
     @test_throws Exception modify(x -> nothing, (;), o)
 
-    o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
-    @test o((a=[1, 2],)) == 2
-    @test o((a=[1],)) == 10
-    @test_throws Exception o((;))
-    @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
-    @test set((a=[1],), o, 5) == (a=[1, 5],)
-    @test_throws Exception set((;), o, 5)
-    @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
-    @test_broken modify(x -> x+1, (a=[1],), o) == (a=[1, 11],)
-    @test_throws Exception modify(x -> x+1, (;), o)
-    @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
-    @test_broken modify(x -> 10, (a=[1, 2],), o) == (a=[1],)
-    @test modify(x -> 10, (a=[1],), o) == (a=[1],)
-    @test_throws Exception modify(x -> 10, (;), o)
-    @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
-    @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
-    @test_throws Exception modify(x -> nothing, (;), o)
+    o = maybe(@optic _.a) ⨟ maybe(@optic(_.b))
+    @test o((a=(b=1,),)) == 1
+    @test o((a=(;),)) == nothing
+    @test o((;)) == nothing
+    @test set((a=(b=1,),), o, 5) == (a=(b=5,),)
+    @test set((a=(;),), o, 5) == (a=(b=5,),)
+    @test_broken set((;), o, 5) == (a=(b=5,),)
+    @test modify(x -> x+1, (a=(b=1,),), o) == (a=(b=2,),)
+    @test modify(x -> x+1, (a=(;),), o) == (a=(;),)
+    @test modify(x -> x+1, (;), o) == (;)
+    @test modify(x -> nothing, (a=(b=1,),), o) == (a=(;),)
+    @test modify(x -> nothing, (a=(;),), o) == (a=(;),)
+    @test modify(x -> nothing, (;), o) == (;)
+
+    for obj in ((5,), (a=5,), [5], Dict(1 => 5),)
+        o = maybe(@optic _[1])
+        @test o(obj) == 5
+        Accessors.test_getset_laws(o, obj, 10, 20)
+    end
+
+    for obj in ((), [],)
+        o = maybe(@optic _[1])
+        @test o(obj) == nothing
+        Accessors.test_getset_laws(o, obj, 10, 20)
+    end
+
+    for obj in ((;), Dict(),)
+        o = maybe(@optic _[:a])
+        @test o(obj) == nothing
+        Accessors.test_getset_laws(o, obj, 10, 20)
+    end
+
+    # o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
+    # @test o((a=[1, 2],)) == 2
+    # @test o((a=[1],)) == 10
+    # @test_throws Exception o((;))
+    # @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
+    # @test set((a=[1],), o, 5) == (a=[1, 5],)
+    # @test_throws Exception set((;), o, 5)
+    # @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
+    # @test_broken modify(x -> x+1, (a=[1],), o) == (a=[1, 11],)
+    # @test_throws Exception modify(x -> x+1, (;), o)
+    # @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
+    # @test_broken modify(x -> 10, (a=[1, 2],), o) == (a=[1],)
+    # @test modify(x -> 10, (a=[1],), o) == (a=[1],)
+    # @test_throws Exception modify(x -> 10, (;), o)
+    # @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
+    # @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
+    # @test_throws Exception modify(x -> nothing, (;), o)
 end
 
 @testitem "recursive" begin

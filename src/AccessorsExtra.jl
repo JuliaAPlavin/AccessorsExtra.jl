@@ -20,6 +20,7 @@ export
     assemble, @assemble,
     unrecurcize, RecursiveOfType,
     keyed, enumerated, selfindexed,
+    maybe, hasoptic,
     get_steps, logged
 
 
