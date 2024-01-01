@@ -373,7 +373,7 @@ end
     @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-    or = RecursiveOfType(NamedTuple, ∗, recurse=Union{Tuple, Vector, NamedTuple})
+    or = RecursiveOfType(NamedTuple)
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
@@ -386,7 +386,7 @@ end
     @test_broken getall(m, o) == getall(m, or)
 
     m = (a=1, b=2+3im)
-    or = RecursiveOfType(Real, ∗ₚ)
+    or = RecursiveOfType(Real)
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)

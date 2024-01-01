@@ -6,11 +6,11 @@ struct RecursiveOfType{OT,RT,O}
     optic::O
 end
 Broadcast.broadcastable(o::RecursiveOfType) = Ref(o)
-RecursiveOfType(; out::Type{TO}, recurse::Type{TR}=Any, optic) where {TO,TR} =
+RecursiveOfType(; out::Type{TO}, recurse::Type{TR}=Any, optic=Properties()) where {TO,TR} =
     RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
-RecursiveOfType(out::Type{TO}; recurse::Type{TR}=Any, optic) where {TO,TR} =
+RecursiveOfType(out::Type{TO}; recurse::Type{TR}=Any, optic=Properties()) where {TO,TR} =
     RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
-RecursiveOfType(out::Type{TO}, optic; recurse::Type{TR}=Any) where {TO,TR} =
+RecursiveOfType(out::Type{TO}, optic=Properties(); recurse::Type{TR}=Any) where {TO,TR} =
     RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(out, recurse, optic)
 
 
