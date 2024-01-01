@@ -262,8 +262,8 @@ end
     @test getall(m, o) == getall(m, or)
 end
 
-@testitem "indexed" begin
-    o = @optic(_.b)ᵢ ⨟ keyed(Elements()) ⨟ @optic(_.a)ᵢ
+@testitem "context" begin
+    o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)ᵢ
     @test modify(((i, v),) -> i => v, (a=1, b=((a='a',), (a='b',), (a='c',))), o) == (a=1, b=((a=1=>'a',), (a=2=>'b',), (a=3=>'c',)))
     @test modify(((i, v),) -> i => v, (a=1, b=[(a='a',), (a='b',), (a='c',)]), o) == (a=1, b=[(a=1=>'a',), (a=2=>'b',), (a=3=>'c',)])
     @test modify(
@@ -274,7 +274,7 @@ end
     @test modify(
         wix -> wix.i => wix.v,
         (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
-        @optic(_.b)ᵢ ⨟ keyed(Elements()) ⨟ Elements()ᵢ
+        @optic(_.b) ⨟ keyed(Elements()) ⨟ Elements()ᵢ
     ) == (a=1, b=(x=(a=:x=>'a',), y=(a=:y=>'b',), z=(a=:z=>'c',)))
 
     @test modify(
