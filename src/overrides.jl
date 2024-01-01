@@ -43,10 +43,9 @@ function parse_obj_optics(ex::Expr)
     elseif @capture(ex, front_[indices__])
         if !tree_contains(front, :_) && any(ind -> tree_contains(ind, :_), indices)
             ind = only(indices)
-            if tree_contains(ind, :_)
+            @assert tree_contains(ind, :_)
                 obj, frontoptic = parse_obj_optics(ind)
                 optic = :(Base.Fix1(getindex, $(esc(front))))
-            end
         else
             obj, frontoptic = parse_obj_optics(front)
             if any(need_dynamic_optic, indices)
