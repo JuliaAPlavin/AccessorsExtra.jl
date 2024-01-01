@@ -21,10 +21,13 @@ end
 construct(T::Type{<:Tuple{Any,Any}}, (_, x)::Pair{typeof(first)}, (_, y)::Pair{typeof(last)})::T = constructorof(T)(x, y)
 construct(T::Type{<:Tuple{Any,Any}}, (_, n)::Pair{typeof(splat(hypot))}, (_, a)::Pair{typeof(splat(atan))})::T = constructorof(T)((n .* sincos(a))...)
 
-construct(::Type{NamedTuple}, args::Vararg{Pair}) =
-    foldl(args, init=(;)) do acc, (o, x)
+construct(::Type{NamedTuple}, args::Vararg{Pair}) = @p let
+    args
+    map(_process_invertible(_[1], _[2]))
+    foldl(init=(;)) do acc, (o, x)
         insert⁺(acc, o, x)
     end
+end
 # disambiguation:
 construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
     foldl(args; init=(;)) do acc, a
@@ -32,13 +35,11 @@ construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
     end
 
 # insert⁺ is a neat piece of functionality by itself!
-struct InsertShouldJustInverse end
-
 insert⁺(obj, optic, val) = insert(obj, optic, val)
 insert⁺(obj, os::ConcatOptics, val) = _foldl(os.optics; init=obj) do obj, o
     insert⁺(obj, o, val)
 end
-insert⁺(obj::InsertShouldJustInverse, optic, val) = inverse(optic)(val)
+insert⁺(::Nothing, ::typeof(identity), val) = val
 insert⁺(obj, optic::ComposedFunction, val) =
     if hasoptic(obj, optic.inner)
         modify(obj, optic.inner) do inner_obj
@@ -50,8 +51,8 @@ insert⁺(obj, optic::ComposedFunction, val) =
 
 default_empty_obj(::IndexLens{<:Tuple{<:Integer}}) = ()
 default_empty_obj(::PropertyLens) = (;)
+default_empty_obj(::typeof(identity)) = nothing
 default_empty_obj(f::ComposedFunction) = default_empty_obj(f.inner)
-default_empty_obj(f) = inverse(f) isa NoInverse ? throw(MethodError(default_empty_obj, f)) : InsertShouldJustInverse()
 
 
 _propname(::PropertyLens{P}) where {P} = P
@@ -62,10 +63,13 @@ function _construct(::Type{T}, args::Vararg{Pair{<:PropertyLens}})::T where {T}
 end
 
 
-construct(::Type{Any}, args::Vararg{Pair}) = 
-    foldl(args, init=default_empty_obj(first(first(args)))) do acc, (o, x)
+construct(::Type{Any}, args::Vararg{Pair}) = @p let
+    args
+    map(_process_invertible(_[1], _[2]))
+    foldl(__, init=default_empty_obj(first(first(__)))) do acc, (o, x)
         insert⁺(acc, o, x)
     end
+end
 construct(::Type{Any}, args::Vararg{Pair{<:PropertyLens}}) = 
     foldl(args, init=default_empty_obj(first(first(args)))) do acc, (o, x)
         insert⁺(acc, o, x)
@@ -80,10 +84,9 @@ function construct(::Type{T}, args::Vararg{Pair}) where {T}
     construct(T, pargs...)
 end
 
-_process_invertible(f, x) = f => x
-function _process_invertible(f::ComposedFunction, x)
+function _process_invertible(f, x)
     fi, fo = _split_invertible(decompose(f))
-    compose(fo...) => compose(fi...)(x)
+    _compose(fo...) => _compose(fi...)(x)
 end
 
 _split_invertible(fs::Tuple{}) = ((), ())
@@ -96,6 +99,9 @@ function _split_invertible(fs::Tuple)
         ((fi..., first_inv), fo)
     end
 end
+
+_compose(args...) = compose(args...)
+_compose() = identity
 
 
 macro construct(exprs...)
