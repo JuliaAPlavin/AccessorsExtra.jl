@@ -58,6 +58,7 @@ end
     )
     @test A.x === @inferred mapview((@o _.x), A)
     @test A.y === @inferred mapview((@o _.y), A)
+    @test A.y == @inferred map((@o _.y), A)
     @test 11:10:1001 == @inferred mapview((@o _.y + 1), A)
     @test 11:10:1001 == @inferred map((@o _.y + 1), A)
     @test_throws "Shouldn't happen" @inferred map((@o _.x + 1), A)
@@ -80,6 +81,10 @@ end
     @test C[5] == (a = 51, b = 50.05, c = (y=50,))
     @test C.a == 11:10:1001
     @test C.c.y == 10:10:1000
+
+    C = mapinsert(B, x=@o _.xy.y + 1)
+    @test C.xy === B.xy
+    @test C.x == 11:10:1001
 
     # C = @inferred mapview((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B)
     # @test C[5] == (a = 51, b = 50.05, c = (y=50,))
@@ -119,6 +124,8 @@ end
     @test 10.01:10.01:1001.0 == map((@o _.xy.y + _.z.im), B)
 
     C = map((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.z.a.v,))), B)
+    @test C isa StructArray
+    @test C.c isa StructArray
     @test C[5] == (a = 51, b = 50.05, c = (v=5,))
     @test C.a == 11:10:1001
     @test C.c.v == 1:100
