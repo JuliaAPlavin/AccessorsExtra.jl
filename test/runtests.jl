@@ -510,14 +510,12 @@ end
 end
 
 @testitem "view" begin
-    A = [1, 2, (a=3, b=4)]
-    opt = @optic _ |> ViewLens(3) |> _.a
-    @test opt(A) == 3
-    @test set(A, opt, 10) === A == [1, 2, (a=10, b=4)]
-    @test set(A, ViewLens((1:2,)), [-2, -3]) === A == [-2, -3, (a=10, b=4)]
-    @test @modify(x -> 2x, A |> ViewLens((1:2,))) === A == [-4, -6, (a=10, b=4)]
-    Accessors.test_getset_laws(opt, A, "a", :b)
-    Accessors.test_getset_laws(@optic(_ |> ViewLens((1:2,))), A, [5, 6], [7, 8])
+    A = [1, 2]
+    @test set(A, @optic(view(_, 2)[]), 10) === A == [1, 10]
+    @test modify(-, A, @optic(view(_, 2)[] + 1)) === A == [1, -12]
+
+    Accessors.test_getset_laws(@optic(view(_, 2)[]), [1, 2], 5, -1)
+    Accessors.test_getset_laws(@optic(view(_, 1:2)), [1, 2], 1:2, 5:6)
 
     A = [1, 2, (a=3, b=4)]
     @test set(A, @optic(view(_, 1:2)), [-2, -3]) === A == [-2, -3, (a=3, b=4)]

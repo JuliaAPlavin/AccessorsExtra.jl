@@ -14,7 +14,6 @@ using Requires
 using Accessors: MacroTools
 
 export
-    ViewLens,
     ∗, ∗ₚ, All,
     concat, ++, @optics, @optic₊,
     @replace,
@@ -139,24 +138,13 @@ set(obj, o::Base.Fix1{typeof(map)}, val) = map((ob, v) -> set(ob, o.x, v), obj, 
 set(obj, o::Base.Fix1{typeof(filter)}, val) = @set obj[findall(o.x, obj)] = val
 modify(f, obj, o::Base.Fix1{typeof(filter)}) = @modify(f, obj[findall(o.x, obj)])
 
+Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
+Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view), <:Integer}, val::AbstractArray{<:Any, 0}) = setindex!(obj, only(val), lens.x)
+
 
 # set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57
 set(obj, o::typeof(getfields), val) = constructorof(typeof(obj))(val...)
 set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
-
-
-# ViewLens: adapted from IndexLens
-struct ViewLens{I<:Tuple}
-    indices::I
-end
-
-ViewLens(indices::Integer...) = ViewLens(indices)
-
-Base.@propagate_inbounds (lens::ViewLens{<:Tuple{Vararg{Integer}}})(obj) = obj[lens.indices...]
-Base.@propagate_inbounds (lens::ViewLens)(obj) = view(obj, lens.indices...)
-
-Base.@propagate_inbounds set(obj, lens::ViewLens, val) = setindex!(obj, val, lens.indices...)
-Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
 
 # inverse getindex
 InverseFunctions.inverse(f::Base.Fix1{typeof(getindex)}) = Base.Fix2(findfirst, f.x) ∘ isequal
