@@ -321,7 +321,13 @@ end
     @test set("1", o, 2) == "2"
     @test_broken set("a", o, 2) == "2"
 
-    # specify default value - semantic not totally clear...
+    o = @optic _.a[2]
+    @test oget((a=[1, 2, 3],), o, 123) == 2
+    @test oget((;), o, 123) == 123
+    @test oget(Returns(123), (a=[1, 2, 3],), o) == 2
+    @test oget(Returns(123), (;), o) == 123
+
+    # specify default value in maybe() - semantic not totally clear...
     # o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
     # @test o((a=[1, 2],)) == 2
     # @test o((a=[1],)) == 10

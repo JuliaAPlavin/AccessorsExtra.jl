@@ -18,7 +18,7 @@ export
     construct, @construct,
     RecursiveOfType,
     keyed, enumerated, selfcontext,
-    maybe, osomething, hasoptic,
+    maybe, osomething, oget, hasoptic,
     FlexIx,
     get_steps, logged,
     OptArgs, OptCons, OptProblemSpec, solobj
