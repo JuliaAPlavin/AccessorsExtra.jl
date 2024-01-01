@@ -23,7 +23,7 @@ The [Accessors.jl](https://github.com/JuliaObjects/Accessors.jl) package defines
 
 This notebook showcases the more stable and widely applicable pieces of functionality defined in `AccessorsExtra`. See the source code and tests for more.
 
-As far as possible, `AccessorsExtra` operations attempt to have as little overhead as possible, with tests checking this. Not all operations are possible to make zero-cost given the current Julia compiler state, though.
+As far as possible, `AccessorsExtra` operations attempt to have as little overhead as possible, with tests checking this.
 
 !!! note
     Before Julia 1.9, `AccessorsExtra` focused on `Accessors` integrations with third-party packages. With package extensions available, these integrations are put into `Accessors` itself, or into packages that define corresponding types.
@@ -138,64 +138,6 @@ modify(-, (a=[1, 2],), o_mb)
 # ╔═╡ 10e5512f-df3b-49e9-bf03-222c05a1933a
 modify(-, (a=[1],), o_mb)
 
-# ╔═╡ 736fa097-2be0-402c-a1d3-ad6123985bb3
-md"""
-## Recursive optics, `unrecurcize`
-
-Efficient fully-featured recursive optics!
-
-The upstream `Accessors` provides the `Recursive` optic, but it only support `modify` --- no `getall`, `setall`. \
-`modify` is reasonably efficient, but doesn't actually infer.
-"""
-
-# ╔═╡ b258b21e-3c5d-4d36-bb8e-747b00ef33e1
-orec_orig = Recursive(x -> !(x isa Number), ∗)
-
-# ╔═╡ 99bcfa08-9855-4a24-8cd3-bb773a859a86
-@btime modify(-, $obj, $orec_orig)
-
-# ╔═╡ 07f51cd2-029f-4f9d-9481-972b3f63e9f2
-getall(obj, orec_orig)
-
-# ╔═╡ 6e357f67-6384-48cc-bb64-c8a736d42099
-md"""
-In `AccessorsExtra`, we provide a more constrained but easier to optimize `RecursiveOfType` optic. By itself, it works but has a large overhead:
-"""
-
-# ╔═╡ 895b291b-906a-4bb8-a739-eee11405ee70
-orec = RecursiveOfType(out=(Number,), recurse=(Tuple, Vector, NamedTuple), optic=∗)
-
-# ╔═╡ e27ac26c-abfb-43fb-980a-3727116c1b3d
-@btime getall($obj, $orec)
-
-# ╔═╡ 9e678685-39c0-40ad-b6e2-15000ad25d91
-@btime modify(-, $obj, $orec)
-
-# ╔═╡ ec7da285-2b63-439f-8cc6-8338231b6fcc
-md"""
-Use the `unrecurcize` function on this optic. It converts the recursive optic to a combination of non-recursive ones, given the type of objects it will later be applied to:
-"""
-
-# ╔═╡ 3e833fd1-26ef-4787-ae02-ec02039e2cf1
-ounrec = unrecurcize(orec, typeof(obj))
-
-# ╔═╡ e001d362-5139-4f45-a8f4-13dfc8eea522
-md"""
-Now, all operations are efficient, and results mostly infer:
-"""
-
-# ╔═╡ 7f75fd88-81a0-4878-909c-0fbc2eacb054
-# infers
-@btime getall($obj, $ounrec)
-
-# ╔═╡ 57badaf2-4d6b-48ef-8d2e-d1c45040bee2
-# infers
-@btime modify(-, $obj, $ounrec)
-
-# ╔═╡ 6699d4ed-029c-445d-9f5c-926be86a35c7
-# doesn't infer for now, overhead may be noticeable in tight loops
-@btime setall($obj, $ounrec, 10:10:50)
-
 # ╔═╡ d375ae9f-2530-44bc-bd93-2c89e9c58e2a
 md"""
 ## Verbose optics: `logged()`
@@ -204,7 +146,7 @@ Wrap any optic with `logged()` to log all steps recursively:
 """
 
 # ╔═╡ 20350429-74ae-475b-baee-2528fd77e4c4
-getall(obj, logged(ounrec))
+getall(obj, logged(multiopt))
 
 # ╔═╡ bf9f7247-8aa2-4fc8-974a-65ba71021f96
 md"""
@@ -267,7 +209,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.0-rc1"
 manifest_format = "2.0"
-project_hash = "81ae6a4f1e84c0bb27fe6677c02a3001e719656c"
+project_hash = "e48914441617a38c36ba195f90ba178f4c8016a5"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -295,7 +237,7 @@ version = "0.1.28"
 
 [[deps.AccessorsExtra]]
 deps = ["Accessors", "ConstructionBase", "DataPipes", "InverseFunctions", "Reexport", "Requires"]
-git-tree-sha1 = "60a5a33ca2868a9fb14071d50e1258d9125c3b3c"
+git-tree-sha1 = "ae180ac08419036da9a5066a9c7d5e9cf3fe5022"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
 version = "0.1.30"
 
@@ -647,20 +589,6 @@ version = "17.4.0+0"
 # ╠═c5791834-27fc-453f-9305-cb977a046d28
 # ╠═2f0f1190-2377-4b30-9e71-c9d8b3b5f4ec
 # ╠═10e5512f-df3b-49e9-bf03-222c05a1933a
-# ╟─736fa097-2be0-402c-a1d3-ad6123985bb3
-# ╠═b258b21e-3c5d-4d36-bb8e-747b00ef33e1
-# ╠═99bcfa08-9855-4a24-8cd3-bb773a859a86
-# ╠═07f51cd2-029f-4f9d-9481-972b3f63e9f2
-# ╟─6e357f67-6384-48cc-bb64-c8a736d42099
-# ╠═895b291b-906a-4bb8-a739-eee11405ee70
-# ╠═e27ac26c-abfb-43fb-980a-3727116c1b3d
-# ╠═9e678685-39c0-40ad-b6e2-15000ad25d91
-# ╟─ec7da285-2b63-439f-8cc6-8338231b6fcc
-# ╠═3e833fd1-26ef-4787-ae02-ec02039e2cf1
-# ╟─e001d362-5139-4f45-a8f4-13dfc8eea522
-# ╠═7f75fd88-81a0-4878-909c-0fbc2eacb054
-# ╠═57badaf2-4d6b-48ef-8d2e-d1c45040bee2
-# ╠═6699d4ed-029c-445d-9f5c-926be86a35c7
 # ╟─d375ae9f-2530-44bc-bd93-2c89e9c58e2a
 # ╠═20350429-74ae-475b-baee-2528fd77e4c4
 # ╟─bf9f7247-8aa2-4fc8-974a-65ba71021f96
