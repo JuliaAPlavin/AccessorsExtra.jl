@@ -24,9 +24,9 @@ OpticStyle(::Type{<:SelfContext}) = ModifyBased()
 Base.show(io::IO, co::SelfContext) = print(io, "selfcontext(", co.f, ")")
 selfcontext(f=identity) = SelfContext(f)
  
-struct WithContext
-    i
-    v
+struct WithContext{I,V}
+    i::I
+    v::V
 end
 Base.first(ix::WithContext) = ix.i
 Base.last(ix::WithContext) = ix.v

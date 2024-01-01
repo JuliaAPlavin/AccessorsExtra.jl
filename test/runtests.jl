@@ -318,10 +318,13 @@ end
 end
 
 @testitem "context" begin
+    AccessorsExtra.@allinferred modify begin
     o = keyed(Elements()) ⨟ @optic(_.a)
     @test modify(((i, v),) -> i => v, ((a='a',), (a='b',), (a='c',)), o) == ((a=1=>'a',), (a=2=>'b',), (a=3=>'c',))
     o = keyed(Elements()) ⨟ @optic(_.a) ⨟ @optic(convert(Int, _) + 1)
     @test modify(((i, v),) -> i + v, ((a='a',), (a='b',), (a='c',)), o) == ((a='b',), (a='d',), (a='f',))
+    end
+
     o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)
     @test modify(((i, v),) -> i => v, (a=1, b=((a='a',), (a='b',), (a='c',))), o) == (a=1, b=((a=1=>'a',), (a=2=>'b',), (a=3=>'c',)))
     @test modify(((i, v),) -> i => v, (a=1, b=[(a='a',), (a='b',), (a='c',)]), o) == (a=1, b=[(a=1=>'a',), (a=2=>'b',), (a=3=>'c',)])
@@ -341,6 +344,7 @@ end
         @optic(_.b) ⨟ keyed(Elements()) ⨟ Elements()
     ) == (a=1, b=(x=(a=:x=>'a',), y=(a=:y=>'b',), z=(a=:z=>'c',)))
 
+    AccessorsExtra.@allinferred modify begin
     @test modify(
         wix -> wix.v / wix.i.total,
         ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
@@ -367,6 +371,7 @@ end
         "2022-03-15",
         @optic(match(r"(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})", _)) ⨟ keyed(Elements())
     ) == "y:2022-m:03-d:15"
+    end
 end
 
 @testitem "PartsOf" begin
