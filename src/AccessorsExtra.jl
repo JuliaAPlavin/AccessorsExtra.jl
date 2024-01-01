@@ -12,7 +12,7 @@ using Requires
 
 export
     ViewLens,
-    ∗,
+    ∗, ∗ₚ,
     concat, ++, @optics,
     @replace,
     assemble, @assemble,
@@ -220,12 +220,13 @@ end
 
 
 const ∗ = Val(:∗)
+const ∗ₚ = Val(:∗ₚ)
 
 Accessors.IndexLens(::Tuple{typeof(∗)}) = Elements()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 
-@generated Accessors.PropertyLens{P}() where {P} = P == :∗ ? Properties() : Expr(:new, PropertyLens{P})
-Accessors._shortstring(prev, o::Properties) = "$prev.:∗"
+Accessors.IndexLens(::Tuple{typeof(∗ₚ)}) = Properties()
+Accessors._shortstring(prev, o::Elements) = "$prev[∗ₚ]"
 
 
 struct FuncValLens{A <: Tuple, KA <: NamedTuple}
