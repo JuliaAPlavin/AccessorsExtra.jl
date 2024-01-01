@@ -27,3 +27,12 @@ function Accessors.setall(obj, co::ConcatOptics, vals)
         setall(obj, o, vss)
     end
 end
+
+
+function Base.show(io::IO, co::ConcatOptics)
+    for (i, o) in enumerate(co.optics)
+        i == 1 || print(io, " ++ ")
+        show(io, o)
+    end
+end
+Base.show(io::IO, ::MIME"text/plain", optic::ConcatOptics) = show(io, optic)
