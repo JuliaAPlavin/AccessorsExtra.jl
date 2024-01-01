@@ -4,7 +4,9 @@ end
 
 Base.getindex(a, i::FlexIx) = getindex(a, i.indices)
 # disambiguate:
-Base.getindex(a::AbstractArray, i::FlexIx) = @invoke getindex(a, i::Any)
+@static if VERSION >= v"1.9-"
+    Base.getindex(a::AbstractArray, i::FlexIx) = @invoke getindex(a, i::Any)
+end
 Base.to_index(i::FlexIx) = i.indices
 
 Accessors.setindex(a, v, i::FlexIx) = flex_setindex(a, v, i.indices)
