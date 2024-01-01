@@ -2,6 +2,8 @@ module AccessorsExtra
 
 using Reexport
 @reexport using Accessors
+using DataPipes
+using FlexiMaps: filtermap
 using ConstructionBase
 using ConstructionBaseExtras
 using InverseFunctions
