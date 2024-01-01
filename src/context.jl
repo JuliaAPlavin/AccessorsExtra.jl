@@ -75,6 +75,7 @@ getall(obj, o::SelfContext) = (o(obj),)
 
 getall(obj, ::Enumerated{Elements}) = map(ValWithContext, _1indices(obj), values(obj))
 getall(obj, ::Keyed{Elements}) = map(ValWithContext, _keys(obj), values(obj))
+getall(obj, ::Keyed{Properties}) = getall(getproperties(obj), keyed(Elements()))
 
 # needs to call modify(obj, Elements()) and not map(...): only the former works for regex optics
 function modify(f, obj, ::Enumerated{Elements})
@@ -100,6 +101,7 @@ modify(f, obj::NamedTuple{KS}, ::Keyed{Elements}) where {KS} = @p let
         NamedTuple{KS}(__)
 end
 
+modify(f, obj, ::Keyed{Properties}) = modify(f, obj, keyed(Elements()) ∘ getproperties)
 
 struct KeepContext{O} <: ContextOptic
     o::O

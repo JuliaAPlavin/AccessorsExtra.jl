@@ -438,6 +438,9 @@ end
     o = Elements() ⨟ keyed(Elements())
     @test map(x -> (x.ctx, x.v), getall(obj, o)) == ((:a, 'a'), (:a, 'b'), (:a, 'c'))
     @test modify(((i, v),) -> v, obj, o) == obj
+    o = Elements() ⨟ keyed(Properties())
+    @test map(x -> (x.ctx, x.v), getall(obj, o)) == ((:a, 'a'), (:a, 'b'), (:a, 'c'))
+    @test modify(((i, v),) -> v, obj, o) == obj
     end
 
     o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)
