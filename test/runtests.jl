@@ -462,6 +462,18 @@ end
     o = Elements() ⨟ keyed(Properties())
     @test map(x -> (x.ctx, x.v), getall(obj, o)) == ((:a, 'a'), (:a, 'b'), (:a, 'c'))
     @test modify(((i, v),) -> v, obj, o) == obj
+
+    o = enumerated(Elements()) ⨟ Elements()
+    @test map(x -> (x.ctx, x.v), getall(obj, o)) == ((1, 'a'), (2, 'b'), (3, 'c'))
+    @test modify(((i, v),) -> v, obj, o) == obj
+    o = enumerated(Elements() ⨟ Properties())
+    @test_broken map(x -> (x.ctx, x.v), getall(obj, o)) == ((1, 'a'), (2, 'b'), (3, 'c'))
+    @test map(x -> (x.ctx, x.v), getall(obj, o)) == [(1, 'a'), (2, 'b'), (3, 'c')]
+    @test modify(((i, v),) -> v, obj, o) == obj
+    o = Elements() ⨟ enumerated(Properties())
+    @test_broken map(x -> (x.ctx, x.v), getall(obj, o)) == ((1, 'a'), (1, 'b'), (1, 'c'))
+    @test map(x -> (x.ctx, x.v), getall(obj, o)) == [(1, 'a'), (1, 'b'), (1, 'c')]
+    @test modify(((i, v),) -> v, obj, o) == obj
     end
 
     o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)

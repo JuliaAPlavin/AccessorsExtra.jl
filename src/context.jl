@@ -77,13 +77,14 @@ modify(f, obj, o::SelfContext) = modify(f, obj, _ContextValOnly(o.f(obj)))
 getall(obj, o::SelfContext) = (o(obj),)
 
 getall(obj, ::Enumerated{Elements}) = map(ValWithContext, _1indices(obj), values(obj))
+getall(obj, o::Enumerated) = map(ValWithContext, Iterators.countfrom(), getall(obj, o.o))
 getall(obj, ::Keyed{Elements}) = map(ValWithContext, _keys(obj), values(obj))
 getall(obj, ::Keyed{Properties}) = getall(getproperties(obj), keyed(Elements()))
 
 # needs to call modify(obj, Elements()) and not map(...): only the former works for regex optics
-function modify(f, obj, ::Enumerated{Elements})
+function modify(f, obj, o::Enumerated)
     i = Ref(1)
-    modify(obj, Elements()) do v
+    modify(obj, o.o) do v
         res = modify(f, v, _ContextValOnly(i[]))
         i[] += 1
         res
