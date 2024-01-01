@@ -66,6 +66,8 @@ end
     @test modify(uppercase, s, @optic eachmatch(r"d\w+", _)[∗].match |> first) == "abc Def Dxyz"
 
     @test getall(s, @optic eachmatch(r"d(\w)\w+", _)[∗][1]) == ["e", "x"]
+    @test getall(s, @optic eachmatch(r"d(\w)\w+|(\w{10})", _)[∗][2]) == [nothing, nothing]
+    @test getall(s, @optic eachmatch(r"d(\w)\w\b|(\w{4})", _)[∗][1]) == ["e", nothing]
     # test composition when not at front/end:
     @test getall(s, @optic _[begin:end] |> eachmatch(r"d(\w)\w+", _)[∗][1] |> _[1:1]) == ["e", "x"]
     @test setall(s, @optic(eachmatch(r"d(\w)\w+", _)[∗][1]), ["ohoh", ""]) == "abc dohohf dyz"
@@ -76,6 +78,22 @@ end
         f = parse(Int, m[1]) / parse(Int, m[2])
         first(string(f), 5)
     end == "fractions: 0.666, another 0.5, 2.5, all!"
+    @test modify(
+            "fractions: 2/3, another 0.5, 5/2, all!",
+            @optic eachmatch(r"(?<num>\d+)/(?<denom>\d+)|(?<frac>\d+\.\d+)", _)[∗] |> If(m -> !isnothing(m[:num]))) do m
+        f = parse(Int, m[:num]) / parse(Int, m[:denom])
+        first(string(f), 5)
+    end == "fractions: 0.666, another 0.5, 2.5, all!"
+    @test modify(
+            "fractions: 2/3, another 0.5, 5/2, all!",
+            @optic eachmatch(r"(?<num>\d+)/(?<denom>\d+)|(?<frac>\d+\.\d+)", _)[∗][:denom] |> If(!isnothing) |> parse(Int, _)) do m
+        m + 1
+    end == "fractions: 2/4, another 0.5, 5/3, all!"
+    @test modify(
+            "fractions: 2/3, another 0.5, 5/2, all!",
+            @optic eachmatch(r"(?<num>\d+)/(?<denom>\d+)|(?<frac>\d+\.\d+)", _)[∗] |> If(m -> !isnothing(m[:num])) |> parse(Int, _[:denom])) do m
+        m + 1
+    end == "fractions: 2/4, another 0.5, 5/3, all!"
 end
 
 # @testitem "maybe" begin
