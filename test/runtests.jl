@@ -302,7 +302,9 @@ end
         for obj in ([(a=1,)], [(b=1,)], [(a=1,), (b=2,)], [(b=1,), (a=2,)],)
             Accessors.test_getset_laws(o, obj, 10, 20)
         end
+        @test o([(a=1,)]) === 1
         @test o([]) === nothing
+        @test o([(b=1,)]) === nothing
         @test modify(x -> x+1, [], o) == []
     end
     o = maybe(@optic only(_).a)
