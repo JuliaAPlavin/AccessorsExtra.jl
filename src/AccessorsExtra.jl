@@ -87,7 +87,7 @@ InverseFunctions.inverse(f::ComposedFunction{<:Base.Fix2{typeof(findfirst)}, typ
 # shortcuts
 const ∗ = Elements()
 const ∗ₚ = Properties()
-# some minor piracy:
+# some piracy:
 Accessors.IndexLens(::Tuple{Elements}) = Elements()
 Accessors.IndexLens(::Tuple{Properties}) = Properties()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
