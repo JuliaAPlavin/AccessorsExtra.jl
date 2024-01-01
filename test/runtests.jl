@@ -703,5 +703,5 @@ end
     CHL.@check()
 
     using Aqua
-    Aqua.test_all(AccessorsExtra, piracy=false, ambiguities=false)
+    Aqua.test_all(AccessorsExtra, piracies=false, ambiguities=false)
 end
