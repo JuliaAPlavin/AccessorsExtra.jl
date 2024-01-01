@@ -15,7 +15,7 @@ export
     ⩓, ⩔,
     concat, ++, @optics, @optic₊,
     @replace,
-    assemble, @assemble,
+    construct, @construct,
     unrecurcize, RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, osomething, hasoptic,
@@ -36,7 +36,7 @@ include("partsof.jl")
 include("funclenses.jl")
 include("regex.jl")
 include("replace.jl")
-include("assemble.jl")
+include("construct.jl")
 include("bystep.jl")
 include("optimization.jl")
 include("testing.jl")

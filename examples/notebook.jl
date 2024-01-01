@@ -150,16 +150,16 @@ getall(obj, logged(multiopt))
 
 # ╔═╡ bf9f7247-8aa2-4fc8-974a-65ba71021f96
 md"""
-## `assemble()` an object from optics
+## `construct()` an object from optics
 
 This is more of an interface for generalized object construction, to be implemented by type authors.
 """
 
 # ╔═╡ c09d4e9c-2d64-4638-9774-0697989b00b0
-assemble(Complex, @optic(_.re) => 1, @optic(_.im) => 2)
+construct(Complex, @optic(_.re) => 1, @optic(_.im) => 2)
 
 # ╔═╡ 102baa65-088f-4d45-882c-b293d2f0e279
-assemble(Vector, only => 1)
+construct(Vector, only => 1)
 
 # ╔═╡ ccdc9876-95f2-4fd2-8ff0-fefe1f0f96a7
 md"""
