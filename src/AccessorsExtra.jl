@@ -18,7 +18,8 @@ export
     unrecurcize, RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, hasoptic,
-    get_steps, logged
+    get_steps, logged,
+    OptArgs, OptCons, OptProblemSpec, solobj
 
 
 include("setindex.jl")
@@ -33,6 +34,7 @@ include("regex.jl")
 include("replace.jl")
 include("assemble.jl")
 include("bystep.jl")
+include("optimization.jl")
 include("testing.jl")
 
 
