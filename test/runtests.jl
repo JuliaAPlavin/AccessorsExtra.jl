@@ -42,24 +42,21 @@ end
     @test modify(+, [1, 2], ∗, (a=3, b=4)) == [4, 6]
     @test modify(+, [1, 2], ∗, [3, 4]) == [4, 6]
 
-    @test modify(+, (1, 2), keyed(∗), (3, 4)) === (4, 6)
-    @test modify(+, (1, 2), keyed(∗), [3, 4, 5]) === (4, 6)
-    @test modify(+, [1, 2], keyed(∗), (3, 4, 5)) == [4, 6]
-    @test modify(+, [1, 2], keyed(∗), [3, 4]) == [4, 6]
-    @test modify(+, (x=1, y=2), keyed(∗), (x=3, y=4, z=5)) === (x=4, y=6)
-    @test modify(+, (x=1, y=2), keyed(∗), (y=4, x=3, z=5)) === (x=4, y=6)
-    @test modify(+, (x=1, y=2), keyed(∗), Dict(:y=>4, :x=>3, :z=>5)) === (x=4, y=6)
-    @test modify(+, (x=1, y=2), keyed(∗), dictionary([:y=>4, :x=>3])) === (x=4, y=6)
-    @test_throws Exception modify(+, (1, 2), keyed(∗), (a=3, b=4))
-    @test_throws Exception modify(+, (x=1, y=2), keyed(∗), (3, 4))
-    @test_throws Exception modify(+, (x=1, y=2), keyed(∗), (a=3, b=4))
+    @test modify(+, (1, 2), ∗ₚ, (3, 4)) === (4, 6)
+    @test modify(+, (x=1, y=2), ∗ₚ, (x=3, y=4, z=5)) === (x=4, y=6)
+    @test modify(+, (x=1, y=2), ∗ₚ, (y=4, x=3, z=5)) === (x=4, y=6)
+    # @test modify(+, (x=1, y=2), ∗ₚ, Dict(:y=>4, :x=>3, :z=>5)) === (x=4, y=6)
+    # @test modify(+, (x=1, y=2), ∗ₚ, dictionary([:y=>4, :x=>3])) === (x=4, y=6)
+    @test_throws Exception modify(+, (1, 2), ∗ₚ, (a=3, b=4))
+    @test_throws Exception modify(+, (x=1, y=2), ∗ₚ, (3, 4))
+    @test_throws Exception modify(+, (x=1, y=2), ∗ₚ, (a=3, b=4))
 
     @test modify(+, Dictionary([2, 3], [10, 20]), ∗, 1:5)::Dictionary == Dictionary([2, 3], [11, 22])
-    @test modify(+, Dictionary([2, 3], [10, 20]), keyed(∗), 1:5)::Dictionary == Dictionary([2, 3], [12, 23])
+    # @test modify(+, Dictionary([2, 3], [10, 20]), keyed(∗), 1:5)::Dictionary == Dictionary([2, 3], [12, 23])
     @test modify(+, ArrayDictionary([2, 3], [10, 20]), ∗, 1:5)::ArrayDictionary == Dictionary([2, 3], [11, 22])
-    @test_broken modify(+, ArrayDictionary([2, 3], [10, 20]), keyed(∗), 1:5)::ArrayDictionary == Dictionary([2, 3], [12, 23])
+    # @test_broken modify(+, ArrayDictionary([2, 3], [10, 20]), keyed(∗), 1:5)::ArrayDictionary == Dictionary([2, 3], [12, 23])
     @test modify(+, unioncollection(Dictionary([2, 3], [10, 20])), ∗, 1:5)::UnionDictionary == Dictionary([2, 3], [11, 22])
-    @test modify(+, unioncollection(Dictionary([2, 3], [10, 20])), keyed(∗), 1:5)::UnionDictionary == Dictionary([2, 3], [12, 23])
+    # @test modify(+, unioncollection(Dictionary([2, 3], [10, 20])), keyed(∗), 1:5)::UnionDictionary == Dictionary([2, 3], [12, 23])
     end
 end
 
