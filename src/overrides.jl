@@ -67,40 +67,40 @@ function parse_obj_optics(ex::Expr)
         ))
         obj, frontoptic = parse_obj_optics(front)
         optic = :($PropertyLens{$(QuoteNode(property))}())
-    elseif @capture(ex, f_(front_))
-        if !tree_contains(f, :_)
-            obj, frontoptic = parse_obj_optics(front)
-            optic = esc(f) # function optic
-        else
-            obj, frontoptic = parse_obj_optics(f)
-            optic = funcvallens(front)
-        end
     elseif @capture(ex, f_(args__))
-        # if Base.isexpr(first(args), :parameters)
-        #     args = vcat(args[2:end], first(args).args)
-        # end
         args_contain_under = map(arg -> tree_contains(arg, :_), args)
-        if !any(args_contain_under)
+        f_contains_under = tree_contains(f, :_)
+        f_contains_under && any(args_contain_under) && error("Either the function or the arguments can contain an underscore, not both")
+        if f_contains_under
+            obj, frontoptic = parse_obj_optics(f)
+            optic = funcvallens(args...)
+        elseif length(args) == 1
+            arg = only(args)
+            # regular function optic
+            obj, frontoptic = parse_obj_optics(arg)
+            optic = esc(f)
+        elseif any(args_contain_under)
+            sum(args_contain_under) == 1 || error("Only a single function argument can be the optic target")
+            if length(args) == 2 && !any(a -> Base.isexpr(a, :kw) || Base.isexpr(a, :parameters), args)
+                # Base.Fix1 or Fix2 is enough
+                if args_contain_under[1]
+                    obj, frontoptic = parse_obj_optics(args[1])
+                    optic = :(Base.Fix2($(esc(f)), $(esc(args[2]))))
+                elseif args_contain_under[2]
+                    obj, frontoptic = parse_obj_optics(args[2])
+                    optic = :(Base.Fix1($(esc(f)), $(esc(args[1]))))
+                end
+            else
+                # need FixArgs
+                i_under = findfirst(args_contain_under)
+                obj, frontoptic = parse_obj_optics(args[i_under])
+                @reset args[i_under] = Placeholder()
+                optic = Expr(:call, fixargs, esc(f), esc.(args)...)
+            end
+        else
             # as if f(args...) didn't match
             obj = esc(ex)
             return obj, ()
-        end
-        sum(args_contain_under) == 1 || error("Only a single function argument can be the optic target")
-        if length(args) == 2 && !any(a -> Base.isexpr(a, :kw) || Base.isexpr(a, :parameters), args)
-            # Base.Fix1 or Fix2 is enough
-            if args_contain_under[1]
-                obj, frontoptic = parse_obj_optics(args[1])
-                optic = :(Base.Fix2($(esc(f)), $(esc(args[2]))))
-            elseif args_contain_under[2]
-                obj, frontoptic = parse_obj_optics(args[2])
-                optic = :(Base.Fix1($(esc(f)), $(esc(args[1]))))
-            end
-        else
-            # need FixArgs
-            i_under = findfirst(args_contain_under)
-            obj, frontoptic = parse_obj_optics(args[i_under])
-            @reset args[i_under] = Placeholder()
-            optic = Expr(:call, fixargs, esc(f), esc.(args)...)
         end
     else
         obj = esc(ex)
