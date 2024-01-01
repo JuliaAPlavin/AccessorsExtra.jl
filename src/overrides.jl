@@ -76,9 +76,14 @@ function parse_obj_optics(ex::Expr)
             optic = funcvallens(args...)
         elseif length(args) == 1
             arg = only(args)
-            # regular function optic
-            obj, frontoptic = parse_obj_optics(arg)
-            optic = esc(f)
+            if Base.isexpr(arg, :(...))
+                obj, frontoptic = parse_obj_optics(only(arg.args))
+                optic = :(splat($(esc(f))))
+            else
+                # regular function optic
+                obj, frontoptic = parse_obj_optics(arg)
+                optic = esc(f)
+            end
         elseif any(args_contain_under)
             sum(args_contain_under) == 1 || error("Only a single function argument can be the optic target")
             if length(args) == 2 && !any(a -> Base.isexpr(a, :kw) || Base.isexpr(a, :parameters), args)

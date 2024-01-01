@@ -51,6 +51,9 @@ end
     @test o([-3, 1, 2, 0]) == [0, 1, 2, -3]
     @test_broken @eval (@optic sort(_; by=identity))([-3, 1, 2, 0]) == [-3, 0, 1, 2]
     @test_broken @eval (@optic sort(_; by=abs))([-3, 1, 2, 0]) == [0, 1, 2, -3]
+
+    @test (@optic atan(_...)) === splat(atan)
+    @test (@optic atan(reverse(_)...)) === splat(atan) ∘ reverse
 end
 
 @testitem "concat optics" begin
