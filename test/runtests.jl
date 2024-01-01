@@ -32,6 +32,17 @@ using TestItemRunner
     @test @insert(dct[:c] = 5)::DT == dictionary([:a => 1, :b => 2, :c => 5])
 end
 
+@testitem "flexix" begin
+    using AccessorsExtra: FlexIx
+
+    s = "abc"
+    @test "adefxyz" == @set s[FlexIx(2:3)] = "defxyz"
+    v = [1, 2, 3]
+    @test [1, 10, 11, 12] == @set v[FlexIx(2:3)] = [10, 11, 12]
+    v = (1, 2, 3)
+    @test (1, 10, 11, 12) == @set v[FlexIx(2:3)] = (10, 11, 12)
+end
+
 @testitem "concat optics" begin
     @testset for o in (
         @optic(_.a) ++ @optic(_.b),

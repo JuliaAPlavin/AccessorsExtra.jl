@@ -18,6 +18,7 @@ export
     unrecurcize, RecursiveOfType,
     keyed, enumerated, selfcontext,
     maybe, hasoptic,
+    FlexIx,
     get_steps, logged,
     OptArgs, OptCons, OptProblemSpec, solobj
 
