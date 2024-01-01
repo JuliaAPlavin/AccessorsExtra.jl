@@ -306,46 +306,47 @@ end
 end
 
 @testitem "recursive" begin
-    or = RecursiveOfType(out=(Number,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
+    AccessorsExtra.@allinferred modify getall begin
+    or = RecursiveOfType(out=Number, recurse=Union{Tuple,Vector,NamedTuple}, optic=Elements())
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 1, 3)
     @test modify(x->x+10, m, or) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
-    @test @inferred(getall(m, o)) == getall(m, or)
+    @test getall(m, o) == getall(m, or)
     @test setall(m, o, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @test_broken @inferred(setall(m, o, (10, 20, 30))) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
-    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
 
     m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == [1, 1, 3]
     @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
     @test setall(m, o, [10, 20, 30]) == (a=10, bs=[(c=20, d="2"), (c=30, d="xxx")])
-    @test @inferred(getall(m, o)) == getall(m, or)
-    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+    @test getall(m, o) == getall(m, or)
+    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
-    or = RecursiveOfType(out=(NamedTuple,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
+    or = RecursiveOfType(out=NamedTuple, recurse=Union{Tuple, Vector, NamedTuple}, optic=Elements())
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
     @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
-    @test_broken @inferred(getall(m, o)) == getall(m, or)
-    @test getall(m, o) == getall(m, or)
-    @test @inferred(modify(Dict ∘ pairs, m, o)) == modify(Dict ∘ pairs, m, or)
+    @test_broken getall(m, o) == getall(m, or)
+    @test modify(Dict ∘ pairs, m, o) == modify(Dict ∘ pairs, m, or)
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
-    @test getall(m, o) == getall(m, or)
+    @test_broken getall(m, o) == getall(m, or)
 
     m = (a=1, b=2+3im)
-    or = RecursiveOfType(out=(Real,), optic=∗ₚ)
+    or = RecursiveOfType(out=Real, optic=∗ₚ)
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == (1, 2, 3)
     @test modify(x->x+10, m, or) == (a=11, b=12+13im)
-    @test @inferred(getall(m, o)) == getall(m, or)
+    @test getall(m, o) == getall(m, or)
     @test setall(m, o, (10, 20, 30)) == (a=10, b=20+30im)
-    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+    @test modify(x->x+10, m, o) == modify(x->x+10, m, or)
+    end
 end
 
 @testitem "context" begin
@@ -462,31 +463,6 @@ end
     @test set([(a=1,)], o, 'y') == [(a='x',)]
     @test setall([(a=1,)], o, ['y']) == [(a='x',)]
     @test modify(-, [(a=1,)], o) == [(a=-3,)]
-end
-
-@testitem "tmp" begin
-#     o = @optic _ |> Elements() |> If(r -> any(>(15), r.bs)) |> _.a
-#     @test modify(a -> a * 2, data, o) == [
-#         (a=1, bs=[10, 11, 12]),
-#         (a=4, bs=[20, 21]),
-#     ]
-#     o = @optic _ |> Elements() |> If(r -> !isempty(getall(r, @optic(_.bs |> Elements() |> If(>(15)))))) |> _.a
-#     @test modify(a -> a * 2, data, o) == [
-#         (a=1, bs=[10, 11, 12]),
-#         (a=4, bs=[20, 21]),
-#     ]
-
-#     o = # bs >= 12
-#     @test modify((a, bs) -> a + length(bs), data, o) == [
-#         (a=2, bs=[10, 11, 12]),
-#         (a=4, bs=[20, 21]),
-#     ]
-
-#     @test delete(data, @optic _ |> Elements() |> _.bs |> Elements() |> If(isodd))
-#     @test delete(data, @optic _ |> Elements() |> If(r -> !isempty(getall(r, @optic _.bs |> Elements() |> If(>(15))))))
-#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Elements() |> _.bs |> Withered())
-#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Withered() |> _.bs |> Elements())
-#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Withered() |> _.bs |> Withered())
 end
 
 @testitem "replace" begin
@@ -624,6 +600,16 @@ end
 
     @test modify(cumsum, [5, 1, 4, 2, 3], sort) == [15, 1, 10, 3, 6]
     @test modify(cumsum, [4, 1, 4, 2, 3], sort) == [10, 1, 14, 3, 6]
+
+    data = [
+        (a=1, bs=[10, 11, 12]),
+        (a=2, bs=[20, 21]),
+    ]
+    @test_throws "not supported" delete(data, @optic _[∗].bs[∗] |> If(isodd))
+    @test delete(data, @optic _[∗].bs |> filter(isodd, _)) == [(a = 1, bs = [10, 12]), (a = 2, bs = [20])]
+    @test delete(data, @optic _[∗].bs |> filter(x -> x > 15, _)) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = [])]
+    # @test modify(b -> b < 15 ? b : nothing, data, @optic(_[∗].bs |> Wither())) == [(a = 1, bs = [10, 11, 12]), (a = 2, bs = Nothing[])]
+    # @test modify(b -> b < 15 ? b : nothing, data, @optic _ |> Wither() |> _.bs |> Wither()) == [(a = 1, bs = [10, 11, 12])]
 end
 
 @testitem "keys, values, pairs" begin

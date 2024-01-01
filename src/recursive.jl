@@ -1,40 +1,97 @@
-struct RecursiveOfType
-    outtypes
-    rectypes
-    optic
+"""    RecursiveOfType(; out, [recurse,] optic)
+"""
+struct RecursiveOfType{OT,RT,O}
+    outtypes::OT
+    rectypes::RT
+    optic::O
 end
 Broadcast.broadcastable(o::RecursiveOfType) = Ref(o)
-RecursiveOfType(; out, recurse=(Any,), optic) = RecursiveOfType(out, recurse, optic)
+RecursiveOfType(; out::Type{TO}, recurse::Type{TR}=Any, optic) where {TO,TR} = RecursiveOfType{Type{TO},Type{TR},typeof(optic)}(
+    out,
+    recurse,
+    optic,
+)
+
 
 OpticStyle(::Type{<:RecursiveOfType}) = ModifyBased()
 
-function modify(f, obj, or::RecursiveOfType)
-    modified = if any(t -> obj isa t, or.rectypes)
-        modify(obj, or.optic) do o
-            modify(f, o, or)
-        end
+# @inline modify(f, obj::OT, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT} =
+#     f(_modify_rec(f, obj, or))
+# @inline modify(f, obj, or::RecursiveOfType) = _modify_rec(f, obj, or)
+# @inline _modify_rec(f, obj::RT, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT} =
+#     modify(obj, or.optic) do o
+#         modify(f, o, or)
+#     end
+# @inline _modify_rec(f, obj, or::RecursiveOfType) = obj
+
+# @inline function modify(f, obj::OT, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
+#     if obj isa RT
+#         modify(obj, or.optic) do o
+#             modify(f, o, or)
+#         end |> f
+#     else
+#         f(obj)
+#     end
+# end
+# @inline function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
+#     if obj isa RT
+#         modify(obj, or.optic) do o
+#             modify(f, o, or)
+#         end
+#     else
+#         obj
+#     end
+# end
+
+# function getall(obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
+#     res_inner = if obj isa RT
+#         map(getall(obj, or.optic)) do o
+#             getall(o, or)
+#         end #|> _reduce_concat
+#     else
+#         ()
+#     end
+#     res_cur = obj isa OT ? (obj,) : ()
+#     return Accessors._concat(res_inner, res_cur)
+# end
+
+# see https://github.com/FluxML/Functors.jl/pull/61 for the approach and its discussion
+
+function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
+    recurse(o) = _walk_modify(var"#self#", f, o, or)
+    _walk_modify(recurse, f, obj, or)
+end
+_walk_modify(recurse, f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT} =
+    if obj isa OT && obj isa RT
+        f(modify(recurse, obj, or.optic))
+    elseif obj isa RT
+        modify(recurse, obj, or.optic)
+    elseif obj isa OT
+        f(obj)
     else
         obj
     end
-    # check cond(cur) == cond(obj) somewhere?
-    cur = any(t -> obj isa t, or.outtypes) ? f(modified) : modified
-end
 
-function getall(obj, or::RecursiveOfType)
-    res_inner = if any(t -> obj isa t, or.rectypes)
-        map(getall(obj, or.optic)) do o
-            getall(o, or)
-        end |> _reduce_concat
+
+function getall(obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
+    recurse(o) = _walk_getall(var"#self#", o, or)
+    _walk_getall(recurse, obj, or)
+end
+_walk_getall(recurse, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT} =
+    if obj isa OT && obj isa RT
+        (_getall(recurse, obj, or.optic)..., obj)
+    elseif obj isa RT
+        _getall(recurse, obj, or.optic)
+    elseif obj isa OT
+        (obj,)
     else
         ()
     end
-    res_cur = any(t -> obj isa t, or.outtypes) ? (obj,) : ()
-    return Accessors._concat(res_inner, res_cur)
-end
+_getall(recurse, obj, optic) = @p getall(obj, optic) |> map(recurse) |> _reduce_concat
 
 
 function unrecurcize(or::RecursiveOfType, ::Type{T}) where {T}
-    rec_optic = if any(rt -> T <: rt, or.rectypes)
+    rec_optic = if T <: or.rectypes
         TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
         if TS == Union{} || !isconcretetype(TS)
             error("Cannot recurse on $T |> $(or.optic): got $TS")
@@ -49,7 +106,7 @@ function unrecurcize(or::RecursiveOfType, ::Type{T}) where {T}
     else
         EmptyOptic()
     end
-    any(rt -> T <: rt, or.outtypes) ?
+    T <: or.outtypes ?
         rec_optic ++ identity :
         rec_optic
 end
