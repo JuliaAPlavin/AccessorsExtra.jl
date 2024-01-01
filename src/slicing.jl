@@ -1,4 +1,4 @@
-# XXX: piracy, should upstream all of these
+# XXX: should upstream all of these – but cannot because FixArgs not in Base
 
 InverseFunctions.inverse(f::FixArgs{typeof(eachslice), <:Tuple{Placeholder}, <:NamedTuple{(:dims,)}}) =
     @o stack(_, dims=f.kwargs.dims)
@@ -12,6 +12,7 @@ InverseFunctions.inverse(f::FixArgs{typeof(eachslice), <:Tuple{Placeholder}, <:N
 InverseFunctions.inverse(f::FixArgs{typeof(stack_dropped), <:Tuple{Placeholder}, <:NamedTuple{(:dims, :drop)}}) =
     @o eachslice(_, dims=f.kwargs.dims, drop=f.kwargs.drop)
 
+# XXX: piracy
 # XXX: works for matrices, but not for vectors
 # maybe overloading set() and not inverse() is better?
 # eachrow and eachcol support both 1d and 2d, with vectors as columns
