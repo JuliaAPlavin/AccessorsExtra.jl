@@ -3,10 +3,498 @@ using TestItemRunner
 @run_package_tests
 
 
+@testitem "setindex" begin
+    using Dictionaries
+
+    AccessorsExtra.@allinferred set begin
+    @test set((1, 2), @optic(_[1:0]), Int[]) === (1, 2)
+    @test set((1, 2), @optic(_[1:1]), [10]) === (10, 2)
+    @test set((1, 2), @optic(_[1:2]), [10, 20]) === (10, 20)
+    @test set((1, 2), @optic(_[Int[]]), Int[]) === (1, 2)
+    @test set((1, 2), @optic(_[[1]]), [10]) === (10, 2)
+    @test set((1, 2), @optic(_[[1, 2]]), [10, 20]) === (10, 20)
+    @test set((1, 2), @optic(_[[2, 1]]), [10, 20]) === (20, 10)
+    end
+
+    @test set((1, :a), @optic(_[1:0]), []) === (1, :a)
+    @test set((1, :a), @optic(_[1:1]), ["x"]) === ("x", :a)
+    @test set((1, :a), @optic(_[1:2]), ["x", "y"]) === ("x", "y")
+    @test set((1, :a), @optic(_[Int[]]), []) === (1, :a)
+    @test set((1, :a), @optic(_[[1]]), ["x"]) === ("x", :a)
+    @test set((1, :a), @optic(_[[1, 2]]), ["x", "y"]) === ("x", "y")
+    @test set((1, :a), @optic(_[[2, 1]]), ["x", "y"]) === ("y", "x")
+
+    dct = dictionary([:a => 1, :b => 2])
+    DT = Dictionary{Symbol,Int}
+    @test @set(dct[:a] = 10)::DT == dictionary([:a => 10, :b => 2])
+    @test @set(dct[:a] = 10.)::Dictionary{Symbol,Float64} == dictionary([:a => 10, :b => 2])
+    @test @delete(dct[:a])::DT == dictionary([:b => 2])
+    @test @insert(dct[:c] = 5)::DT == dictionary([:a => 1, :b => 2, :c => 5])
+end
+
+@testitem "flexix" begin
+    using AccessorsExtra: FlexIx
+
+    s = "abc"
+    @test "adefxyz" == @set s[FlexIx(2:3)] = "defxyz"
+    v = [1, 2, 3]
+    @test [1, 10, 11, 12] == @set v[FlexIx(2:3)] = [10, 11, 12]
+    v = (1, 2, 3)
+    @test (1, 10, 11, 12) == @set v[FlexIx(2:3)] = (10, 11, 12)
+end
+
+@testitem "concat optics" begin
+    @testset for o in (
+        @optic(_.a) ++ @optic(_.b),
+        @optics(_.a, _.b),
+        @optic(_[(:a, :b)] |> Elements()),
+    )
+        obj = (a=1, b=2, c=3)
+        @test getall(obj, o) === (1, 2)
+        @test setall(obj, o, (3, 4)) === (a=3, b=4, c=3)
+        @test modify(-, obj, o) === (a=-1, b=-2, c=3)
+        Accessors.test_getsetall_laws(o, obj, (3, 4), (:a, :b))
+    end
+
+    obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
+    o = concat(a=@optic(_.a), c=@optic(first(_.bs) |> _.c))
+    AccessorsExtra.@allinferred getall modify delete if VERSION >= v"1.10-"; :setall end begin
+        @test getall(obj, o) === (a=1, c=2)
+        @test setall(obj, o, (a="10", c="11")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
+        @test setall(obj, o, (c="11", a="10")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
+        @test modify(float, obj, o) === (a=1.0, bs=((c=2.0, d=3), (c=4, d=5)))
+    end
+    # doesn't infer due to "bounded recursion
+    @test delete(obj, o) === (bs=((d=3,), (c=4, d=5)),)
+    
+
+    AccessorsExtra.@allinferred getall setall modify begin
+        obj = (a=1, bs=((c=2, d=3), (c=4, d=5)))
+        o = @optics _.a  _.bs |> Elements() |> _.c
+        @test getall(obj, o) === (1, 2, 4)
+        @test setall(obj, o, (:a, :b, :c)) === (a=:a, bs=((c=:b, d=3), (c=:c, d=5)))
+        @test modify(-, obj, o) === (a=-1, bs=((c=-2, d=3), (c=-4, d=5)))
+        Accessors.test_getsetall_laws(o, obj, (3, 4, 5), (:a, :b, :c))
+
+        o = @optic(_ - 1) ∘ (@optics _.a  _.bs |> Elements() |> _.c)
+        @test getall(obj, o) === (0, 1, 3)
+        @test modify(-, obj, o) === (a=1, bs=((c=0, d=3), (c=-2, d=5)))
+        Accessors.test_getsetall_laws(o, obj, (3, 4, 5), (10, 20, 30))
+
+        obj = (a=1, bs=[(c=2, d=3), (c=4, d=5)])
+        o = @optics _.a  _.bs |> Elements() |> _.c
+        @test getall(obj, o) == [1, 2, 4]
+        @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
+    end
+    @test setall(obj, o, (:a, :b, :c)) == (a=:a, bs=[(c=:b, d=3), (c=:c, d=5)])
+end
+
+@testitem "concat container" begin
+    using StaticArrays
+
+    AccessorsExtra.@allinferred o set modify begin
+    o = @optic₊ (_.a.b, _.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (1, 3)
+    @test set(m, o, (4, 5)) == (a=(b=4, c=2), c=5)
+    @test modify(xs -> xs ./ sum(xs), m, o) == (a=(b=0.25, c=2), c=0.75)
+
+    o = @optic₊ (x=_.a.b, y=_.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (x=1, y=3)
+    @test set(m, o, (x=4, y=5)) == (a=(b=4, c=2), c=5)
+    @test set(m, o, (y=5, x=4)) == (a=(b=4, c=2), c=5)
+    @test modify(xs -> map(x -> x - xs.x, xs), m, o) == (a=(b=0, c=2), c=2)
+
+    o = @optic₊ (_.a.b + 1, -_.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (2, -3)
+    @test set(m, o, (4, 5)) == (a=(b=3, c=2), c=-5)
+    @test modify(xs -> xs ./ sum(xs), m, o) == (a=(b=-3.0, c=2), c=-3.0)
+    end
+    
+    o = @optic₊ SVector(_.a.b, _.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == SVector(1, 3)
+    @test set(m, o, SVector(4, 5)) == (a=(b=4, c=2), c=5)
+    @test modify(xs -> 2*xs, m, o) == (a=(b=2, c=2), c=6)
+
+    o = @optic₊ Pair(_.a.b, _.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (1 => 3)
+    @test set(m, o, 4 => 5) == (a=(b=4, c=2), c=5)
+
+    o = @optic₊ _.a.b => _.c
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (1 => 3)
+    @test set(m, o, 4 => 5) == (a=(b=4, c=2), c=5)
+    
+    o = @optic₊ [_.a.b, _.c]
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == [1, 3]
+    @test set(m, o, [4, 5]) == (a=(b=4, c=2), c=5)
+    @test modify(xs -> 2*xs, m, o) == (a=(b=2, c=2), c=6)
+    
+    # o = @optic₊ Dict("x" => _.a.b, "y" => _.c)
+    # m = (a=(b=1, c=2), c=3)
+    # @test o(m) == Dict("x" => 1, "y" => 3)
+    # @test set(m, o, Dict("x" => 4, "y" => 5)) == (a=(b=4, c=2), c=5)
+    # @test set(m, o, Dict("y" => 5, "x" => 4)) == (a=(b=4, c=2), c=5)
+
+    o = @optic₊ (x=(u=_.a.b, v=_.c), y=_.a.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (x=(u=1, v=3), y=2)
+    @test set(m, o, (x=(u=5, v=6), y=7)) == (a=(b=5, c=7), c=6)
+
+    o = @optic₊ (x=[_.a.b, _.c], y=_.a.c)
+    m = (a=(b=1, c=2), c=3)
+    @test o(m) == (x=[1, 3], y=2)
+    @test set(m, o, (x=[5, 6], y=7)) == (a=(b=5, c=7), c=6)
+end
+
+@testitem "shorter forms" begin
+    o = @optic(_.a[∗].b[∗ₚ].c[2])
+    @test o === @optic(_.a |> Elements() |> _.b |> Properties() |> _.c[2])
+    @test sprint(show, o) == "(@optic _.a[∗].b[∗ₚ].c[2])"
+end
+
+@testitem "function value setting" begin
+    # o = @optic _("abc")
+    o = AccessorsExtra.funcvallens("abc")
+    @test o(reverse) == "cba"
+    myrev = set(reverse, o, "!!!")
+    @test myrev("abc") == "!!!"
+    @test myrev("def") == "fed"
+
+    f = modify(uppercase, lowercase, first ∘ AccessorsExtra.FuncResult())
+    @test f("abc") == "Abc"
+    @test f("ABC") == "Abc"
+    f = modify(uppercase, reverse, first ∘ AccessorsExtra.FuncArgument())
+    @test f("abc") == "cbA"
+    f = modify(uppercase, (func=lowercase, x=1), @optic _.func |> AccessorsExtra.FuncResult() |> first)
+    @test f.func("abc") == "Abc"
+end
+
+@testitem "regex" begin
+    s = "name_2020_03_10.ext"
+    o = @optic match(r"(?<y>\d{4})_(\d{2})_(\d{2})", _).match
+    @test o(s) == "2020_03_10"
+    @test set(s, o, "2021_04_11") == "name_2021_04_11.ext"
+    @test modify(d -> d + 20, s, @optic match(r"(?<y>\d{4})_\d{2}_\d{2}", _)[:y] |> parse(Int, _)) == "name_2040_03_10.ext"
+    @test modify(s -> "[$s]", s, @optic match(r"(?<y>\d{4})_(\d{2})_(\d{2})", _)[∗]) == "name_[2020]_[03]_[10].ext"
+    o = @optic match(r"\d", _) |> If(!isnothing) |> _.match |> parse(Int, _)
+    @test getall("a 1", o) == (1,)
+    @test getall("a b", o) == ()
+    @test modify(x -> x + 1, "a 1", o) == "a 2"
+    @test modify(x -> x + 1, "a b", o) == "a b"
+
+    s = "abc def dxyz"
+    @test getall(s, @optic eachmatch(r"d\w+", _)[∗].match) == ["def", "dxyz"]
+    @test setall(s, @optic(eachmatch(r"d\w+", _)[∗].match), ["aa", "ooo"]) == "abc aa ooo"
+    @test modify(uppercase, s, @optic eachmatch(r"d\w+", _)[∗].match) == "abc DEF DXYZ"
+    @test modify(uppercase, s, @optic eachmatch(r"d\w+", _)[∗].match |> first) == "abc Def Dxyz"
+
+    @test getall(s, @optic eachmatch(r"d(\w)\w+", _)[∗][1]) == ["e", "x"]
+    @test getall(s, @optic eachmatch(r"d(\w)\w+|(\w{10})", _)[∗][2]) == [nothing, nothing]
+    @test getall(s, @optic eachmatch(r"d(\w)\w\b|(\w{4})", _)[∗][1]) == ["e", nothing]
+    # test composition when not at front/end:
+    @test getall(s, @optic _[begin:end] |> eachmatch(r"d(\w)\w+", _)[∗][1] |> _[1:1]) == ["e", "x"]
+    @test setall(s, @optic(eachmatch(r"d(\w)\w+", _)[∗][1]), ["ohoh", ""]) == "abc dohohf dyz"
+    @test modify(m -> m^5, s, @optic(eachmatch(r"d(\w)\w+", _)[∗][1])) == "abc deeeeef dxxxxxyz"
+
+    @test modify(m -> m+1, "a: 1, b: 21", @optic eachmatch(r"\d+", _)[∗].match |> parse(Int, _)) == "a: 2, b: 22"
+    @test modify("fractions: 2/3, another 1/2, 5/2, all!", @optic eachmatch(r"(\d+)/(\d+)", _)[∗]) do m
+        f = parse(Int, m[1]) / parse(Int, m[2])
+        first(string(f), 5)
+    end == "fractions: 0.666, another 0.5, 2.5, all!"
+    @test modify(
+            "fractions: 2/3, another 0.5, 5/2, all!",
+            @optic eachmatch(r"(?<num>\d+)/(?<denom>\d+)|(?<frac>\d+\.\d+)", _)[∗] |> If(m -> !isnothing(m[:num]))) do m
+        f = parse(Int, m[:num]) / parse(Int, m[:denom])
+        first(string(f), 5)
+    end == "fractions: 0.666, another 0.5, 2.5, all!"
+    @test modify(
+            "fractions: 2/3, another 0.5, 5/2, all!",
+            @optic eachmatch(r"(?<num>\d+)/(?<denom>\d+)|(?<frac>\d+\.\d+)", _)[∗][:denom] |> If(!isnothing) |> parse(Int, _)) do m
+        m + 1
+    end == "fractions: 2/4, another 0.5, 5/3, all!"
+    @test modify(
+            "fractions: 2/3, another 0.5, 5/2, all!",
+            @optic eachmatch(r"(?<num>\d+)/(?<denom>\d+)|(?<frac>\d+\.\d+)", _)[∗] |> If(m -> !isnothing(m[:num])) |> parse(Int, _[:denom])) do m
+        m + 1
+    end == "fractions: 2/4, another 0.5, 5/3, all!"
+end
+
+@testitem "maybe" begin
+    # @test set(1, something, 2) == 2
+    # @test set(Some(1), something, 2) == Some(2)
+
+    o = osomething(@optic(_.a), @optic(_.b))
+    # o = @osomething(_.a, _.b)
+    @test o((a=1, b=2)) == 1
+    @test o((c=1, b=2)) == 2
+    @test_throws "no optic" o((c=1,))
+    @test set((a=1, b=2), o, 10) == (a=10, b=2)
+    @test set((c=1, b=2), o, 10) == (c=1, b=10)
+    @test_throws "no optic" set((c=1,), o, 10)
+
+    # get(...) - needs Base.Fix3
+
+    o = maybe(@optic _[2]) ∘ @optic(_.a)
+    @test o((a=[1, 2],)) == 2
+    @test o((a=[1],)) == nothing
+    @test_throws Exception o((;))
+    @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
+    @test set((a=[1],), o, 5) == (a=[1, 5],)
+    @test_throws Exception set((;), o, 5)
+    @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
+    @test modify(x -> x+1, (a=[1],), o) == (a=[1],)
+    @test_throws Exception modify(x -> x+1, (;), o)
+    @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
+    @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
+    @test_throws Exception modify(x -> nothing, (;), o)
+
+    o = maybe(@optic _.a) ⨟ maybe(@optic(_.b))
+    @test o((a=(b=1,),)) == 1
+    @test o((a=(;),)) == nothing
+    @test o((;)) == nothing
+    @test set((a=(b=1,),), o, 5) == (a=(b=5,),)
+    @test set((a=(;),), o, 5) == (a=(b=5,),)
+    @test_broken set((;), o, 5) == (a=(b=5,),)
+    @test modify(x -> x+1, (a=(b=1,),), o) == (a=(b=2,),)
+    @test modify(x -> x+1, (a=(;),), o) == (a=(;),)
+    @test modify(x -> x+1, (;), o) == (;)
+    @test modify(x -> nothing, (a=(b=1,),), o) == (a=(;),)
+    @test modify(x -> nothing, (a=(;),), o) == (a=(;),)
+    @test modify(x -> nothing, (;), o) == (;)
+
+    for obj in ((5,), (a=5,), [5], Dict(1 => 5),)
+        o = maybe(@optic _[1])
+        @test o(obj) == 5
+        Accessors.test_getset_laws(o, obj, 10, 20)
+    end
+
+    for obj in ((), [],)
+        o = maybe(@optic _[1])
+        @test o(obj) == nothing
+        Accessors.test_getset_laws(o, obj, 10, 20)
+    end
+
+    for obj in ((;), Dict(),)
+        o = maybe(@optic _[:a])
+        @test o(obj) == nothing
+        Accessors.test_getset_laws(o, obj, 10, 20)
+    end
+
+    # o = maybe(@optic _[2]; default=10) ∘ @optic(_.a)
+    # @test o((a=[1, 2],)) == 2
+    # @test o((a=[1],)) == 10
+    # @test_throws Exception o((;))
+    # @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
+    # @test set((a=[1],), o, 5) == (a=[1, 5],)
+    # @test_throws Exception set((;), o, 5)
+    # @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
+    # @test_broken modify(x -> x+1, (a=[1],), o) == (a=[1, 11],)
+    # @test_throws Exception modify(x -> x+1, (;), o)
+    # @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
+    # @test_broken modify(x -> 10, (a=[1, 2],), o) == (a=[1],)
+    # @test modify(x -> 10, (a=[1],), o) == (a=[1],)
+    # @test_throws Exception modify(x -> 10, (;), o)
+    # @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
+    # @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
+    # @test_throws Exception modify(x -> nothing, (;), o)
+end
+
+@testitem "recursive" begin
+    or = RecursiveOfType(out=(Number,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
+    m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == (1, 1, 3)
+    @test modify(x->x+10, m, or) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
+    @test @inferred(getall(m, o)) == getall(m, or)
+    @test setall(m, o, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
+    @test_broken @inferred(setall(m, o, (10, 20, 30))) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
+    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+
+    m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == [1, 1, 3]
+    @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @test setall(m, o, [10, 20, 30]) == (a=10, bs=[(c=20, d="2"), (c=30, d="xxx")])
+    @test @inferred(getall(m, o)) == getall(m, or)
+    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+
+    m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    or = RecursiveOfType(out=(NamedTuple,), recurse=(Tuple, Vector, NamedTuple), optic=Elements())
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
+    @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
+    @test_broken @inferred(getall(m, o)) == getall(m, or)
+    @test getall(m, o) == getall(m, or)
+    @test @inferred(modify(Dict ∘ pairs, m, o)) == modify(Dict ∘ pairs, m, or)
+
+    m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))
+    @test getall(m, o) == getall(m, or)
+
+    m = (a=1, b=2+3im)
+    or = RecursiveOfType(out=(Real,), optic=∗ₚ)
+    o = unrecurcize(or, typeof(m))
+    @test getall(m, or) == (1, 2, 3)
+    @test modify(x->x+10, m, or) == (a=11, b=12+13im)
+    @test @inferred(getall(m, o)) == getall(m, or)
+    @test setall(m, o, (10, 20, 30)) == (a=10, b=20+30im)
+    @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
+end
+
+@testitem "context" begin
+    AccessorsExtra.@allinferred modify begin
+    obj = ((a='a',), (a='b',), (a='c',))
+    o = keyed(Elements()) ⨟ @optic(_.a)
+    @test modify(((i, v),) -> i => v, obj, o) == ((a=1=>'a',), (a=2=>'b',), (a=3=>'c',))
+    o = keyed(Elements()) ⨟ @optic(_.a) ⨟ @optic(convert(Int, _) + 1)
+    @test_broken (map(x -> (x.i, x.v), getall(obj, o)); true)  # needs compose order fix
+    @test modify(((i, v),) -> i + v, obj, o) == ((a='b',), (a='d',), (a='f',))
+    end
+
+    o = @optic(_.b) ⨟ keyed(Elements()) ⨟ @optic(_.a)
+    @test modify(((i, v),) -> i => v, (a=1, b=((a='a',), (a='b',), (a='c',))), o) == (a=1, b=((a=1=>'a',), (a=2=>'b',), (a=3=>'c',)))
+    @test modify(((i, v),) -> i => v, (a=1, b=[(a='a',), (a='b',), (a='c',)]), o) == (a=1, b=[(a=1=>'a',), (a=2=>'b',), (a=3=>'c',)])
+    @test modify(
+        wix -> wix.i => wix.v,
+        (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
+        keyed(@optic(_.a)) ++ keyed(@optic(_.b)) ⨟ @optic(_[∗].a)
+    ) == (a=:a=>1, b=(x=(a=:b=>'a',), y=(a=:b=>'b',), z=(a=:b=>'c',)))
+    @test modify(
+        wix -> wix.i => wix.v,
+        (a=[(a=1,)], b=(x=(a='a',), y=(a='b',), z=(a='c',))),
+        (keyed(@optic(_.a)) ++ keyed(@optic(_.b))) ⨟ @optic(_[∗].a)ᵢ
+    ) == (a=[(a=:a=>1,)], b=(x=(a=:b=>'a',), y=(a=:b=>'b',), z=(a=:b=>'c',)))
+    @test modify(
+        wix -> wix.i => wix.v,
+        (a=1, b=(x=(a='a',), y=(a='b',), z=(a='c',))),
+        @optic(_.b) ⨟ keyed(Elements()) ⨟ Elements()
+    ) == (a=1, b=(x=(a=:x=>'a',), y=(a=:y=>'b',), z=(a=:z=>'c',)))
+
+    AccessorsExtra.@allinferred modify begin
+    @test modify(
+        wix -> wix.v / wix.i.total,
+        ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
+        Elements() ⨟ selfcontext() ⨟ @optic(_.x)
+    ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
+    @test modify(
+        wix -> wix.v / wix.i,
+        ((x=5, total=10,), (x=2, total=20,), (x=3, total=8,)),
+        Elements() ⨟ selfcontext(r -> r.total) ⨟ @optic(_.x)
+    ) == ((x=0.5, total=10,), (x=0.1, total=20,), (x=0.375, total=8,))
+
+    str = "abc def 5 x y z 123"
+    o = @optic(eachmatch(r"\w+", _)) ⨟ enumerated(Elements())
+    @test map(wix -> "$(wix.v.match)_$(wix.i)", getall(str, o)) == ["abc_1", "def_2", "5_3", "x_4", "y_5", "z_6", "123_7"]
+    @test modify(
+        wix -> "$(wix.v.match)_$(wix.i)",
+        str,
+        o
+    ) == "abc_1 def_2 5_3 x_4 y_5 z_6 123_7"
+    @test modify(
+        wix -> wix.v + wix.i,
+        str,
+        @optic(eachmatch(r"\d+", _)) ⨟ enumerated(Elements()) ⨟ @optic(parse(Int, _.match))
+    ) == "abc def 6 x y z 125"
+    @test modify(
+        wix -> "$(wix.i):$(wix.v)",
+        "2022-03-15",
+        @optic(match(r"(?<y>\d{4})-(?<m>\d{2})-(?<d>\d{2})", _)) ⨟ keyed(Elements())
+    ) == "y:2022-m:03-d:15"
+    end
+
+    data = [
+        (a=1, bs=[10, 11, 12]),
+        (a=2, bs=[20, 21]),
+    ]
+    o = @optic _[∗] |> selfcontext() |> _.bs[∗]
+    @test map(x -> (;x.i.a, b=x.v), getall(data, o)) == [(a = 1, b = 10), (a = 1, b = 11), (a = 1, b = 12), (a = 2, b = 20), (a = 2, b = 21)]
+    @test modify(x -> 100*x.i.a + x.v, data, o) == [
+        (a=1, bs=[110, 111, 112]),
+        (a=2, bs=[220, 221]),
+    ]
+end
+
+@testitem "PartsOf" begin
+    x = (a=((b=1,), (b=2,), (b=3,)), c=4)
+    @test (@optic _.a[∗].b |> PartsOf())(x) == (1, 2, 3)
+    @test (@optic _.a[∗].b |> PartsOf() |> length)(x) == 3
+    o = @optic _.a[∗].b
+    @test getall(x, o) == (o ⨟ PartsOf())(x) == (1, 2, 3)
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ PartsOf()
+    @test modify(reverse, x, o) == (a=((b=4,), (b=3,), (b=2,)), c=1)
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ @optic(_ |> PartsOf() |> _[2])
+    @test modify(x -> x*10, x, o) == (a=((b=1,), (b=20,), (b=3,)), c=4)
+    o = (@optic(_.a[∗].b) ++ @optic(_.c)) ⨟ @optic(_ |> PartsOf()) ⨟ @optics _[1] _[2]
+    @test modify(x -> x*10, x, o) == (a=((b=10,), (b=20,), (b=3,)), c=4)
+    @test modify(
+        xs -> round.(Int, xs ./ sum(xs) .* 100),
+        "Counts: 10, 15, and 25!",
+        @optic(eachmatch(r"\d+", _)[∗] |> parse(Int, _.match) |> PartsOf())
+    ) == "Counts: 20, 30, and 50!"
+end
+
+@testitem "steps" begin
+    @test get_steps([(a=1,)], @optic first(_).a |> _ + 1) == [
+        (o = first, g = (a = 1,)),
+        (o = (@optic _.a), g = 1),
+        (o = @optic(_ + 1), g = 2)
+    ]
+    @test get_steps([(a=1,)], @optic first(_).b |> _ + 1 - 2) == [
+        (o = first, g = (a = 1,)),
+        (o = (@optic _.b), g = AccessorsExtra.Thrown(ErrorException("type NamedTuple has no field b"))),
+        (o = @optic(_ + 1), g = nothing),
+        (o = @optic(_ - 2), g = nothing)
+    ]
+
+    o = logged(@optic first(_).a |> _ + 1)
+    @test o([(a=1,)]) == 2
+    @test set([(a=1,)], o, 'y') == [(a='x',)]
+    @test modify(-, [(a=1,)], o) == [(a=-3,)]
+    o = logged(@optic _[∗].a + 1)
+    @test getall([(a=1,)], o) == [2]
+    @test set([(a=1,)], o, 'y') == [(a='x',)]
+    @test setall([(a=1,)], o, ['y']) == [(a='x',)]
+    @test modify(-, [(a=1,)], o) == [(a=-3,)]
+end
+
+@testitem "tmp" begin
+#     o = @optic _ |> Elements() |> If(r -> any(>(15), r.bs)) |> _.a
+#     @test modify(a -> a * 2, data, o) == [
+#         (a=1, bs=[10, 11, 12]),
+#         (a=4, bs=[20, 21]),
+#     ]
+#     o = @optic _ |> Elements() |> If(r -> !isempty(getall(r, @optic(_.bs |> Elements() |> If(>(15)))))) |> _.a
+#     @test modify(a -> a * 2, data, o) == [
+#         (a=1, bs=[10, 11, 12]),
+#         (a=4, bs=[20, 21]),
+#     ]
+
+#     o = # bs >= 12
+#     @test modify((a, bs) -> a + length(bs), data, o) == [
+#         (a=2, bs=[10, 11, 12]),
+#         (a=4, bs=[20, 21]),
+#     ]
+
+#     @test delete(data, @optic _ |> Elements() |> _.bs |> Elements() |> If(isodd))
+#     @test delete(data, @optic _ |> Elements() |> If(r -> !isempty(getall(r, @optic _.bs |> Elements() |> If(>(15))))))
+#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Elements() |> _.bs |> Withered())
+#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Withered() |> _.bs |> Elements())
+#     @test modify(b -> isodd(b) ? nothing : b, data, @optic _ |> Withered() |> _.bs |> Withered())
+end
+
 @testitem "replace" begin
     nt = (a=1, b=:x)
-    @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (c=1, b=:x)
-    @test AccessorsExtra._replace(nt, (@optic(_.a) => @optic(_.c)) ∘ identity) === (c=1, b=:x)
+    AccessorsExtra.@allinferred _replace begin
+        @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (c=1, b=:x)
+        @test AccessorsExtra._replace(nt, (@optic(_.a) => @optic(_.c)) ∘ identity) === (c=1, b=:x)
+    end
     @test @replace(nt.c = nt.a) === (c=1, b=:x)
     @test @replace(nt.c = _.a) === (c=1, b=:x)
     @test @replace(_.c = nt.a) === (c=1, b=:x)
@@ -16,50 +504,77 @@ using TestItemRunner
     @test_throws Exception eval(:(@replace(_.c = _.a)))
 end
 
-@testitem "staticarrays" begin
-    using StaticArrays: SVector, MVector
+@testitem "assemble" begin
+    ==ₜ(_, _) = false
+    ==ₜ(x::T, y::T) where T = x == y
 
-    sv = SVector(1, 2)
-    @test SVector(3.0, 2.0) === @set sv.x = 3.0
-    @test SVector(3.0, 5.0) === @inferred setproperties(sv, x = 3.0, y = 5.0)
-    @test SVector(-1.0, -2.0) === @set sv.data = (-1.0, -2)
+    AccessorsExtra.@allinferred assemble begin
+        @test assemble(Complex, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+        @test assemble(Complex{Int}, @optic(_.re) => 1, @optic(_.im) => 2)::Complex{Int} === 1 + 2im
+        @test assemble(ComplexF32, @optic(_.re) => 1, @optic(_.im) => 2)::ComplexF32 == 1 + 2im
+        @test assemble(Complex, @optic(_.re) => 1., @optic(_.im) => 2)::ComplexF64 === 1. + 2im
+        @test assemble(Complex, abs => 1., angle => π/2)::ComplexF64 ≈ 1im
+        @test assemble(ComplexF32, abs => 1., angle => π/2)::ComplexF32 ≈ 1im
+        @test_throws InexactError assemble(Complex{Int}, abs => 1., angle => π/2)
 
-    @test_throws "does not have properties (:z,)" @set sv.z = 3.0
+        @test assemble(Tuple, only => 1) === (1,)
+        @test assemble(Tuple{Int}, only => 1) === (1,)
+        @test assemble(Tuple{Float64}, only => 1) === (1.0,)
+        @test_throws Exception assemble(Tuple{String}, only => 1)
+        @test_throws Exception assemble(Tuple{Int, Int}, only => 1)
+
+        @test assemble(Vector, only => 1) ==ₜ [1]
+        @test assemble(Vector{Int}, only => 1) ==ₜ [1]
+        @test assemble(Vector{Float64}, only => 1) ==ₜ [1.0]
+        @test_throws Exception assemble(Vector{String}, only => 1)
+
+        @test assemble(Set, only => 1) ==ₜ Set((1,))
+        @test assemble(Set{Int}, only => 1) ==ₜ Set((1,))
+        @test assemble(Set{Float64}, only => 1) ==ₜ Set((1.0,))
+        @test_throws Exception assemble(Set{String}, only => 1,)
+
+        @test assemble(NamedTuple{(:a,)}, only => 1) === (a=1,)
+        @test assemble(NamedTuple, @optic(_.a) => 1) === (a=1,)
+        @test assemble(NamedTuple, @optic(_.a) => 1, @optic(_.b) => "") === (a=1, b="")
+    end
+
+    @test @assemble(Complex, _.re = 1, _.im = 2)::Complex{Int} === 1 + 2im
+    @test (@assemble Complex{Int}  _.re = 1 _.im = 2)::Complex{Int} === 1 + 2im
+    res = @assemble Complex begin
+        _.re = 1
+        _.im = 2
+    end
+    @test res::Complex{Int} === 1 + 2im
+    res = @assemble Complex{Int} begin
+        _.re = 1
+        _.im = 2
+    end
+    @test res::Complex{Int} === 1 + 2im
+    res = @assemble NamedTuple begin
+        _.a = @assemble Complex  abs(_) = 1 angle(_) = π
+        _.b = @assemble Vector  only(_) = 10
+        _.c = 123
+    end
+    @test res == (a=-1, b=[10], c=123)
+    res = @assemble NamedTuple begin
+        _.a = assemble(Complex, @optic(_.re) => -1, @optic(_.im) => 0)
+        _.b = assemble(Vector, only => 10)
+        _.c = 123
+    end
+    @test res == (a=-1, b=[10], c=123)
 end
 
 @testitem "structarrays" begin
     using StructArrays
 
-    struct S{TA, TB}
-        a::TA
-        b::TB
-    end
-
     s = StructArray(a=[1, 2, 3])
-    @test @insert(StructArrays.components(s).b = 10:12)::StructArray == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]
     @test setproperties(s, a=10:12)::StructArray == StructArray(a=10:12)
     @test_throws ArgumentError setproperties(s, b=10:12)
-    @test @set(s.a = 10:12)::StructArray == StructArray(a=10:12)
-    @test @insert(s.b = 10:12)::StructArray == [(a=1, b=10), (a=2, b=11), (a=3, b=12)]
-    @test @delete(@insert(s.b = 10:12).a)::StructArray == StructArray(b=10:12)
-    @test_throws "only eltypes with fields" @delete(s.a)
+    @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(a=[2, 3, 4])
 
-    s = StructArray([(a=(x=1, y=:abc),), (a=(x=2, y=:def),)]; unwrap=T -> T <: NamedTuple)
-    @test @set(s.a = 10:12)::StructArray == StructArray(a=10:12)
-    @test @set(s.a.x = 10:11)::StructArray == [(a=(x=10, y=:abc),), (a=(x=11, y=:def),)]
-    @test @insert(s.b = 10:11)::StructArray == [(a=(x=1, y=:abc), b=10), (a=(x=2, y=:def), b=11)]
-    @test @insert(s.a.z = 10:11)::StructArray == [(a=(x=1, y=:abc, z=10),), (a=(x=2, y=:def, z=11),)]
-    @test @delete(s.a.y)::StructArray == [(a=(x=1,),), (a=(x=2,),)]
-    @test @replace(s.b = s.a.x)::StructArray == [(a=(y=:abc,), b=1), (a=(y=:def,), b=2)]
-
-    s = StructArray([S(1, 2), S(3, 4)])
-    @test @set(s.a = 10:11)::StructArray == StructArray([S(10, 2), S(11, 4)])
-    @test_broken @set(s.a = [:a, :b])::StructArray == StructArray([S(:a, 2), S(:b, 4)])
-    # @test @set(s.a.x = 10:11)::StructArray == [(a=(x=10, y=:abc),), (a=(x=11, y=:def),)]
-    # @test @insert(s.b = 10:11)::StructArray == [(a=(x=1, y=:abc), b=10), (a=(x=2, y=:def), b=11)]
-    # @test @insert(s.a.z = 10:11)::StructArray == [(a=(x=1, y=:abc, z=10),), (a=(x=2, y=:def, z=11),)]
-    # @test @delete(s.a.y)::StructArray == [(a=(x=1,),), (a=(x=2,),)]
-    # @test @replace(s.b = s.a.x)::StructArray == [(a=(y=:abc,), b=1), (a=(y=:def,), b=2)]
+    s = StructArray(([1, 2, 3],))
+    @test setproperties(s, (10:12,))::StructArray == StructArray((10:12,))
+    @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
 end
 
 @testitem "getfield" begin
@@ -69,14 +584,12 @@ end
 end
 
 @testitem "view" begin
-    A = [1, 2, (a=3, b=4)]
-    opt = @optic _ |> ViewLens(3) |> _.a
-    @test opt(A) == 3
-    @test set(A, opt, 10) === A == [1, 2, (a=10, b=4)]
-    @test set(A, ViewLens((1:2,)), [-2, -3]) === A == [-2, -3, (a=10, b=4)]
-    @test @modify(x -> 2x, A |> ViewLens((1:2,))) === A == [-4, -6, (a=10, b=4)]
-    Accessors.test_getset_laws(opt, A, "a", :b)
-    Accessors.test_getset_laws(@optic(_ |> ViewLens((1:2,))), A, [5, 6], [7, 8])
+    A = [1, 2]
+    @test set(A, @optic(view(_, 2)[]), 10) === A == [1, 10]
+    @test modify(-, A, @optic(view(_, 2)[] + 1)) === A == [1, -12]
+
+    Accessors.test_getset_laws(@optic(view(_, 2)[]), [1, 2], 5, -1)
+    Accessors.test_getset_laws(@optic(view(_, 1:2)), [1, 2], 1:2, 5:6)
 
     A = [1, 2, (a=3, b=4)]
     @test set(A, @optic(view(_, 1:2)), [-2, -3]) === A == [-2, -3, (a=3, b=4)]
@@ -84,218 +597,166 @@ end
     @test @modify(x -> x + 1, A |> view(_, 1:2) |> Elements()) === A == [-3, -5, (a=3, b=4)]
 end
 
-@testitem "ranges" begin
-    r = 1:10
-    @test 1:3:10 === @set step(r) = 3
-    @test 1:0.5:10 === @set length(r) = 19
-    @test -5:10 === @set first(r) = -5
-    @test 1:15 === @set last(r) = 15
-
-    r = range(1, 10, length=10)
-    @test 1:3.0:10 === @set step(r) = 3
-    @test 1:0.5:10 === @set length(r) = 19
-    @test -5:1.0:10 === @set first(r) = -5
-    @test 1:1.0:15 === @set last(r) = 15
-
-    r = Base.OneTo(10)
-    @test 1:3:10 === @set step(r) = 3
-    @test 1:0.5:10 === @set length(r) = 19
-    @test -5:10 === @set first(r) = -5
-    @test Base.OneTo(15) === @set last(r) = 15
-end
-
-@testitem "arrays" begin
-    using OffsetArrays
-
-    A = [1 2 3; 4 5 6]
-    
-    B = @set axes(A)[1] = 10:11
-    @test parent(B) == A
-    @test_broken parent(B) === A
-    @test axes(B) == (10:11, 1:3)
-
-    @test_throws Exception @set axes(A)[1] = 10:12
-
-    @test A == @set axes(A)[1] = Base.OneTo(2)
-    @test reshape(A, (2, 1, 3)) == @insert axes(A)[2] = Base.OneTo(1)
-    B = @insert size(A)[2] = 1
-    @test reshape(A, (2, 1, 3)) == B
-    @test A == @delete size(B)[2]
-    @test_throws Exception @set size(A)[1] = 1
-    @test_throws Exception @insert size(A)[2] = 2
-
-    @inferred set(A, @optic(axes(_)[1]), Base.OneTo(2))
-    @inferred insert(A, @optic(axes(_)[2]), Base.OneTo(1))
-    @inferred insert(A, @optic(size(_)[2]), 1)
-    @inferred delete(B, @optic(size(_)[2]))
-
-    B = @set vec(A) = 1:6
-    @test B == [1 3 5; 2 4 6]
-
-    B = @set reverse(vec(A)) = 1:6
-    @test B == [6 4 2; 5 3 1]
-end
-
-@testitem "axiskeys" begin
-    using AxisKeys
-
-    A = KeyedArray([1 2 3; 4 5 6], x=[:a, :b], y=11:13)
-
-    for B in (
-        @set(axiskeys(A)[1] = [:y, :z]),
-        @set(named_axiskeys(A).x = [:y, :z]),
-        @set(A |> axiskeys(_, 1) = [:y, :z]),
-        @set(A |> axiskeys(_, :x) = [:y, :z]),
-    )
-        @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-        @test named_axiskeys(B) == (x=[:y, :z], y=11:13)
-    end
-
-    for B in (
-        @set(axiskeys(A)[2] = [:y, :z, :w]),
-        @set(named_axiskeys(A).y = [:y, :z, :w]),
-        @set(A |> axiskeys(_, 2) = [:y, :z, :w]),
-        @set(A |> axiskeys(_, :y) = [:y, :z, :w]),
-    )
-        @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-        @test named_axiskeys(B) == (x=[:a, :b], y=[:y, :z, :w])
-    end
-
-    B = @set named_axiskeys(A) = (a=[1, 2], b=[3, 2, 1])
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (a=[1, 2], b=[3, 2, 1])
-
-    B = @set dimnames(A) = (:a, :b)
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (a=[:a, :b], b=11:13)
-
-    B = @set A.x = 10:11
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (x=10:11, y=11:13)
-
-    B = @replace named_axiskeys(A) |> (_.z = _.x)
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (z=[:a, :b], y=11:13)
-
-    B = @set AxisKeys.keyless_unname(A) = [6 5 4; 3 2 1]
-    @test named_axiskeys(B) == named_axiskeys(A)
-    @test AxisKeys.keyless_unname(B) == [6 5 4; 3 2 1]
-
-    B = @set vec(A) = 1:6
-    @test AxisKeys.keyless_unname(B) == [1 3 5; 2 4 6]
-    @test named_axiskeys(B) == named_axiskeys(A)
-
-
-    @test_throws ArgumentError @set axiskeys(A)[1] = 1:3
-    @test_throws ArgumentError @set named_axiskeys(A).x = 1:3
-    @test_throws Exception     @set axiskeys(A) = ()
-    @test_throws ArgumentError @set named_axiskeys(A) = (;)
-    @test_throws ArgumentError @set A.z = 10:11
-
-
-    A = KeyedArray([1 2 3; 4 5 6], ([:a, :b], 11:13))
-
-    B = @set axiskeys(A)[1] = [:y, :z]
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test axiskeys(B) == ([:y, :z], 11:13)
-
-    B = @set named_axiskeys(A) = (a=[1, 2], b=[3, 2, 1])
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (a=[1, 2], b=[3, 2, 1])
-
-    B = @set dimnames(A) = (:a, :b)
-    @test AxisKeys.keyless_unname(A) === AxisKeys.keyless_unname(B)
-    @test named_axiskeys(B) == (a=[:a, :b], b=11:13)
-
-    # B = @set AxisKeys.keyless_unname(A) = [6 5 4; 3 2 1]
-    # @test named_axiskeys(B) == named_axiskeys(A)
-    # @test AxisKeys.keyless_unname(A) == [6 5 4; 3 2 1]
-
-    B = @set vec(A) = 1:6
-    @test AxisKeys.keyless_unname(B) == [1 3 5; 2 4 6]
-    @test axiskeys(B) == axiskeys(A)
-end
-
 @testitem "inverses" begin
     using InverseFunctions
-    using Distributions
     using Unitful
 
     InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
     InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
 
-    d = Normal(2, 5)
-    InverseFunctions.test_inverse(@optic(cdf(d, _)), 2)
-    InverseFunctions.test_inverse(@optic(quantile(d, _)), 0.1)
-
     InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"m")
     InverseFunctions.test_inverse(@optic(ustrip(u"m", _)), 2u"mm")
+
+    InverseFunctions.test_inverse(Accessors.decompose, sin ∘ tan ∘ cos; compare= ==)
+    InverseFunctions.test_inverse(Accessors.deopcompose, sin ∘ tan ∘ cos; compare= ==)
 end
 
-@testitem "other optics" begin
+@testitem "collections" begin
+    o = @optic map(-, _)  # invertible
+    Accessors.test_getset_laws(o, [1, 2], [3, 4], [5, 6])
+    o = @optic map(only, _)  # non-invertible
+    Accessors.test_getset_laws(o, [(1,), (2,)], [(3,), (4,)], [(5,), (6,)])
+    o = @optic filter(>(0), _)
+    Accessors.test_getset_laws(o, [1, -2, 3, -4, 5, -6], [1, 2, 3], [1, 3, 5])
+    @test modify([1, -2, 3, -4, 5, -6], o) do x
+        x .+ sum(x)
+    end == [10, -2, 12, -4, 14, -6]
+
+    @test modify(cumsum, [5, 1, 4, 2, 3], sort) == [15, 1, 10, 3, 6]
+    @test modify(cumsum, [4, 1, 4, 2, 3], sort) == [10, 1, 14, 3, 6]
+end
+
+@testitem "keys, values, pairs" begin
     using Dictionaries
 
-    T = (4, 5, 6)
-    @test (8, 10, 12) === @inferred modify(x -> 2x, T, Values())
-    @test (5, 7, 9) === @inferred modify(((i, x),) -> i => i + x, T, Pairs())
-    @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> Pairs())
-    T = (a=4, b=5, c=6)
-    @test (a=8, b=10, c=12) === @inferred modify(x -> 2x, T, Values())
-    @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), T, Keys())
-    @test (a=(:a, 8), b=(:b, 10), c=(:c, 12)) === @inferred modify(((i, x),) -> i => (i, 2x), T, Pairs())
-    A = [4, 5, 6]
-    @test [8, 10, 12] == @inferred modify(x -> 2x, A, Values())
-    @test [5, 7, 9] == @inferred modify(((i, x),) -> i => i + x, A, Pairs())
-    D = Dict(4 => 5, 6 => 7)
-    @test Dict(4 => 6, 6 => 8) == @inferred modify(x -> x+1, D, Values())
-    @test Dict(5 => 5, 7 => 7) == @inferred modify(x -> x+1, D, Keys())
-    @test Dict(8 => 9, 12 => 13) == @inferred modify(((i, x),) -> 2i => i + x, D, Pairs())
-    D = dictionary([4 => 5, 6 => 7])
-    @test dictionary([4 => 6, 6 => 8]) == @inferred modify(x -> x+1, D, Values())
-    @test dictionary([5 => 5, 7 => 7]) == @inferred modify(x -> x+1, D, Keys())
-    D = ArrayDictionary([4, 6], [5, 7])
-    @test dictionary([4 => 6, 6 => 8]) == @inferred modify(x -> x+1, D, Values())
-    @test dictionary([5 => 5, 7 => 7]) == @inferred modify(x -> x+1, D, Keys())
-end
+    # ds = Dict(:a => 1:10,:b => 2:11)
+    # delete(If) not possible? need Filtered(cond) == If(cond) ∘ Elements()
+    # @test @delete ds |> values(_)[∗] |> If(x -> any(>=(5), x))
+    # @test @delete ds |> values(_)[∗][∗] |> If(>=(5))
 
-@testitem "skycoords" begin
-    using SkyCoords
-    using SkyCoords: lat, lon
-
-    for T in [ICRSCoords, FK5Coords{2000}, GalCoords]
-        c = T(0.5, -1)
-        @test @set(lat(c) = 1.2) == T(0.5, 1.2)
-        @test lat(@set(lat(c) = 1.2)) == 1.2
-        @test @set(lon(c) = 2.3) == T(2.3, -1)
-        @test lon(@set(lon(c) = 2.3)) == 2.3
+    AccessorsExtra.@allinferred modify begin
+        T = (4, 5, 6)
+        @test (8, 10, 12) === modify(x -> 2x, T, @optic values(_)[∗])
+        @test (5, 7, 9) === modify(((i, x),) -> i => i + x, T, @optic pairs(_)[∗])
+        @test_throws AssertionError @modify(((i, x),) -> (i+1) => i + x, T |> @optic pairs(_)[∗])
+        T = (a=4, b=5, c=6)
+        @test (a=8, b=10, c=12) === modify(x -> 2x, T, @optic values(_)[∗])
+        @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @optic keys(_)[∗])  broken=VERSION < v"1.10-"
+        @test (a=(:a, 8), b=(:b, 10), c=(:c, 12)) === modify(((i, x),) -> i => (i, 2x), T, @optic pairs(_)[∗])
+        A = [4, 5, 6]
+        @test [8, 10, 12] == modify(x -> 2x, A, @optic values(_)[∗])
+        @test [5, 7, 9] == modify(((i, x),) -> i => i + x, A, @optic pairs(_)[∗])
+        D = Dict(4 => 5, 6 => 7)
+        @test Dict(4 => 6, 6 => 8) == modify(x -> x+1, D, @optic values(_)[∗])
+        @test Dict(5 => 5, 7 => 7) == modify(x -> x+1, D, @optic keys(_)[∗])
+        @test Dict(8 => 9, 12 => 13) == modify(((i, x),) -> 2i => i + x, D, @optic pairs(_)[∗])
+        D = dictionary([4 => 5, 6 => 7])
+        @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, @optic values(_)[∗])
+        @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @optic keys(_)[∗])
+        @test dictionary([8 => 9, 12 => 13]) == modify(((i, x),) -> 2i => i + x, D, @optic pairs(_)[∗])
+        D = ArrayDictionary([4, 6], [5, 7])
+        @test dictionary([4 => 6, 6 => 8]) == modify(x -> x+1, D, @optic values(_)[∗])
+        @test dictionary([5 => 5, 7 => 7]) == modify(x -> x+1, D, @optic keys(_)[∗])
     end
-    c = ICRSCoords(0.5, -1)
-    c1 = @set(c |> convert(GalCoords, _) |> lon = 0)::ICRSCoords
-    @test c1.ra ≈ 5.884005859354123
-    @test c1.dec ≈ -0.69919820078915
+    @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @optic keys(_)[∗])
 end
 
-@testitem "intervals" begin
+@testitem "Optimization" begin
     using IntervalSets
+    using StructArrays
+    using StaticArrays
+    using Optimization
+    using OptimizationOptimJL, OptimizationMetaheuristics
 
-    int = Interval{:open, :closed}(1, 5)
-    @test Interval{:open, :closed}(1, 10) === @set int.right = 10
-    @test Interval{:open, :closed}(10.0, 11.0) === @set endpoints(int) = (10.0, 11.0)
-    @test Interval{:open, :closed}(-2, 5) === @set leftendpoint(int) = -2
-    @test Interval{:open, :closed}(1, 2) === @set rightendpoint(int) = 2
-    @test Interval{:closed, :closed}(1, 5) === @set first(closedendpoints(int)) = true
+    @testset "reconstruct" begin
+        of = OptimizationFunction(sin, Optimization.AutoForwardDiff())
+        @test constructorof(typeof(of))(Accessors.getfields(of)...) === of
+    end
 
-    @test 1 === @set 2 |> mod(_, 0..3) = 1
-    @test 0 === @set 2 |> mod(_, 0..3) = 0
-    @test 3 === @set 2 |> mod(_, 0..3) = 3
-    @test 31 === @set 32 |> mod(_, 0..3) = 1
+    
+    struct ExpModel{A,B}
+        scale::A
+        shift::B
+    end
+    
+    struct SumModel{T <: Tuple}
+        comps::T
+    end
+    
+    (m::ExpModel)(x) = m.scale * exp(-(x - m.shift)^2)
+    (m::SumModel)(x) = sum(c -> c(x), m.comps)
+
+    loss(m, data) = sum(r -> abs2(r.y - m(r.x)), data)
+
+    truemod = SumModel((
+        ExpModel(2, 5),
+        ExpModel(0.5, 2),
+        ExpModel(0.5, 8),
+    ))
+
+    data = let x = 0:0.2:10
+        StructArray(; x, y=truemod.(x) .+ range(-0.01, 0.01, length=length(x)))
+    end
+
+    mod0 = SumModel((
+        ExpModel(1, 1),
+        ExpModel(1, 2),
+        ExpModel(1, 3),
+    ))
+    vars = OptArgs(
+        @optic(_.comps[∗].shift) => 0..10.,
+        @optic(_.comps[∗].scale) => 0.3..10.,
+    )
+    prob = OptProblemSpec(Base.Fix2(loss, data), mod0, vars)
+    sol = solve(prob, ECA(), maxiters=300)
+    @test sol.u isa Vector{Float64}
+    @test sol.uobj isa SumModel
+    @test getall(sol.uobj, @optic _.comps[∗].shift) |> collect |> sort ≈ [2, 5, 8]  rtol=1e-2
+
+    @testset "no autodiff" begin
+    @testset "OptProblemSpec(utype=$(prob.utype))" for prob in (
+        OptProblemSpec(Base.Fix2(loss, data), mod0, vars),
+        OptProblemSpec(Base.Fix2(loss, data), Vector, mod0, vars),
+        OptProblemSpec(Base.Fix2(loss, data), Vector{Float64}, mod0, vars),
+        OptProblemSpec(Base.Fix2(loss, data), SVector, mod0, vars),
+        OptProblemSpec(Base.Fix2(loss, data), SVector{<:Any, Float64}, mod0, vars),
+        OptProblemSpec(Base.Fix2(loss, data), MVector, mod0, vars),
+        OptProblemSpec(Base.Fix2(loss, data), MVector{<:Any, Float64}, mod0, vars),
+        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), mod0, vars),
+        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), Vector, mod0, vars),
+        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), Vector{Float64}, mod0, vars),
+        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), SVector, mod0, vars),
+        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), SVector{<:Any, Float64}, mod0, vars),
+        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), MVector, mod0, vars),
+        OptProblemSpec(Base.Fix2(OptimizationFunction{false}(loss), data), MVector{<:Any, Float64}, mod0, vars),
+    )
+        sol = solve(prob, ECA(), maxiters=300)
+        @test sol.u isa Vector{Float64}
+        @test sol.uobj isa SumModel
+    end
+    end
+
+    cons = OptCons(
+        ((x, _) -> sum(c -> c.shift, x.comps) / length(x.comps)) => 0.5..4,
+    )
+    @testset "autodiff" begin
+    @testset "OptProblemSpec(utype=$(prob.utype))" for prob in (
+        OptProblemSpec(Base.Fix2(OptimizationFunction(loss, Optimization.AutoForwardDiff()), data), Vector{Float64}, mod0, vars, cons),
+    )
+        sol = solve(prob, Optim.IPNewton(), maxiters=300)
+        @test sol.u isa Vector{Float64}
+        @test sol.uobj isa SumModel
+        for (f, int) in cons.specs
+            @test f(sol.uobj, data) ∈ int
+        end
+    end
+    end
 end
-
 
 @testitem "_" begin
     import CompatHelperLocal as CHL
     CHL.@check()
 
     using Aqua
-    Aqua.test_all(AccessorsExtra)
+    Aqua.test_all(AccessorsExtra, piracy=false, ambiguities=false, project_toml_formatting=false)
 end
