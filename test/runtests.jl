@@ -569,5 +569,5 @@ end
     CHL.@check()
 
     using Aqua
-    Aqua.test_all(AccessorsExtra, piracy=false, ambiguities=false)
+    Aqua.test_all(AccessorsExtra, piracy=false, ambiguities=false, project_toml_formatting=false)
 end

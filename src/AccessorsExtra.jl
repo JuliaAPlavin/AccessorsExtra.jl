@@ -8,7 +8,6 @@ using DataPipes
 using FlexiMaps: filtermap
 using ConstructionBase
 using InverseFunctions
-using StaticArraysCore: SVector, MVector
 using Requires
 using Accessors: MacroTools
 
@@ -38,21 +37,6 @@ include("testing.jl")
 
 
 function __init__()
-    @require StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a" begin
-        using .StructArrays
-
-        ConstructionBase.setproperties(x::StructArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), StructArrays.components(x))
-    end
-
-    @require Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4" begin
-        using .Dictionaries
-
-        modify(f, obj::KVPWrapper{typeof(keys), <:AbstractDictionary}, ::Elements) =
-            constructorof(typeof(obj.obj))(map(f, keys(obj.obj)), values(obj.obj))
-        modify(f, obj::KVPWrapper{typeof(values), <:AbstractDictionary}, ::Elements) =
-            map(f, obj.obj)
-    end
-
     @require SkyCoords = "fc659fc5-75a3-5475-a2ea-3da92c065361" begin
         using .SkyCoords
         using .SkyCoords: lat, lon
