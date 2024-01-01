@@ -14,14 +14,37 @@ for OF in (only, first, last)
 end
 
 construct(T::Type{Tuple{}})::T = T()
+function construct(T::Type{<:Tuple}, args::Vararg{Pair{<:IndexLens}})::T
+    @assert map(a -> only(first(a).indices), args) === ntuple(identity, length(args))
+    constructorof(T)(last.(args)...)
+end
 construct(T::Type{<:Tuple{Any,Any}}, (_, x)::Pair{typeof(first)}, (_, y)::Pair{typeof(last)})::T = constructorof(T)(x, y)
 construct(T::Type{<:Tuple{Any,Any}}, (_, n)::Pair{typeof(splat(hypot))}, (_, a)::Pair{typeof(splat(atan))})::T = constructorof(T)((n .* sincos(a))...)
 
-
+construct(::Type{NamedTuple}, args::Vararg{Pair}) =
+    foldl(args, init=(;)) do acc, (o, x)
+        insert⁺(acc, o, x)
+    end
+# disambiguation:
 construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
     foldl(args; init=(;)) do acc, a
         insert(acc, first(a), last(a))
     end
+
+# neat piece of functionality by itself!
+insert⁺(obj, optic, val) = insert(obj, optic, val)
+insert⁺(obj, optic::ComposedFunction, val) =
+    if hasoptic(obj, optic.inner)
+        modify(obj, optic.inner) do inner_obj
+            insert⁺(inner_obj, optic.outer, val)
+        end
+    else
+        insert⁺(obj, optic.inner, insert⁺(default_empty_obj(optic.outer), optic.outer, val))
+    end
+
+default_empty_obj(::IndexLens{<:Tuple{<:Integer}}) = ()
+default_empty_obj(::PropertyLens) = (;)
+default_empty_obj(f::ComposedFunction) = default_empty_obj(f.inner)
 
 
 _propname(::PropertyLens{P}) where {P} = P
@@ -32,7 +55,19 @@ function _construct(::Type{T}, args::Vararg{Pair{<:PropertyLens}})::T where {T}
 end
 
 
-function construct(T, args::Vararg{Pair})
+construct(::Type{Any}, args::Vararg{Pair}) = 
+    foldl(args, init=default_empty_obj(first(first(args)))) do acc, (o, x)
+        insert⁺(acc, o, x)
+    end
+construct(::Type{Any}, args::Vararg{Pair{<:PropertyLens}}) = 
+    foldl(args, init=default_empty_obj(first(first(args)))) do acc, (o, x)
+        insert⁺(acc, o, x)
+    end
+
+
+construct(args::Vararg{Pair}) = construct(Any, args...)
+
+function construct(::Type{T}, args::Vararg{Pair}) where {T}
     pargs = @p args |> map(_process_invertible(_[1], _[2]))
     pargs == args && throw(MethodError(construct, Tuple{T, typeof.(args)...}))
     construct(T, pargs...)

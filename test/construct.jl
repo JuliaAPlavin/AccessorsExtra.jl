@@ -25,6 +25,24 @@
     end
 end
 
+@testitem "auto type" begin
+    AccessorsExtra.@allinferred construct begin
+        @test construct(Any, (@o _.a) => 1, (@o _.b) => "") === (a=1, b="")
+        @test construct((@o _.a) => 1, (@o _.b) => "") === (a=1, b="")
+        # @test construct((@o _[static(1)]) => 1, (@o _[static(2)]) => "") === (1, "")
+        # @test construct((@o _[static(2)]) => 1, (@o _[static(1)]) => "") === (1, "")
+
+        @test construct(NamedTuple, (@o _.a.x) => 1, (@o _.a.y) => 2, (@o _.b) => "") === (a=(x=1, y=2), b="")
+        @test construct((@o _.a.x) => 1, (@o _.a.y) => 2, (@o _.b) => "") === (a=(x=1, y=2), b="")
+
+        @test_broken construct((@o _.a) => 1, (@o _.b[1:3]) => [2, 3, 4]) == (a=1, b=[2, 3, 4])
+        @test_broken construct((@o _.b[1:3][∗]) => 2, (@o _.a) => 1) == (b=[2, 2, 2], a=1)
+    end
+    @test construct((@o _[1]) => 1, (@o _[2]) => "") === (1, "")
+    @test_throws Exception construct((@o _[2]) => 1, (@o _[1]) => "") === (1, "")
+    @test_throws MethodError construct((@o _.a) => 1, (@o _[1]) => "")
+end
+
 @testitem "laws" begin
     using StaticArrays
     using LinearAlgebra: norm
