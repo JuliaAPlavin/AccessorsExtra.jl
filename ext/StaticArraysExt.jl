@@ -16,7 +16,4 @@ function _construct(T::Type{<:SVector{N}}, args::Vararg{Pair{<:PropertyLens}}) w
     end
 end
 
-# XXX: upstream
-set(obj::Tuple, ::Type{SVector}, val::SVector) = Tuple(val)
-
 end
