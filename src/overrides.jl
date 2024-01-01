@@ -116,7 +116,7 @@ function parse_obj_optics(ex::Expr)
                 obj = esc(:_)
                 frontoptic = ()
                 arg = gensym(:_)
-                optic = :($PropertyFunction{$props}($arg -> $(replace_underscore(ex, arg))))
+                optic = :($PropertyFunction{$props}($(esc(arg)) -> $(esc(replace_underscore(ex, arg)))))
             end
         else
             # as if f(args...) didn't match

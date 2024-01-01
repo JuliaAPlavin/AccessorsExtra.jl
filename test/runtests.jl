@@ -93,6 +93,15 @@ end
     o = @o round(Int, _.a + _.b.c)
     @test needed_properties(o) == (:a, :b)
     @test o((a=2.6, b=(c=3,))) == 6
+
+    macro mym_str(expr)
+        expr
+    end
+    begin
+        o = @o _.a + _.b + parse(Int, mym"3")
+        @test needed_properties(o) == (:a, :b)
+        @test o((a=1, b=2)) == 6
+    end
 end
 
 @testitem "concat optics" begin
