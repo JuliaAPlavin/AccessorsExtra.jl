@@ -20,6 +20,7 @@ export
     get_steps
 
 
+include("flexix.jl")
 include("concatoptic.jl")
 include("alongside.jl")
 include("recursive.jl")

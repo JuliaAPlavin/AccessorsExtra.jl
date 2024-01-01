@@ -6,7 +6,7 @@ function Accessors.modify(f, s, o::Base.Fix1{typeof(match)})
     repl = if v isa AbstractString
         sub = m.match
         rng = (sub.offset+1):(sub.offset+sub.ncodeunits)
-        @views s[begin:prevind(s, first(rng))] * v * s[nextind(s, last(rng)):end]
+        @set s[FlexIx(rng)] = v
     else
         @assert v === m
         return s
@@ -39,7 +39,7 @@ function Accessors.modify(f, s::AbstractString, o::EachmatchElements)
     end
     @assert issorted(replacements, by=r -> first(first(r)))
     foldl(reverse(replacements); init=s) do s, (rng, v)
-        @views s[begin:prevind(s, first(rng))] * v * s[nextind(s, last(rng)):end]
+        @set s[FlexIx(rng)] = v
     end
 end
 
@@ -51,7 +51,7 @@ function Accessors.setall(s::AbstractString, o::EachmatchElements, v)
     end
     @assert issorted(replacements, by=r -> first(first(r)))
     foldl(reverse(replacements); init=s) do s, (rng, v)
-        @views s[begin:prevind(s, first(rng))] * v * s[nextind(s, last(rng)):end]
+        @set s[FlexIx(rng)] = v
     end
 end
 
@@ -61,7 +61,7 @@ function _set_regexmatch(m::RegexMatch, o::Union{IndexLens,PropertyLens}, v::Abs
     sub = o(m)
     rng = ((sub.offset+1):(sub.offset+sub.ncodeunits)) .- m.match.offset
     s = m.match
-    @views s[begin:prevind(s, first(rng))] * v * s[nextind(s, last(rng)):end]
+    @set s[FlexIx(rng)] = v
 end
 
 function _set_regexmatch(m::RegexMatch, o::Union{IndexLens,PropertyLens}, v::Nothing)
@@ -74,7 +74,6 @@ function Accessors.modify(f, m::RegexMatch, ::Elements)
     foldl(reverse(m.captures); init=m.match) do s, sub
         v = f(sub)
         rng = ((sub.offset+1):(sub.offset+sub.ncodeunits)) .- m.match.offset
-        @info "" m rng v
-        @views s[begin:prevind(s, first(rng))] * v * s[nextind(s, last(rng)):end]
+        @set s[FlexIx(rng)] = v
     end
 end
