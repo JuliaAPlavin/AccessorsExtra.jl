@@ -39,6 +39,7 @@ include("testing.jl")
 
 
 function __init__()
+    # https://github.com/JuliaAstro/SkyCoords.jl/pull/50
     @require SkyCoords = "fc659fc5-75a3-5475-a2ea-3da92c065361" begin
         using .SkyCoords
         using .SkyCoords: lat, lon
@@ -51,6 +52,7 @@ function __init__()
         set(x::GalCoords, ::typeof(lat), v) = @set x.b = v
     end
 
+    # https://github.com/PainterQubits/Unitful.jl/pull/622
     @require Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d" begin
         using .Unitful
 
@@ -59,6 +61,7 @@ function __init__()
 end
 
 
+# https://github.com/JuliaFunctional/CompositionsBase.jl/pull/12
 InverseFunctions.inverse(::typeof(deopcompose)) = Base.splat(opcompose)
 InverseFunctions.inverse(::typeof(Base.splat(opcompose))) = deopcompose
 InverseFunctions.inverse(::typeof(decompose)) = Base.splat(compose)
