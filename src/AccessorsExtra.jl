@@ -225,8 +225,8 @@ function ConstructionBase.setproperties(d::Dict, patch::NamedTuple{(:vals,)})
 end
 
 
-const ∗ = Val(:∗)
-const ∗ₚ = Val(:∗ₚ)
+const ∗ = Elements()
+const ∗ₚ = Properties()
 
 Accessors.IndexLens(::Tuple{typeof(∗)}) = Elements()
 Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
