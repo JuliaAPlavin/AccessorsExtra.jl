@@ -10,6 +10,7 @@ using Requires
 
 export
     ViewLens, Keys, Values, Pairs,
+    ∗,
     concat, ++,
     @replace,
     assemble, @assemble
@@ -195,5 +196,11 @@ function ConstructionBase.setproperties(d::Dict, patch::NamedTuple{(:vals,)})
     @assert length(d.keys) == length(patch.vals)
     Dict{K,V}(copy(d.slots), copy(d.keys), patch.vals, d.ndel, d.count, d.age, d.idxfloor, d.maxprobe)
 end
+
+
+const ∗ = Val(:∗)
+
+Accessors.IndexLens(::Tuple{typeof(∗)}) = Elements()
+Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
 
 end

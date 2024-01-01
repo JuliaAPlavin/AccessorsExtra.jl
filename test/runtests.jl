@@ -34,6 +34,10 @@ using TestItemRunner
     @test modify(-, obj, o) == (a=-1, bs=[(c=-2, d=3), (c=-4, d=5)])
 end
 
+@testitem "Elements" begin
+    @test @optic(_.a[∗].b) === @optic(_.a |> Elements() |> _.b)
+end
+
 @testitem "replace" begin
     nt = (a=1, b=:x)
     @test AccessorsExtra._replace(nt, @optic(_.a) => @optic(_.c)) === (c=1, b=:x)
