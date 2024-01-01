@@ -19,6 +19,7 @@ export
 
 
 include("concatoptic.jl")
+include("regex.jl")
 include("replace.jl")
 include("assemble.jl")
 include("testing.jl")

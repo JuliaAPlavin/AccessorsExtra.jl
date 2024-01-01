@@ -58,6 +58,26 @@ end
     @test myrev("def") == "fed"
 end
 
+@testitem "regex" begin
+    s = "abc def dxyz"
+    @test getall(s, @optic eachmatch(r"d\w+", _)[∗].match) == ["def", "dxyz"]
+    @test setall(s, @optic(eachmatch(r"d\w+", _)[∗].match), ["aa", "ooo"]) == "abc aa ooo"
+    @test modify(uppercase, s, @optic eachmatch(r"d\w+", _)[∗].match) == "abc DEF DXYZ"
+    @test modify(uppercase, s, @optic eachmatch(r"d\w+", _)[∗].match |> first) == "abc Def Dxyz"
+
+    @test getall(s, @optic eachmatch(r"d(\w)\w+", _)[∗][1]) == ["e", "x"]
+    # test composition when not at front/end:
+    @test getall(s, @optic _[begin:end] |> eachmatch(r"d(\w)\w+", _)[∗][1] |> _[1:1]) == ["e", "x"]
+    @test setall(s, @optic(eachmatch(r"d(\w)\w+", _)[∗][1]), ["ohoh", ""]) == "abc dohohf dyz"
+    @test modify(m -> m^5, s, @optic(eachmatch(r"d(\w)\w+", _)[∗][1])) == "abc deeeeef dxxxxxyz"
+
+    @test modify(m -> m+1, "a: 1, b: 21", @optic eachmatch(r"\d+", _)[∗].match |> parse(Int, _)) == "a: 2, b: 22"
+    @test modify("fractions: 2/3, another 1/2, 5/2, all!", @optic eachmatch(r"(\d+)/(\d+)", _)[∗]) do m
+        f = parse(Int, m[1]) / parse(Int, m[2])
+        first(string(f), 5)
+    end == "fractions: 0.666, another 0.5, 2.5, all!"
+end
+
 @testitem "replace" begin
     nt = (a=1, b=:x)
     AccessorsExtra.@allinferred _replace begin
