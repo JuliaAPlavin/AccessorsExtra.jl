@@ -10,6 +10,18 @@ getall(obj, ao::AlongsideOptic{<:Tuple}) =
         getall(obj, opt)
     end |> _reduce_concat
 
+function setall(obj, ao::AlongsideOptic{<:Tuple}, vals)
+    modify(obj, Tuple) do obj
+        lengths = map(obj, ao.optics) do obj, opt
+            Accessors._staticlength(getall(obj, opt))
+        end
+        vs = Accessors.to_nested_shape(vals, Val(lengths), Val(2))
+        lengths = map(obj, ao.optics, vs) do obj, opt, vss
+            setall(obj, opt, vss)
+        end
+    end
+end
+
 # without @generated: doesn't infer when nested
 # function modify(f, obj::Union{Tuple,NamedTuple}, ao::AlongsideOptic{<:Tuple})
 #     @modify(Tuple(obj)) do tup

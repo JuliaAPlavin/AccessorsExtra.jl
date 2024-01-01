@@ -58,6 +58,7 @@ end
 struct EmptyOptic end
 OpticStyle(::Type{<:EmptyOptic}) = ModifyBased()
 getall(obj, ::EmptyOptic) = ()
+setall(obj, ::EmptyOptic, vals) = (@assert isempty(vals); obj)
 modify(f, obj, ::EmptyOptic) = obj
 Base.show(io::IO, o::EmptyOptic) = print(io, "∅")
 Base.show(io::IO, ::MIME"text/plain", o::EmptyOptic) = show(io, optic)

@@ -312,12 +312,15 @@ end
     @test getall(m, or) == (1, 1, 3)
     @test modify(x->x+10, m, or) == (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
     @test @inferred(getall(m, o)) == getall(m, or)
+    @test setall(m, o, (10, 20, 30)) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
+    @test_broken @inferred(setall(m, o, (10, 20, 30))) == (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
 
     m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
     o = unrecurcize(or, typeof(m))
     @test getall(m, or) == [1, 1, 3]
     @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @test setall(m, o, [10, 20, 30]) == (a=10, bs=[(c=20, d="2"), (c=30, d="xxx")])
     @test @inferred(getall(m, o)) == getall(m, or)
     @test @inferred(modify(x->x+10, m, o)) == modify(x->x+10, m, or)
 
