@@ -103,7 +103,7 @@ set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable
 
 
 oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
-oget(obj, o, default) = hasoptic(obj, o) ? o(obj) : default
+oget(obj, o, default=nothing) = hasoptic(obj, o) ? o(obj) : default
 
 
 set(obj, fa::FixArgs{typeof(get), <:Tuple{Placeholder,Any,Any}, <:NamedTuple{()}}, val) =
@@ -135,7 +135,7 @@ hasoptic(obj, o) = !isnothing(obj)
 
 
 # convenience macros
-macro oget(ref, default)
+macro oget(ref, default=nothing)
     obj, optic = parse_obj_optic(ref)
     return :($oget($obj, $optic, $default))
 end

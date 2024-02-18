@@ -259,6 +259,8 @@ end
     o = @o _.a[2]
     @test oget((a=[1, 2, 3],), o, 123) == 2
     @test oget((;), o, 123) == 123
+    @test oget((a=[1, 2, 3],), o) == 2
+    @test oget((;), o) == nothing
     @test oget(Returns(123), (a=[1, 2, 3],), o) == 2
     @test oget(Returns(123), (;), o) == 123
 
@@ -293,6 +295,8 @@ end
     x = (a=[1, 2],)
     @test (@oget x.a[2] 123) === 2
     @test (@oget x.a[3] 123) === 123
+    @test (@oget x.a[2]) === 2
+    @test (@oget x.a[3]) === nothing
     @test (@oget f(x.a[2]) 123) === 4
 
     @test osomething(@o(_.a)) === @osomething _.a
