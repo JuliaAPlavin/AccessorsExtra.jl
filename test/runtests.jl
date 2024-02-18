@@ -345,7 +345,6 @@ end
 
 @testitem "base optics" begin
     using StaticArrays
-    using LinearAlgebra: diag
 
     x = [1, 2, 3]
     @test (@set (2 in $x) = false) == [1, 3]
@@ -354,9 +353,6 @@ end
     Accessors.test_getset_laws(@o(5 in _), [1,2,3], false, true)
     Accessors.test_getset_laws(@o(2 in _), Set([1,2,3]), false, true)
     Accessors.test_getset_laws(@o(5 in _), Set([1,2,3]), false, true)
-
-    Accessors.test_getset_laws(diag, [1 2; 3 4], [1., 2.5], [0, 1])
-    Accessors.test_getset_laws(diag, [1 2 3; 4 5 6], [1., 2.5], [0, 1])
 end
 
 @testitem "on get/set" begin

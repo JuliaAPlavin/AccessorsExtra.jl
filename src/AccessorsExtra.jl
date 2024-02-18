@@ -10,8 +10,7 @@ using InverseFunctions
 using Accessors: MacroTools
 
 export
-    @o,
-    ∗, ∗ₚ, PartsOf,
+    PartsOf,
     ⩓, ⩔,
     concat, ++, @optics, @optic₊, ConcatOptics,
     @replace, @push, @pushfirst, @pop, @popfirst,
@@ -23,9 +22,6 @@ export
     modifying, onget, onset, ongetset,
     FlexIx,
     get_steps, logged
-
-
-const var"@o" = var"@optic"
 
 include("overrides.jl")
 include("concatoptic.jl")
@@ -80,24 +76,6 @@ function set(obj, f::Base.Fix1{typeof(getindex)}, val)
     return ix
 end
 
-# shortcuts
-const ∗ = Elements()
-const ∗ₚ = Properties()
-# some piracy:
-Accessors.IndexLens(::Tuple{Elements}) = Elements()
-Accessors.IndexLens(::Tuple{Properties}) = Properties()
-Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
-Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
-Base.show(io::IO, ::Elements) = print(io, "∗")
-Base.show(io::IO, ::Properties) = print(io, "∗ₚ")
-Base.show(io::IO, ::MIME"text/plain", optic::Union{Elements,Properties}) = show(io, optic)
-
-# like in Accessors, but for Elements and Properties
-Base.show(io::IO, optic::ComposedFunction{<:Any, <:Union{Elements,Properties}}) = Accessors.show_optic(io, optic)
-# resolve method ambiguity with Base:
-Base.show(io::IO, optic::ComposedFunction{typeof(!), <:Union{Elements,Properties}}) = Accessors.show_optic(io, optic)
-
-
 Accessors._shortstring(prev, o::Base.Splat) = "$(o.f)($prev...)"
 
 
@@ -151,12 +129,5 @@ ongetset(f) = onget(f) ∘ onset(f)
 
 # should probably try to upstream:
 set(obj, o::Base.Fix1{typeof(in)}, val::Bool) = val ? union(obj, (o.x,)) : setdiff(obj, (o.x,))
-
-# some piracy - should upstream:
-getall(obj::AbstractDict, ::Elements) = collect(obj)
-getall(obj::AbstractSet, ::Elements) = collect(obj)
-modify(f, obj::Dict, ::Elements) = Dict(f(p)::Pair for p in obj)
-
-Base.:(!)(f::Union{PropertyLens,IndexLens,DynamicIndexLens}) = (!) ∘ f
 
 end
