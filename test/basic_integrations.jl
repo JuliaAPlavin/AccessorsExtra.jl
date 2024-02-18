@@ -36,6 +36,14 @@ end
     s = StructArray(([1, 2, 3],))
     @test setproperties(s, (10:12,))::StructArray == StructArray((10:12,))
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
+
+    s = StructArray(([1, 2, 3], [4, 5, 6]))
+    @test (@set propertynames(s) = (:a, :b)) === StructArray(a=s.:1, b=s.:2)
+    @test (@set propertynames(s) = (1, 2)) === s
+    s = StructArray(a=[1, 2, 3], b=[4, 5, 6])
+    @test (@set propertynames(s) = (:a, :b)) === s
+    @test (@set propertynames(s) = (:c, :d)) === StructArray(c=s.a, d=s.b)
+    @test (@set propertynames(s) = (1, 2)) === StructArray((s.a, s.b))
 end
 
 @testitem "URIs" begin
