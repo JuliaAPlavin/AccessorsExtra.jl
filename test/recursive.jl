@@ -94,6 +94,7 @@ end
 
     @test modify(+, (a=1, b="", c=2+3im), RecursiveOfType(Number), (a=10, b=20, c=30+40im)) === (a=11, b="", c=32+43im)
     @test modify(+, (a=1, b="", c=2+3im), RecursiveOfType(Number, order=:pre), (a=10, b=20, c=30+40im)) === (a=11, b="", c=62+83im)
+    @test modify(+, (a=1, b="", c=2+3im), real ∘ RecursiveOfType(Number), (a=10, b=20, c=30+40im)) === (a=11, b="", c=32+3im)
 
     end
 end
