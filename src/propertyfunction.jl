@@ -8,6 +8,12 @@ Base.show(io::IO, ::MIME"text/plain", pf::PropertyFunction) = show(io, pf)
 
 (pf::PropertyFunction{props})(obj) where {props} = pf.func(obj)
 
+function hasoptic(obj, pf::PropertyFunction)
+    isnothing(obj) && return false
+    optics = flat_concatoptic(propspec(pf), RecursiveOfType(Placeholder))
+    return all(!isnothing, getall(obj, optics))
+end
+
 Base.:(!)(pf::PropertyFunction) = PropertyFunction(pf.props_nt, !pf.func)
 
 const PROPFUNCTYPES_ONLYEXTRA = Union{

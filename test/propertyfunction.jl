@@ -52,6 +52,17 @@
     @test o((a=10, b=100)) == 111
 end
 
+@testitem "maybe" begin
+    o = @o _.a + _.b.c
+    @test oget(nothing, o, nothing) === nothing
+    @test oget((a=2, b=(c=3,)), o, nothing) == 5
+    @test oget((a=nothing, b=(c=3,)), o, nothing) === nothing
+    @test oget((a=2, b=(c=nothing,)), o, nothing) === nothing
+
+    o = @o (_.a, _.b)
+    @test oget((a=1, b=(c=nothing,)), o, nothing) === (1, (c=nothing,))
+end
+
 @testitem "structarrays" begin
     using StructArrays
     using FlexiMaps
