@@ -44,6 +44,12 @@ include("bystep.jl")
 include("testing.jl")
 
 
+barebones_string(optic) = @p let
+    sprint(show, optic; context=:compact => true)
+    replace(__, "_." => "", "_[" => "[")
+end
+
+
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view), <:Integer}, val::AbstractArray{<:Any, 0}) = setindex!(obj, only(val), lens.x)
 

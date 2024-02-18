@@ -48,6 +48,8 @@ end
 end
 
 @testitem "show" begin
+    using AccessorsExtra: flat_concatoptic
+
     # XXX: some tests just test Accessors
     @test sprint(show, @o(_.a[∗].b[∗ₚ].c[2])) == "(@optic _.a[∗].b[∗ₚ].c[2])"
     @test sprint(show, @o(_[∗].b)) == "(@optic _[∗].b)"
@@ -68,3 +70,15 @@ end
     end == ("_.a", "exp(_.b[1])", "exp(_.b[2])")
 end
 
+@testitem "barebones string" begin
+    using AccessorsExtra: barebones_string
+
+    @test barebones_string(@o(_.a[∗].b[∗ₚ].c[2])) == "a[∗].b[∗ₚ].c[2]"
+    @test barebones_string(@o(_[∗].b)) == "[∗].b"
+    @test barebones_string(@o(_[∗ₚ])) == "[∗ₚ]"
+    @test_broken barebones_string(@o(atan(_...))) == "atan(_...)"
+    @test barebones_string(@o(atan(_.a...))) == "atan(a...)"
+    @test barebones_string(@o(tuple(_, 1, 2))) == "tuple(_, 1, 2)"
+    @test barebones_string(@o(sort(_, by=abs))) == "sort(_, by=abs)"
+    @test barebones_string(@o(sort(_, 1, by=abs))) == "sort(_, 1, by=abs)"
+end
