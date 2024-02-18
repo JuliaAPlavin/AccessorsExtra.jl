@@ -58,7 +58,13 @@ default_empty_obj(f::ComposedFunction) = default_empty_obj(f.inner)
 _propname(::PropertyLens{P}) where {P} = P
 construct(::Type{T}, arg1::Pair{<:PropertyLens}, args::Vararg{Pair{<:PropertyLens}}) where {T} = _construct(T, arg1, args...)
 function _construct(::Type{T}, args::Vararg{Pair{<:PropertyLens}})::T where {T}
-    @assert fieldnames(T) == map(_propname ∘ first, args)
+    if fieldnames(T) != map(_propname ∘ first, args)
+        expected = fieldnames(T)
+        received = map(_propname ∘ first, args)
+        issetequal(expected, received) ?
+            error("Properties have to be specified in the same order. Expected for $T: $(join(expected, ", ")); received: $(join(received, ", ")).") :
+            error("Property names don't match. Expected for $T: $(join(expected, ", ")); received: $(join(received, ", ")).")
+    end
     constructorof(T)(map(last, args)...)
 end
 

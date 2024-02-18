@@ -4,7 +4,7 @@
 
     AccessorsExtra.@allinferred construct begin
         @test construct(Complex, @o(_.re) => 1, @o(_.im) => 2)::Complex{Int} === 1 + 2im
-        @test_broken construct(Complex, @o(_.im) => 1, @o(_.re) => 2)::Complex{Int} === 1 + 2im
+        @test_throws "same order" construct(Complex, @o(_.im) => 1, @o(_.re) => 2)
         @test construct(ComplexF32, @o(_.re) => 1, @o(_.im) => 2)::ComplexF32 === 1f0 + 2f0im
         @test_throws InexactError construct(Complex{Int}, abs => 1., angle => π/2)
 
