@@ -131,6 +131,17 @@ end
     @test set(m, o, (x=[5, 6], y=7)) == (a=(b=5, c=7), c=6)
 end
 
+@testitem "concat container on structarrays" begin
+    using StructArrays
+    using FlexiMaps
+
+    A = StructArray(a=StructArray(b=[1, 2]), c=[3, 4])
+    @test mapview((@optic₊ (x=_.a.b, y=_.c)), A) === StructArray(x=A.a.b, y=A.c)
+    @test A.a.b !== map((@optic₊ (x=_.a.b, y=_.c)), A).x == A.a.b
+    @test mapview((@optic₊ (_.a.b, _.c)), A) === StructArray((A.a.b, A.c))
+    @test A.a.b !== map((@optic₊ (_.a.b, _.c)), A).:1 == A.a.b
+end
+
 @testitem "flatten to concatoptic" begin
     using AccessorsExtra: tree_concatoptic, flat_concatoptic
 

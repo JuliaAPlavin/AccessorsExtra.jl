@@ -36,6 +36,7 @@ StaticArraysExt = "StaticArrays"
 StructArraysExt = "StructArrays"
 TestExt = "Test"
 URIsExt = "URIs"
+FlexiMapsStructArraysExt = ["FlexiMaps", "StructArrays"]
 
 [compat]
 Accessors = "0.1.34"
