@@ -59,7 +59,7 @@ function setall(obj, co::ConcatOptics{<:Tuple}, vals)
     lengths = map(co.optics) do o
         Accessors._staticlength(getall(obj, o))
     end
-    vs = Accessors.to_nested_shape(vals, Val(lengths), Val(2))
+    vs = Accessors.to_nested_shape(vals, lengths, Val(2))
     foldl(map(tuple, co.optics, vs); init=obj) do obj, (o, vss)
         setall(obj, o, vss)
     end
@@ -147,6 +147,7 @@ Accessors._staticlength(::NamedTuple{KS}) where {KS} = Val(length(KS))
 Accessors._concat(a::Tuple, b::NamedTuple) = (a..., b...)
 Accessors._concat(a::NamedTuple, b::Tuple) = (a..., b...)
 Accessors._concat(a::NamedTuple, b::NamedTuple) = (a..., b...)
+Accessors.splitelems(nt::NamedTuple, N) = Accessors.splitelems(Tuple(nt), N)
 
 
 # works? but not sure if it's useful ie better than just using ++
