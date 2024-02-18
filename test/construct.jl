@@ -6,10 +6,12 @@
         @test construct(Complex, @o(_.re) => 1, @o(_.im) => 2)::Complex{Int} === 1 + 2im
         @test_throws "same order" construct(Complex, @o(_.im) => 1, @o(_.re) => 2)
         @test construct(ComplexF32, @o(_.re) => 1, @o(_.im) => 2)::ComplexF32 === 1f0 + 2f0im
+        @test construct(Complex, re=1, im=2) === 1 + 2im
         @test_throws InexactError construct(Complex{Int}, abs => 1., angle => π/2)
 
         @test construct(Tuple, only => 1) === (1,)
         @test construct(Tuple{Float64}, only => 1) === (1.0,)
+        @test construct(Tuple{}) === ()
         @test_throws Exception construct(Tuple{String}, only => 1)
         @test_throws Exception construct(Tuple{Int, Int}, only => 1)
 
@@ -22,6 +24,7 @@
         @test_throws Exception construct(Set{String}, only => 1,)
 
         @test construct(NamedTuple, @o(_.a) => 1, @o(_.b) => "") === (a=1, b="")
+        @test construct(NamedTuple) === (;)
     end
 end
 
@@ -29,6 +32,8 @@ end
     AccessorsExtra.@allinferred construct begin
         @test construct(Any, (@o _.a) => 1, (@o _.b) => "") === (a=1, b="")
         @test construct((@o _.a) => 1, (@o _.b) => "") === (a=1, b="")
+        @test construct(Any, a=1, b="") === (a=1, b="")
+        @test construct(a=1, b="") === (a=1, b="")
         # @test construct((@o _[static(1)]) => 1, (@o _[static(2)]) => "") === (1, "")
         # @test construct((@o _[static(2)]) => 1, (@o _[static(1)]) => "") === (1, "")
 

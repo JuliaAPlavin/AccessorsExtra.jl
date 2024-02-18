@@ -58,6 +58,7 @@ default_empty_obj(f::ComposedFunction) = default_empty_obj(f.inner)
 _propname(::PropertyLens{P}) where {P} = P
 construct(::Type{T}, arg1::Pair{<:PropertyLens}, args::Vararg{Pair{<:PropertyLens}}) where {T} = _construct(T, arg1, args...)
 function _construct(::Type{T}, args::Vararg{Pair{<:PropertyLens}})::T where {T}
+    # XXX: mixup of PropertyLens and fieldnames, constructorof
     if fieldnames(T) != map(_propname ∘ first, args)
         expected = fieldnames(T)
         received = map(_propname ∘ first, args)
@@ -68,6 +69,12 @@ function _construct(::Type{T}, args::Vararg{Pair{<:PropertyLens}})::T where {T}
     constructorof(T)(map(last, args)...)
 end
 
+construct(;kwargs...) = _construct(Any, values(kwargs))
+construct(::Type{T}; kwargs...) where {T} = _construct(T, values(kwargs))
+_construct(::Type{T}, kwargs::NamedTuple{KS}) where {T,KS} =
+    construct(T, map(KS, values(kwargs)) do k, v
+        PropertyLens(k) => v
+    end...)
 
 construct(::Type{Any}, args::Vararg{Pair}) = @p let
     args
