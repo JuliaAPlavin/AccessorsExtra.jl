@@ -34,9 +34,6 @@ end
     @test_throws ArgumentError setproperties(s, b=10:12)
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(a=[2, 3, 4])
 
-    @test (@set Tables.columns(s) = (10:12,)) == StructArray((10:12,))
-    @test (@set Tables.columns(s) = (b=10:12,)) == StructArray(b=10:12)
-
     s = StructArray(([1, 2, 3],))
     @test setproperties(s, (10:12,))::StructArray == StructArray((10:12,))
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
@@ -48,6 +45,43 @@ end
     @test (@set propertynames(s) = (:a, :b)) === s
     @test (@set propertynames(s) = (:c, :d)) === StructArray(c=s.a, d=s.b)
     @test (@set propertynames(s) = (1, 2)) === StructArray((s.a, s.b))
+end
+
+@testitem "Tables" begin
+    using Tables
+    using StructArrays
+    using TypedTables
+    using AccessorsExtra.Accessors: test_getset_laws
+
+    cmp(a, b) = rowtable(a) == rowtable(b)
+    cmp(a::T, b::T) where {T} = a == b
+
+    tblbase = (a=[1, 2], b=["3", "4"])
+
+    # only explicitly supported table types
+    @testset for tblfunc in [rowtable, columntable, StructArray]
+        tbl = tblfunc(tblbase)
+        @test set(tbl, Tables.columns, tblbase)::typeof(tbl) == tbl
+        test_getset_laws(Tables.columns, tbl, (c=[1.0], d=["2"]), (a=[1], b=[2]); cmp)
+        test_getset_laws((@o Tables.columns(_).a), tbl, [1.0, 2.0], [:x, :y]; cmp)
+        # test_insertdelete_laws((@o Tables.columns(_).c), tbl, [1.0, 2.0])
+    end
+
+    # table types with materializer() returning the same type
+    @testset for tblfunc in [rowtable, columntable, Table]
+        tbl = tblfunc(tblbase)
+        @test set(tbl, columntable, tblbase)::typeof(tbl) == tbl
+        @test set(tbl, rowtable, rowtable(tblbase))::typeof(tbl) == tbl
+    end
+
+    # all table types
+    @testset for tblfunc in [rowtable, columntable, Tables.dictrowtable, Tables.dictcolumntable, StructArray, Table]
+        tbl = tblfunc(tblbase)
+        test_getset_laws(columntable, tbl, (c=[1.0], d=["2"]), (a=[1], b=[2]); cmp)
+        test_getset_laws((@o columntable(_).a), tbl, [1.0], [2]; cmp)
+        test_getset_laws((@o rowtable(_)[1]), tbl, (a=3, b="x"), (a=2, b="3"); cmp)
+        # test_insertdelete_laws((@o columntable(_).c), tbl, [1.0, 2.0])
+    end
 end
 
 @testitem "URIs" begin
