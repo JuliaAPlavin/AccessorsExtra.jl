@@ -57,6 +57,10 @@ end
     # @test_broken modify(+, ArrayDictionary([2, 3], [10, 20]), keyed(∗), 1:5)::ArrayDictionary == Dictionary([2, 3], [12, 23])
     @test modify(+, unioncollection(Dictionary([2, 3], [10, 20])), ∗, 1:5)::UnionDictionary == Dictionary([2, 3], [11, 22])
     # @test modify(+, unioncollection(Dictionary([2, 3], [10, 20])), keyed(∗), 1:5)::UnionDictionary == Dictionary([2, 3], [12, 23])
+
+
+    @test modify(+, (a=(1, 2), b=3), (@o _.a[∗]), (b=4, a=(5, 6))) === (a=(6, 8), b=3)
+    @test modify(+, (a=(1, 2), b=3), (@optics _.a[∗] _.b), (b=4, a=(5, 6))) === (a=(6, 8), b=7)
     end
 end
 

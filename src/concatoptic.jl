@@ -44,11 +44,10 @@ _foldl(f, xs::NamedTuple; init) = _foldl(f, values(xs); init)
 _foldl(f, xs::Tuple{}; init) = init
 _foldl(f, xs::Tuple; init) = _foldl(f, Base.tail(xs); init=f(init, first(xs)))
 
-function modify(f, obj, co::ConcatOptics)
+modify(f, obj, co::ConcatOptics, objs...) =
     _foldl(co.optics; init=obj) do obj, o
-        modify(f, obj, o)
+        modify(f, obj, o, objs...)
     end
-end
 
 delete(obj, os::ConcatOptics) = _foldl(delete, os.optics; init=obj)
 insert(obj, os::ConcatOptics, val) = _foldl(os.optics; init=obj) do obj, o
