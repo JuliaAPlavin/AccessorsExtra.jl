@@ -63,6 +63,17 @@ end
     @test oget((a=1, b=(c=nothing,)), o, nothing) === (1, (c=nothing,))
 end
 
+@testitem "no ambiguities" begin
+    # @test map((@o isodd(_.a)), ((a=1,), (a=2,), (a=3,)))  # difficult to avoid ambiguities for tuples...
+    @test map((@o isodd(_.a)), [(a=1,), (a=2,), (a=3,)]) == [true, false, true]
+
+    @test filter((@o isodd(_.a)), ((a=1,), (a=2,), (a=3,))) == ((a=1,), (a=3,))
+    @test filter((@o isodd(_.a)), [(a=1,), (a=2,), (a=3,)]) == [(a=1,), (a=3,)]
+
+    @test findall((@o isodd(_.a)), ((a=1,), (a=2,), (a=3,))) == [1, 3]
+    @test findall((@o isodd(_.a)), [(a=1,), (a=2,), (a=3,)]) == [1, 3]
+end
+
 @testitem "structarrays" begin
     using StructArrays
     using FlexiMaps

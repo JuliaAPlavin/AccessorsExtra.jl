@@ -28,13 +28,14 @@ const PROPFUNCTYPES = Union{
 }
 
 Base.map(f::PROPFUNCTYPES, x) = map(rawfunc(f), extract_properties_recursive(x, propspec(f)))
-Base.map(f::PROPFUNCTYPES, x::AbstractArray) = map(rawfunc(f), extract_properties_recursive(x, propspec(f)))
+Base.map(f::PROPFUNCTYPES, x::AbstractArray) = map(rawfunc(f), extract_properties_recursive(x, propspec(f)))  # disambiguation
 
 # almost same as in Base, but:
 # - with PROPFUNCTYPES instead of Function restriction
-Base.findall(testf::PROPFUNCTYPES, A::AbstractArray) = findall(map(testf, A))
+Base.findall(f::PROPFUNCTYPES, A::AbstractArray) = findall(map(f, A))
 # - use map() no matter what the IndexStyle is
 Base.filter(f::PROPFUNCTYPES, a::AbstractArray) = a[map(f, a)::AbstractArray{Bool}]
+Base.filter(f::PROPFUNCTYPES, a::Array) = a[map(f, a)::AbstractArray{Bool}]  # disambiguation
 
 # all 2nd arg types for disambiguation
 for m in methods(Base.Sort._sort!)
