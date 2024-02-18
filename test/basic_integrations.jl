@@ -54,8 +54,14 @@ end
     using URIs
 
     uri = URI("https://google.com/user?key=value")
+    @test constructorof(URI)(getfields(uri)...) == uri
     @test (@set uri.host = "github.com") == URI("https://github.com/user?key=value")
     @test (@set uri.path = "/abc/def") == URI("https://google.com/abc/def?key=value")
+    @test (@set uri.query = "abc") == URI("https://google.com/user?abc")
+    @test (@set uri.query = "a=b&c") == URI("https://google.com/user?a=b&c")
+    @test (@insert queryparams(uri)["b"] = "x&y=z") == URI("https://google.com/user?key=value&b=x%26y%3Dz")
+    @test (@insert queryparampairs(uri)[1] = "b" => "x&y=z") == URI("https://google.com/user?b=x%26y%3Dz&key=value")
+
     @test URIs.uristring(@set uri.path = "/abc/def") == "https://google.com/abc/def?key=value"
 end
 
