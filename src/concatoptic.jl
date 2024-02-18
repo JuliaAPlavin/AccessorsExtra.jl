@@ -16,8 +16,13 @@ Specifically, with a concat-optic:
 """
 function concat end
 const ++ = concat
-concat(optics...) = ConcatOptics(_reduce_concat(map(_optics, optics)))
-concat(; optics...) = ConcatOptics(values(optics))
+concat(optics...) = @p let
+    optics
+    map(_optics)
+    _reduce_concat()
+    length(__) == 1 ? only(__) : ConcatOptics(__)
+end
+concat(; optics...) = isempty(optics) ? ConcatOptics(()) : ConcatOptics(values(optics))
 _optics(o) = (o,)
 _optics(o::ConcatOptics) = o.optics
 
@@ -147,6 +152,55 @@ Accessors._concat(a::Tuple, b::NamedTuple) = (a..., b...)
 Accessors._concat(a::NamedTuple, b::Tuple) = (a..., b...)
 Accessors._concat(a::NamedTuple, b::NamedTuple) = (a..., b...)
 Accessors.splitelems(nt::NamedTuple, N) = Accessors.splitelems(Tuple(nt), N)
+
+
+flat_concatoptic(obj, o) = _flatten(tree_concatoptic(obj, o))
+_flatten(o::ConcatOptics) = concat(map(_flatten, o.optics)...)
+_flatten(o::ComposedFunction) =
+    concat(map(Iterators.product(_optics(_flatten(o.outer)), _optics(_flatten(o.inner)))) do (o1, o2)
+        o1 ∘ o2
+    end...)
+_flatten(o) = o
+
+tree_concatoptic(obj, o) = tree_concatoptic(typeof(obj), o)
+function tree_concatoptic(obj::Type, o::ComposedFunction)
+    inner_optic = tree_concatoptic(obj, o.inner)
+    outer_obj_types = Core.Compiler.return_type(getall, Tuple{obj, typeof(o.inner)}) |> _eltypes
+    optics = map(outer_obj_types, _optics(inner_optic)) do OT, oin
+        tree_concatoptic(OT, o.outer) ∘₁ oin
+    end
+    concat(optics...)
+end
+tree_concatoptic(obj::Type, o::ConcatOptics) =
+    concat(map(o.optics) do oin
+        tree_concatoptic(obj, oin)
+    end...)
+function tree_concatoptic(obj::Type, o)
+    getall_eltypes = Core.Compiler.return_type(getall, Tuple{obj, typeof(o)}) |> _eltypes
+    if length(getall_eltypes) == 1
+        o
+    else
+        throw(MethodError(tree_concatoptic, (o, obj)))
+    end
+end
+tree_concatoptic(obj::Type{<:NTuple{N,Any}}, o::Elements) where {N} = ConcatOptics(ntuple(i -> IndexLens((i,)), N))
+tree_concatoptic(obj::Type{<:Integer}, o::Elements) = @o _[]
+tree_concatoptic(obj::Type{<:AbstractArray}, o::Elements) = @o _[∗]
+tree_concatoptic(obj::Type{<:AbstractVector}, o::Elements) = ConcatOptics(ntuple(i -> IndexLens((i,)), _typelength(obj)))
+function tree_concatoptic(obj::Type{T}, o::Properties) where {T}
+    NT = Core.Compiler.return_type(getproperties, Tuple{T})
+    concat(map(PropertyLens, fieldnames(NT))...)
+end
+
+∘₁(a, b) = a ∘ b
+# ∘₁(a::ConcatOptics{<:Tuple{Any}}, b) = only(a.optics) ∘₂ b
+∘₁(a::ConcatOptics{<:Tuple{}}, b) = a
+∘₁(a::typeof(identity), b) = b
+
+# ∘₂(a, b) = a ∘ b
+# ∘₂(a, b::ConcatOptics{<:Tuple{Any}}) = a ∘ only(b.optics)
+# ∘₂(a, b::typeof(identity)) = a
+# ∘₂(a, b::ConcatOptics{<:Tuple{}}) = b
 
 
 # works? but not sure if it's useful ie better than just using ++

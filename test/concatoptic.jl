@@ -48,12 +48,22 @@
     end
     @test setall(obj, o, (:a, :b, :c)) == (a=:a, bs=[(c=:b, d=3), (c=:c, d=5)])
 
-    @test getall((1,2), ++()) === (;)
+    @test getall((1,2), ++()) === ()
     @test setall((1,2), ++(), ()) === (1,2)
     @test setall((1,2), AccessorsExtra.ConcatOptics((;)), (;)) === (1,2)
     @test getall((1,2), ++() ∘ identity) === ()
     @test setall((1,2), ++() ∘ identity, ()) === (1,2)
     @test setall((1,2), AccessorsExtra.ConcatOptics((;)) ∘ identity, (;)) === (1,2)
+end
+
+@testitem "construction edgecases" begin
+    @test concat() === ConcatOptics(())
+    @test concat(@o _.a) === @o _.a
+    @test concat((@o _.a), (@o _.b)) === ConcatOptics(((@o _.a), (@o _.b)))
+    @test concat(concat()) === ConcatOptics(())
+    @test concat(concat(), concat()) === ConcatOptics(())
+    @test concat((@o _.a), concat()) === @o _.a
+    @test concat((@o _.a), concat((@o _.c), (@o _.d)), (@o _.b)) === ConcatOptics(((@o _.a), (@o _.c), (@o _.d), (@o _.b)))
 end
 
 @testitem "concat container" begin
@@ -119,4 +129,31 @@ end
     m = (a=(b=1, c=2), c=3)
     @test o(m) == (x=[1, 3], y=2)
     @test set(m, o, (x=[5, 6], y=7)) == (a=(b=5, c=7), c=6)
+end
+
+@testitem "flatten to concatoptic" begin
+    using AccessorsExtra: tree_concatoptic, flat_concatoptic
+
+    obj = (a=1, b=(2, 3))
+    @testset for O in (obj, typeof(obj))
+        @test tree_concatoptic(O, (@o _[∗ₚ][∗])) === (@o _.a[]) ++ (((@o _[1]) ++ (@o _[2])) ∘ (@o _.b))
+        @test tree_concatoptic(O, (@o _[∗ₚ][∗] + 1)) === (@o _.a[] + 1) ++ (((@o _[1] + 1) ++ (@o _[2] + 1)) ∘ (@o _.b))
+        @test tree_concatoptic(O, (@o _.a)) === @o _.a
+        @test tree_concatoptic(O, (@o _.a + 1)) === @o _.a + 1
+        @test tree_concatoptic(O, (@o _.b[∗] * 2)) === ((@o _[1] * 2) ++ (@o _[2] * 2)) ∘ (@o _.b)
+        @test tree_concatoptic(O, (@optics _.a + 1 _.b[∗] * 2)) === (@o _.a + 1) ++ (((@o _[1] * 2) ++ (@o _[2] * 2)) ∘ (@o _.b))
+        @test tree_concatoptic(O, (@optics _[]) ∘ (@optics _.a)) === (@o _.a[])
+        @test tree_concatoptic(O, ConcatOptics(((@o _[]),)) ∘ (@optics _.a)) === (@o _.a[])
+
+        @test flat_concatoptic(O, (@o _[∗ₚ][∗])) === (@o _.a[]) ++ (@o _.b[1]) ++ (@o _.b[2])
+        @test flat_concatoptic(O, (@o _[∗ₚ][∗] + 1)) === (@o _.a[] + 1) ++ (@o _.b[1] + 1) ++ (@o _.b[2] + 1)
+        @test flat_concatoptic(O, (@o _.a)) === @o _.a
+        @test flat_concatoptic(O, (@o _.a + 1)) === @o _.a + 1
+        @test flat_concatoptic(O, (@o _.b[∗] * 2)) === (@o _.b[1] * 2) ++ (@o _.b[2] * 2)
+        @test flat_concatoptic(O, (@optics _.a + 1 _.b[∗] * 2)) === (@o _.a + 1) ++ (@o _.b[1] * 2) ++ (@o _.b[2] * 2)
+        @test flat_concatoptic(O, (@optics _[]) ∘ (@optics _.a)) === (@o _.a[])
+    end
+
+    @test tree_concatoptic(String, (@o _[∗ₚ])) === concat()
+    @test flat_concatoptic(String, (@o _[∗ₚ])) === concat()
 end

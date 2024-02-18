@@ -188,43 +188,12 @@ _typelength(::Type{T}) where {T<:AbstractVector} = fieldcount(only(fieldtypes(T)
     end
 end
 
-
-ConcatOptics(obj, or::RecursiveOfType) = ConcatOptics(typeof(obj), or)
-
-ConcatOptics(::Type{T}, or::RecursiveOfType{<:Any,<:Any,Val{nothing}}) where {T} =
+tree_concatoptic(::Type{T}, o::Children) where {T} = tree_concatoptic(T, _chooseoptic_bytype(T, o))
+tree_concatoptic(::Type{T}, or::RecursiveOfType{<:Any,<:Any,Val{nothing}}) where {T} = 
     if T <: or.outtypes
         identity
     elseif T <: or.rectypes
-        TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
-        if _chooseoptic_bytype(T, or.optic) === Properties()
-            NT = Core.Compiler.return_type(getproperties, Tuple{T})
-            opts = map(_propnames(NT), fieldtypes(TS)) do name, ET
-                ConcatOptics(ET, or) ∘ᵢ PropertyLens(name)
-            end |> Tuple
-            concat(opts...)
-        elseif _chooseoptic_bytype(T, or.optic) === Elements()
-            if TS <: Tuple
-                opts = map(ntuple(identity, fieldcount(TS)), fieldtypes(TS)) do name, ET
-                    ConcatOptics(ET, or) ∘ᵢ IndexLens(name)
-                end |> Tuple
-                concat(opts...)
-            elseif T <: AbstractVector
-                ET = eltype(T)
-                ConcatOptics(ET, or) ∘ᵢ Elements()
-            else
-                error("Cannot recurse on $T |> $(or.optic): got $TS")
-            end
-        else
-            TS === Tuple{} || error("Arbitrary non-empty children not supported, got $TS for $T")
-            concat()
-        end
+        tree_concatoptic(T, or ∘ or.optic)
     else
         concat()
     end
-
-∘ᵢ(args...) = ∘(args...)
-∘ᵢ(::typeof(identity), args...) = ∘ᵢ(args...)
-∘ᵢ(co::ConcatOptics, args...) = concat(map(o -> ∘ᵢ(o, args...), co.optics)...)
-
-_propnames(::Type{T}) where {T<:Tuple} = fieldnames(T)
-_propnames(::Type{T}) where {T<:NamedTuple} = fieldnames(T)

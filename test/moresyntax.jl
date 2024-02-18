@@ -62,4 +62,9 @@ end
     @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b)) == "(ᵢ(@optic _.b))ᵢ ∘ (@optic _.a[∗ₚ] |> selfcontext(identity))"
     @test sprint(show, @o(_.a[∗].b[∗ₚ].c[2]); context=:compact => true) == "_.a[∗].b[∗ₚ].c[2]"
     @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b); context=:compact => true) == "(_.b)ᵢ ∘ _.a[∗ₚ] |> selfcontext(identity)"
+
+    @test map(flat_concatoptic((a=1, b=(2, 3)), (@optics _.a exp(_.b[∗]))).optics) do o
+        sprint(show, o; context=:compact => true)
+    end == ("_.a", "exp(_.b[1])", "exp(_.b[2])")
 end
+
