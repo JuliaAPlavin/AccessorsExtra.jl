@@ -143,9 +143,9 @@ end
 macro osomething(args...)
     return :($osomething($(map(args) do arg
         :($Accessors.@optic $arg)
-    end...)))
+    end...))) |> esc
 end
 
 macro maybe(o, default=nothing)
-    return :($maybe($Accessors.@optic $o; default=$default))
+    return :($maybe(($Accessors.@optic $o); default=$default)) |> esc
 end

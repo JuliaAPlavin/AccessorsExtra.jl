@@ -123,6 +123,7 @@ end
 end
 
 @testitem "structarrays - containeroptic" begin
+    # XXX: see structarrays section in concatoptic.jl
     using StructArrays
     using FlexiMaps
     using FlexiGroups

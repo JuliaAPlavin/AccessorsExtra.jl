@@ -283,17 +283,21 @@ end
     # @test_throws Exception modify(x -> nothing, (;), o)
     end
 
+    f = x -> 2*x
     @test (@maybe _.a) === maybe(@o _.a)
     @test (@maybe _.a[∗][2]) === maybe(@o _.a[∗][2])
     @test (@maybe exp(_.a[∗][2])) === maybe(@o exp(_.a[∗][2]))
     @test (@maybe _.a 10) === maybe(@o _.a; default=10)
+    @test (@maybe f(_)) === maybe(f)
 
     x = (a=[1, 2],)
     @test (@oget x.a[2] 123) === 2
     @test (@oget x.a[3] 123) === 123
+    @test (@oget f(x.a[2]) 123) === 4
 
     @test osomething(@o(_.a)) === @osomething _.a
     @test osomething(@o(_.a), @o(_.b)) === @osomething _.a _.b
+    @test osomething(@o(_.a), @o(f(_.b))) === @osomething _.a f(_.b)
 end
 
 @testitem "PartsOf" begin
