@@ -30,6 +30,16 @@
     end
 end
 
+@testitem "nontraversable types" begin
+    obj = (UnionAll,1,Union{Int,Float64},Vector{T} where {T},Symbol)
+    @test getall(obj, RecursiveOfType(Number)) === (1,)
+    @test getall(obj, RecursiveOfType(Any, order=:pre)) === (obj, obj...)
+    @test modify(x->x+1, obj, RecursiveOfType(Number)) === (UnionAll,2,Union{Int,Float64},Vector{T} where {T},Symbol)
+    @test modify(identity, obj, RecursiveOfType(Any, order=:pre)) === obj
+    @test setall(obj, RecursiveOfType(Number), (2,)) === (UnionAll,2,Union{Int,Float64},Vector{T} where {T},Symbol)
+    @test ConcatOptics(obj, RecursiveOfType(Number)) === @optics _[2]
+end
+
 @testitem "walk types" begin
     AccessorsExtra.@allinferred set modify getall setall begin
 

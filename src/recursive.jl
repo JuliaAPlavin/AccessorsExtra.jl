@@ -1,13 +1,14 @@
 struct Children end
 @inline OpticStyle(::Type{<:Children}) = ModifyBased()
-@inline _chooseoptic(obj, c::Children) = _chooseoptic(typeof(obj), c)
-@inline _chooseoptic(::Type, ::Children) = Properties()
-@inline _chooseoptic(::Type{<:Tuple}, ::Children) = Elements()
-@inline _chooseoptic(::Type{<:AbstractArray}, ::Children) = Elements()
-@inline _chooseoptic(::Type{<:AbstractDict}, ::Children) = Elements()
-@inline getall(obj, c::Children) = getall(obj, _chooseoptic(obj, c))
-@inline modify(f, obj, c::Children, objs...) = modify(f, obj, _chooseoptic(obj, c), objs...)
-@inline setall(obj, c::Children, vals) = setall(obj, _chooseoptic(obj, c), vals)
+@inline _chooseoptic_byval(obj, c::Children) = _chooseoptic_bytype(typeof(obj), c)
+@inline _chooseoptic_bytype(::Type, ::Children) = Properties()
+@inline _chooseoptic_bytype(::Type{<:Type}, ::Children) = ConcatOptics(())
+@inline _chooseoptic_bytype(::Type{<:Tuple}, ::Children) = Elements()
+@inline _chooseoptic_bytype(::Type{<:AbstractArray}, ::Children) = Elements()
+@inline _chooseoptic_bytype(::Type{<:AbstractDict}, ::Children) = Elements()
+@inline getall(obj, c::Children) = getall(obj, _chooseoptic_byval(obj, c))
+@inline modify(f, obj, c::Children, objs...) = modify(f, obj, _chooseoptic_byval(obj, c), objs...)
+@inline setall(obj, c::Children, vals) = setall(obj, _chooseoptic_byval(obj, c), vals)
 
 
 """    RecursiveOfType(out::Type, [optic=Children()]; [recurse::Type=Any])
@@ -195,13 +196,13 @@ ConcatOptics(::Type{T}, or::RecursiveOfType{<:Any,<:Any,Val{nothing}}) where {T}
         identity
     elseif T <: or.rectypes
         TS = Core.Compiler.return_type(getall, Tuple{T, typeof(or.optic)})
-        if _chooseoptic(T, or.optic) === Properties()
+        if _chooseoptic_bytype(T, or.optic) === Properties()
             NT = Core.Compiler.return_type(getproperties, Tuple{T})
             opts = map(_propnames(NT), fieldtypes(TS)) do name, ET
                 ConcatOptics(ET, or) ∘ᵢ PropertyLens(name)
             end |> Tuple
             concat(opts...)
-        elseif _chooseoptic(T, or.optic) === Elements()
+        elseif _chooseoptic_bytype(T, or.optic) === Elements()
             if TS <: Tuple
                 opts = map(ntuple(identity, fieldcount(TS)), fieldtypes(TS)) do name, ET
                     ConcatOptics(ET, or) ∘ᵢ IndexLens(name)
@@ -210,7 +211,12 @@ ConcatOptics(::Type{T}, or::RecursiveOfType{<:Any,<:Any,Val{nothing}}) where {T}
             elseif T <: AbstractVector
                 ET = eltype(T)
                 ConcatOptics(ET, or) ∘ᵢ Elements()
+            else
+                error("Cannot recurse on $T |> $(or.optic): got $TS")
             end
+        else
+            TS === Tuple{} || error("Arbitrary non-empty children not supported, got $TS for $T")
+            concat()
         end
     else
         concat()
