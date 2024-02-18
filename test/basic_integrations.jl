@@ -130,3 +130,15 @@ end
     @test c === @delete alpha(c)
     @test c === @delete alpha(ca)
 end
+
+@testitem "Skipper" begin
+    # test that no method ambiguity
+    using Skipper
+    using FlexiMaps
+    using StructArrays
+
+    @test map(x->x, skip(isodd, 1:10)) == [2, 4, 6, 8, 10]
+    @test collect(mapview(x->x, skip(isodd, 1:10))) == [2, 4, 6, 8, 10]
+    @test map((@o _.x), skip((@o isodd(_.x)), StructArray(x=1:10))) == [2, 4, 6, 8, 10]
+    @test collect(mapview((@o _.x), skip((@o isodd(_.x)), StructArray(x=1:10)))) == [2, 4, 6, 8, 10]
+end
