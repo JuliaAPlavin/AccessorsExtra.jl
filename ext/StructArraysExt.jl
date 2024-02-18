@@ -1,6 +1,7 @@
 module StructArraysExt
 
 using StructArrays
+using StructArrays: Tables
 import AccessorsExtra: extract_properties_recursive
 using AccessorsExtra.Accessors
 using AccessorsExtra.ConstructionBase
@@ -14,6 +15,8 @@ extract_properties_recursive(x::StructArray, props_nt::NamedTuple) =
 # should work equally well, but hits inference recursion limit:
 # extract_properties_recursive(x::StructArray, props_nt::NamedTuple) = @modify(cs -> extract_properties_recursive(cs, props_nt), StructArrays.components(x))
 
+# XXX: piracy, should upstream
+Accessors.set(sa::StructArray, ::typeof(Tables.columns), cols) = set(sa, StructArrays.components, cols)
 
 # XXX: piracy, should upstream
 Accessors.set(x::StructArray, ::typeof(propertynames), names) =
