@@ -79,45 +79,24 @@ OpticStyle(::Type{<:RecursiveOfType}) = ModifyBased()
 #     end
 # end
 
-# see https://github.com/FluxML/Functors.jl/pull/61 for the approach and its discussion
-function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}) where {OT,RT}
-    recurse(o) = _walk_modify(var"#self#", f, o, or)
-    _walk_modify(recurse, f, obj, or)
+# see https://github.com/FluxML/Functors.jl/pull/61 for the var"#self#" approach and its discussion
+function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}, objs...) where {OT,RT}
+    recurse(o, bs...) = _walk_modify(var"#self#", f, o, or, bs...)
+    _walk_modify(recurse, f, obj, or, objs...)
 end
-_walk_modify(recurse, f, obj, or::RecursiveOfType{Type{OT},Type{RT},ORD}) where {OT,RT,ORD} =
+_walk_modify(recurse, f, obj, or::RecursiveOfType{Type{OT},Type{RT},ORD}, objs...) where {OT,RT,ORD} =
     if obj isa OT
         if ORD === Val{nothing} || !(obj isa RT)
-            f(obj)
+            f(obj, objs...)
         elseif ORD === Val{:pre}
-            modify(recurse, f(obj), or.optic)
+            modify(recurse, f(obj, objs...), or.optic, objs...)
         elseif ORD === Val{:post}
-            f(modify(recurse, obj, or.optic))
+            f(modify(recurse, obj, or.optic, objs...), objs...)
         else
             error("Unknown order: $ORD")
         end
     elseif obj isa RT
-        modify(recurse, obj, or.optic)
-    else
-        obj
-    end
-
-function modify(f, obj, or::RecursiveOfType{Type{OT},Type{RT}}, objb) where {OT,RT}
-    recurse(o, b) = _walk_modify(var"#self#", f, o, or, b)
-    _walk_modify(recurse, f, obj, or, objb)
-end
-_walk_modify(recurse, f, obj, or::RecursiveOfType{Type{OT},Type{RT},ORD}, objb) where {OT,RT,ORD} =
-    if obj isa OT
-        if ORD === Val{nothing} || !(obj isa RT)
-            f(obj, objb)
-        elseif ORD === Val{:pre}
-            modify(recurse, f(obj, objb), or.optic, objb)
-        elseif ORD === Val{:post}
-            f(modify(recurse, obj, or.optic, objb), objb)
-        else
-            error("Unknown order: $ORD")
-        end
-    elseif obj isa RT
-        modify(recurse, obj, or.optic, objb)
+        modify(recurse, obj, or.optic, objs...)
     else
         obj
     end
