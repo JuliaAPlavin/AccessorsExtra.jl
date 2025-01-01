@@ -1,3 +1,12 @@
+# trivial setters
+set(obj::AbstractArray, ::typeof(values), vals::AbstractArray) = (@assert axes(obj) == axes(vals); vals)
+# XXX: setall should be improved in Accessors, see OffsetArrays tests
+# set(obj::AbstractArray, ::typeof(values), vals) = setall(obj, Elements(), vals)
+set(obj::Tuple, ::typeof(values), vals) = Tuple(vals)
+set(obj::Pair, ::typeof(values), vals) = Pair(vals...)
+set(obj::NamedTuple{KS}, ::typeof(values), vals) where {KS} = NamedTuple{KS}(Tuple(vals))
+set(obj::NamedTuple{KS}, ::typeof(keys), vals::NTuple{<:Any,Symbol}) where {KS} = NamedTuple{vals}(values(obj))
+
 # inspired by https://juliaobjects.github.io/Accessors.jl/stable/examples/custom_optics/ but cleaner? :)
 
 # special wrapper type, can only be modify'ed with Elements()
@@ -6,7 +15,9 @@ struct KVPWrapper{TO,T}
     obj::T
 end
 
-modify(f, obj, o::Union{typeof(keys),typeof(values),typeof(pairs)}) = f(KVPWrapper(o, obj))
+modify(f, obj::AbstractDict, o::Union{typeof(keys),typeof(values)}) = f(KVPWrapper(o, obj))
+modify(f, obj, o::typeof(pairs)) = f(KVPWrapper(o, obj))
+modify(f, obj::AbstractDict, o::typeof(pairs)) = f(obj)
 modify(f, obj::KVPWrapper, ::Elements) = error("modify(f, ::$(typeof(obj.obj)), $(obj.o ⨟ Elements())) not supported")
 
 ### keys
@@ -51,7 +62,6 @@ modify(f, obj::KVPWrapper{typeof(pairs), <:NamedTuple{NS}}, ::Elements) where {N
         @assert first(p) == k
         last(p)
     end |> NamedTuple{NS}
-modify(f, obj::KVPWrapper{typeof(pairs), <:Dict}, ::Elements) = Dict(f(p)::Pair for p in pairs(obj.obj))
 
 
 # see https://github.com/JuliaObjects/ConstructionBase.jl/pull/47

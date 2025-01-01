@@ -26,3 +26,16 @@ macro popfirst(ref)
     obj, optic = parse_obj_optic(ref)
     :($popfirst($obj, $optic))
 end
+
+macro getall(ref)
+    obj, optic = parse_obj_optic(ref)
+    :($getall($obj, $optic))
+end
+
+macro setall(ex)
+    @assert ex.head == :(=)
+    ref, val = ex.args
+    obj, optic = parse_obj_optic(ref)
+    val = esc(val)
+    :($setall($obj, $optic, $val))
+end

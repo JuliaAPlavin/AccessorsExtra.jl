@@ -4,6 +4,8 @@ using AccessorsExtra
 using AccessorsExtra: KVPWrapper, constructorof, IndexLens, Keyed
 import AccessorsExtra: modify, Accessors
 
+modify(f, obj::AbstractDictionary, o::Union{typeof(keys),typeof(values)}) = f(KVPWrapper(o, obj))
+
 modify(f, obj::KVPWrapper{typeof(keys), <:AbstractDictionary}, ::Elements) =
     constructorof(typeof(obj.obj))(map(f, keys(obj.obj)), values(obj.obj))
 

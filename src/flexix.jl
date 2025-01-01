@@ -2,9 +2,16 @@ struct FlexIx{I}
     indices::I
 end
 
-Base.getindex(a, i::FlexIx) = getindex(a, i.indices)
-# disambiguate:
+# shouldn't have any constrains, but this leads to lots of invalidations
+# mostly due to getindex(::Type{Any}, vals...)
+# Base.getindex(a, i::FlexIx) = getindex(a, i.indices)
+# disambiguate if ::Any method, or just support arrays:
 Base.getindex(a::AbstractArray, i::FlexIx) = @invoke getindex(a, i::Any)
+
+# only make sense for sequentially indexed collections:
+Base.getindex(a::Tuple, i::FlexIx) = getindex(a, i.indices)
+Base.getindex(a::AbstractString, i::FlexIx) = getindex(a, i.indices)
+
 
 Base.to_index(i::FlexIx) = i.indices
 

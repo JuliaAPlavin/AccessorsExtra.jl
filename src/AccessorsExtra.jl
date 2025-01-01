@@ -7,29 +7,29 @@ import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBa
 using DataPipes
 @reexport using ConstructionBase
 using InverseFunctions
-using LinearAlgebra: norm
 using Accessors: MacroTools
 
 export
-    @o,
-    ∗, ∗ₚ, PartsOf,
+    PartsOf,
     ⩓, ⩔,
-    concat, ++, @optics, @optic₊,
+    concat, ++, @optics, @optic₊, ConcatOptics,
     @replace, @push, @pushfirst, @pop, @popfirst,
+    @getall, @setall,
     construct, @construct,
     RecursiveOfType,
     keyed, enumerated, selfcontext, stripcontext, hascontext,
-    maybe, osomething, oget, hasoptic,
+    maybe, osomething, oget, hasoptic, @maybe, @oget, @osomething,
     modifying, onget, onset, ongetset,
     FlexIx,
     get_steps, logged
 
-
 include("overrides.jl")
+include("concatoptic.jl")
 include("keyvalues.jl")
 include("flexix.jl")
 include("fixargs.jl")
-include("concatoptic.jl")
+include("propertyfunction.jl")
+include("slicing.jl")
 include("recursive.jl")
 include("context.jl")
 include("modifymany.jl")
@@ -43,7 +43,11 @@ include("construct.jl")
 include("bystep.jl")
 include("testing.jl")
 
-const var"@o" = var"@optic"
+
+barebones_string(optic) = @p let
+    sprint(show, optic; context=:compact => true)
+    replace(__, "_." => "", "_[" => "[")
+end
 
 
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
@@ -51,15 +55,19 @@ Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view), <:Integer}, val:
 
 
 # set getfields(): see https://github.com/JuliaObjects/Accessors.jl/pull/57
-@generated function set(obj::T, o::typeof(getfields), val::NamedTuple{KS}) where {T, KS}
+@generated function set(obj::T, o::typeof(getfields), val::NamedTuple{KS,VS}) where {T, KS, VS}
     @assert fieldnames(T) == KS
-    if all(map((A, B) -> A >: B, fieldtypes(T), fieldtypes(val)))
-        return Expr(:new, T, map(k -> :(val.$k), KS)...)
-    else
-        :(constructorof($T)(val...))
+    # assume that constructorof(T)(val...) gives the correct type
+    # construct this type with specified field values
+    newT = quote
+        newT = Core.Compiler.return_type(constructorof(T), $VS)
+        isconcretetype(newT) ? newT : typeof(constructorof(T)(val...))
     end
+    return Expr(:new, newT, map(k -> :(val.$k), KS)...)
+    # return Expr(:new, :(Core.Compiler.return_type(constructorof(T), Tuple{typeof.(values(val))...})), map(k -> :(val.$k), KS)...)
 end
 set(obj, o::Base.Fix2{typeof(getfield)}, val) = @set getfields(obj)[o.x] = val
+set(obj, o::Base.Fix2{typeof(getfield), Val{F}}, val) where {F} = @set getfields(obj) |> PropertyLens{F}() = val
 
 # inverse getindex
 # XXX: should only be defined for a separate type, something like Bijection
@@ -73,24 +81,6 @@ function set(obj, f::Base.Fix1{typeof(getindex)}, val)
     ix === nothing && throw(ArgumentError("value $val not found in $(f.x)"))
     return ix
 end
-
-# shortcuts
-const ∗ = Elements()
-const ∗ₚ = Properties()
-# some piracy:
-Accessors.IndexLens(::Tuple{Elements}) = Elements()
-Accessors.IndexLens(::Tuple{Properties}) = Properties()
-Accessors._shortstring(prev, o::Elements) = "$prev[∗]"
-Accessors._shortstring(prev, o::Properties) = "$prev[∗ₚ]"
-Base.show(io::IO, ::Elements) = print(io, "∗")
-Base.show(io::IO, ::Properties) = print(io, "∗ₚ")
-Base.show(io::IO, ::MIME"text/plain", optic::Union{Elements,Properties}) = show(io, optic)
-
-# like in Accessors, but for Elements and Properties
-Base.show(io::IO, optic::ComposedFunction{<:Any, <:Union{Elements,Properties}}) = Accessors.show_optic(io, optic)
-# resolve method ambiguity with Base:
-Base.show(io::IO, optic::ComposedFunction{typeof(!), <:Union{Elements,Properties}}) = Accessors.show_optic(io, optic)
-
 
 Accessors._shortstring(prev, o::Base.Splat) = "$(o.f)($prev...)"
 
@@ -145,6 +135,5 @@ ongetset(f) = onget(f) ∘ onset(f)
 
 # should probably try to upstream:
 set(obj, o::Base.Fix1{typeof(in)}, val::Bool) = val ? union(obj, (o.x,)) : setdiff(obj, (o.x,))
-set(obj, ::typeof(splat(atan)), val) = @set Tuple(obj) = norm(obj) .* (sin(val), cos(val))
 
 end

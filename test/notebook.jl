@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.24
+# v0.19.38
 
 using Markdown
 using InteractiveUtils
@@ -19,36 +19,20 @@ md"""
 	Advanced optics/lenses and relevant tools, based on the `Accessors.jl` framework.
 
 The [Accessors.jl](https://github.com/JuliaObjects/Accessors.jl) package defines a unified interface to modify immutable data structures --- so-called optics or lenses. See its docs for details and background. \
-`AccessorsExtra.jl` defines more optics and relevant tools that are too experimental or opinionated to be included into a package as foundational as `Accessors` itself.
+`AccessorsExtra.jl` defines more optics and relevant tools that are considered too experimental or opinionated to be included into a package as foundational as `Accessors` itself.
 
-This notebook showcases the more stable and widely applicable pieces of functionality defined in `AccessorsExtra`. See the source code and tests for more.
+This notebook showcases the stable and widely applicable pieces of functionality defined in `AccessorsExtra`. See the source code and tests for more.
 
 Optics and operations in `AccessorsExtra` attempt to have as little overhead as possible, often zero, with tests checking this.
 
 !!! note
-    Before Julia 1.9, `AccessorsExtra` focused on `Accessors` integrations with third-party packages. With package extensions available, these integrations are put into `Accessors` itself, or into packages that define corresponding types.
+    Before Julia 1.9, `AccessorsExtra` focused on `Accessors` integrations with third-party packages. With package extensions available, these integrations are mostly put into `Accessors` itself, or into packages that define corresponding types.
 """
 
 # ╔═╡ 5ea94011-6019-47aa-9228-1df5af684d77
 md"""
 # Examples
 """
-
-# ╔═╡ f18f2b35-b15c-4c33-8955-dd4a8da45297
-md"""
-## Aliases `∗` and `∗ₚ`
-
-First, the little convenience thing: `∗` (type as `\ast`) and `∗ₚ` are aliases to `Accessors`' `Elements()` and `Properties()`:
-"""
-
-# ╔═╡ fcfa3e1c-e0a2-4b5f-9975-e61e18a01896
-∗
-
-# ╔═╡ 64b806b0-8002-4371-947c-541692daff53
-∗ₚ
-
-# ╔═╡ e41d36fe-faa5-4352-8a60-85333cf10509
-@o(_.a |> Elements() |> _.b) === @o _.a[∗].b
 
 # ╔═╡ 67906fcb-6a41-47df-b64b-aab148d455c8
 md"""
@@ -184,11 +168,18 @@ getall(obj, logged(multiopt))
 md"""
 ## `construct()` an object from optics
 
-This is more of an interface for generalized object construction, to be implemented by type authors.
+This is mostly considerend an interface for generalized object construction, to be implemented by type authors when needed.
+
+`AccessorsExtra` itself defines:
+- the underlying machinery: stuff like `@construct` macro or invertible function preprocessing
+- `construct` implementation for common types like tuples/vectors/svectors/...; see `methods(construct)` for a complete list.
 """
 
 # ╔═╡ c09d4e9c-2d64-4638-9774-0697989b00b0
 construct(Complex, @o(_.re) => 1, @o(_.im) => 2)
+
+# ╔═╡ ab7eb768-3dcc-491d-acd2-04ae572d7938
+construct(Complex, @o(log10(_.re)) => 1, @o(_.im) => 2)
 
 # ╔═╡ 102baa65-088f-4d45-882c-b293d2f0e279
 construct(Vector, only => 1)
@@ -217,9 +208,12 @@ md"""
 ## ... and more!
 
 The following isn't documented, see packages tests for usage examples:
+- `@optic` macro extended
+- `onget`/`onset`/`ongetset` handlers
+- `modifying(optic)`: interface to constrain modification
+- optics with context, eg `keyed(Elements())`
 - `FlexIx` grow/shrink collections
 - `⩓` and `⩔` function operators
-- optics with context, eg `keyed(Elements())`
 - `PartsOf()` all optic values together
 - regular expressions as optics
 - `@o view(_, ix)` modifies the input array
@@ -235,9 +229,6 @@ The following isn't documented, see packages tests for usage examples:
 # ╔═╡ 10fd2a3e-924b-48fc-a126-fe5f33ecedc3
 TableOfContents()
 
-# ╔═╡ edc6c86f-8106-4df1-8b7d-23986da1d22a
-
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -246,18 +237,18 @@ BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
-AccessorsExtra = "~0.1.37"
+AccessorsExtra = "~0.1.44"
 BenchmarkTools = "~1.3.2"
-PlutoUI = "~0.7.50"
+PlutoUI = "~0.7.51"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.0-rc2"
+julia_version = "1.10.1"
 manifest_format = "2.0"
-project_hash = "81ae6a4f1e84c0bb27fe6677c02a3001e719656c"
+project_hash = "bc91f79172d3e32fac41af4ee7c37deb94920931"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -267,15 +258,15 @@ version = "1.1.4"
 
 [[deps.Accessors]]
 deps = ["Compat", "CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "LinearAlgebra", "MacroTools", "Requires", "Test"]
-git-tree-sha1 = "c7dddee3f32ceac12abd9a21cd0c4cb489f230d2"
+git-tree-sha1 = "2b301c2388067d655fe5e4ca6d4aa53b61f895b4"
 uuid = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
-version = "0.1.29"
+version = "0.1.31"
 
     [deps.Accessors.extensions]
-    AxisKeysExt = "AxisKeys"
-    IntervalSetsExt = "IntervalSets"
-    StaticArraysExt = "StaticArrays"
-    StructArraysExt = "StructArrays"
+    AccessorsAxisKeysExt = "AxisKeys"
+    AccessorsIntervalSetsExt = "IntervalSets"
+    AccessorsStaticArraysExt = "StaticArrays"
+    AccessorsStructArraysExt = "StructArrays"
 
     [deps.Accessors.weakdeps]
     AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
@@ -284,20 +275,26 @@ version = "0.1.29"
     StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [[deps.AccessorsExtra]]
-deps = ["Accessors", "ConstructionBase", "DataPipes", "InverseFunctions", "Reexport", "Requires"]
-git-tree-sha1 = "5f8779bedc1a8fe9318a79fb1ac0db8cf909b0a2"
+deps = ["Accessors", "CompositionsBase", "ConstructionBase", "DataPipes", "InverseFunctions", "LinearAlgebra", "Reexport"]
+git-tree-sha1 = "29f0c4b26d44b4e6ee6ac334898b95e53997bd64"
 uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
-version = "0.1.37"
+version = "0.1.44"
 
     [deps.AccessorsExtra.extensions]
     DictionariesExt = "Dictionaries"
-    SciMLExt = "SciMLBase"
+    DistributionsExt = "Distributions"
+    DomainSetsExt = "DomainSets"
+    StaticArraysExt = "StaticArrays"
     StructArraysExt = "StructArrays"
+    TestExt = "Test"
 
     [deps.AccessorsExtra.weakdeps]
     Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
-    SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+    Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+    DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
     StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+    Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -334,22 +331,26 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.2+0"
+version = "1.1.0+0"
 
 [[deps.CompositionsBase]]
-git-tree-sha1 = "455419f7e328a1a2493cabc6428d79e951349769"
+git-tree-sha1 = "802bb88cd69dfd1509f6670416bd4434015693ad"
 uuid = "a33af91c-f02d-484b-be07-31d278c5ca2b"
-version = "0.1.1"
+version = "0.1.2"
+weakdeps = ["InverseFunctions"]
+
+    [deps.CompositionsBase.extensions]
+    CompositionsBaseInverseFunctionsExt = "InverseFunctions"
 
 [[deps.ConstructionBase]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "89a9db8d28102b094992472d333674bd1a83ce2a"
+git-tree-sha1 = "738fec4d684a9a6ee9598a8bfee305b26831f28c"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
-version = "1.5.1"
+version = "1.5.2"
 
     [deps.ConstructionBase.extensions]
-    IntervalSetsExt = "IntervalSets"
-    StaticArraysExt = "StaticArrays"
+    ConstructionBaseIntervalSetsExt = "IntervalSets"
+    ConstructionBaseStaticArraysExt = "StaticArrays"
 
     [deps.ConstructionBase.weakdeps]
     IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
@@ -392,9 +393,9 @@ version = "0.9.4"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
-git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+git-tree-sha1 = "d75853a0bdbfb1ac815478bacd89cd27b550ace6"
 uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
-version = "0.2.2"
+version = "0.2.3"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
@@ -402,9 +403,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[deps.InverseFunctions]]
 deps = ["Test"]
-git-tree-sha1 = "49510dfcb407e572524ba94aeae2fced1f3feb0f"
+git-tree-sha1 = "6667aadd1cdee2c6cd068128b3d226ebc4fb0c67"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
-version = "0.1.8"
+version = "0.1.9"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -415,21 +416,26 @@ version = "0.21.4"
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
 uuid = "b27032c2-a3e7-50c8-80cd-2d36dbcbfd21"
-version = "0.6.3"
+version = "0.6.4"
 
 [[deps.LibCURL_jll]]
 deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll", "Zlib_jll", "nghttp2_jll"]
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "7.84.0+0"
+version = "8.4.0+0"
 
 [[deps.LibGit2]]
-deps = ["Base64", "NetworkOptions", "Printf", "SHA"]
+deps = ["Base64", "LibGit2_jll", "NetworkOptions", "Printf", "SHA"]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"
+
+[[deps.LibGit2_jll]]
+deps = ["Artifacts", "LibSSH2_jll", "Libdl", "MbedTLS_jll"]
+uuid = "e37daf67-58a4-590a-8e99-b0245dd2ffc5"
+version = "1.6.4+0"
 
 [[deps.LibSSH2_jll]]
 deps = ["Artifacts", "Libdl", "MbedTLS_jll"]
 uuid = "29816b5a-b9ab-546f-933c-edad1886dfa8"
-version = "1.10.2+0"
+version = "1.11.0+1"
 
 [[deps.Libdl]]
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
@@ -459,14 +465,14 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.2+0"
+version = "2.28.2+1"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2022.10.11"
+version = "2023.1.10"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
@@ -475,30 +481,36 @@ version = "1.2.0"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.21+4"
+version = "0.3.23+4"
 
 [[deps.Parsers]]
-deps = ["Dates", "SnoopPrecompile"]
-git-tree-sha1 = "478ac6c952fddd4399e71d4779797c538d0ff2bf"
+deps = ["Dates", "PrecompileTools", "UUIDs"]
+git-tree-sha1 = "a5aef8d4a6e8d81f171b2bd4be5265b01384c74c"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.5.8"
+version = "2.5.10"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.9.0"
+version = "1.10.0"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
-git-tree-sha1 = "5bb5129fdd62a2bbbe17c2756932259acf467386"
+git-tree-sha1 = "b478a748be27bd2f2c73a7690da219d0844db305"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.50"
+version = "0.7.51"
+
+[[deps.PrecompileTools]]
+deps = ["Preferences"]
+git-tree-sha1 = "259e206946c293698122f63e2b513a7c99a244e8"
+uuid = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+version = "1.1.1"
 
 [[deps.Preferences]]
 deps = ["TOML"]
-git-tree-sha1 = "47e5f437cc0e7ef2ce8406ce1e7e24d44915f88d"
+git-tree-sha1 = "7eb1686b4f04b82f96ed7a4ea5890a4f0c7a09f1"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.3.0"
+version = "1.4.0"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -513,7 +525,7 @@ deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.Random]]
-deps = ["SHA", "Serialization"]
+deps = ["SHA"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[deps.Reexport]]
@@ -534,28 +546,23 @@ version = "0.7.0"
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
-[[deps.SnoopPrecompile]]
-deps = ["Preferences"]
-git-tree-sha1 = "e760a70afdcd461cf01a575947738d359234665c"
-uuid = "66db9d55-30c0-4569-8b51-7e840670fc0c"
-version = "1.0.3"
-
 [[deps.Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+version = "1.10.0"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.9.0"
+version = "1.10.0"
 
 [[deps.SuiteSparse_jll]]
-deps = ["Artifacts", "Libdl", "Pkg", "libblastrampoline_jll"]
+deps = ["Artifacts", "Libdl", "libblastrampoline_jll"]
 uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "5.10.1+6"
+version = "7.2.1+1"
 
 [[deps.TOML]]
 deps = ["Dates"]
@@ -591,32 +598,28 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
-version = "1.2.13+0"
+version = "1.2.13+1"
 
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.4.0+0"
+version = "5.8.0+1"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850ede-7688-5339-a07c-302acd2aaf8d"
-version = "1.48.0+0"
+version = "1.52.0+1"
 
 [[deps.p7zip_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
-version = "17.4.0+0"
+version = "17.4.0+2"
 """
 
 # ╔═╡ Cell order:
 # ╟─e003c366-a162-4575-97ab-9540c8b1b459
 # ╟─5ea94011-6019-47aa-9228-1df5af684d77
 # ╠═8f657eb5-ff7f-4d0c-a9ff-967f30871b6b
-# ╟─f18f2b35-b15c-4c33-8955-dd4a8da45297
-# ╠═fcfa3e1c-e0a2-4b5f-9975-e61e18a01896
-# ╠═64b806b0-8002-4371-947c-541692daff53
-# ╠═e41d36fe-faa5-4352-8a60-85333cf10509
 # ╟─67906fcb-6a41-47df-b64b-aab148d455c8
 # ╠═91c72a11-a77d-456a-beeb-7e3e690828ae
 # ╠═69fe774a-059d-46db-9a30-9b07679eeef5
@@ -650,6 +653,7 @@ version = "17.4.0+0"
 # ╠═20350429-74ae-475b-baee-2528fd77e4c4
 # ╟─bf9f7247-8aa2-4fc8-974a-65ba71021f96
 # ╠═c09d4e9c-2d64-4638-9774-0697989b00b0
+# ╠═ab7eb768-3dcc-491d-acd2-04ae572d7938
 # ╠═102baa65-088f-4d45-882c-b293d2f0e279
 # ╟─ccdc9876-95f2-4fd2-8ff0-fefe1f0f96a7
 # ╠═5be7b8b2-9568-4d80-96be-fcbd0c68b16a
@@ -661,6 +665,5 @@ version = "17.4.0+0"
 # ╟─a0313d3a-73a5-4a0a-92e0-1f862e95cb70
 # ╟─433ef25f-23fe-4646-8168-0c03a02cca69
 # ╟─10fd2a3e-924b-48fc-a126-fe5f33ecedc3
-# ╠═edc6c86f-8106-4df1-8b7d-23986da1d22a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

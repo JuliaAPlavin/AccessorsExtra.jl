@@ -4,27 +4,70 @@ struct MaybeOptic{O,D}
 end
 Broadcast.broadcastable(o::MaybeOptic) = Ref(o)
 
+"""    maybe(optic; [default=nothing])
+
+Create an optional optic that references a value that may or may not be present in the object.
+
+__Note:__ support for `default != nothing` is experimental and only implemented for getting, not for setting.
+
+`maybe(o)` behaves similar to `o` itself, with the following differences:
+- if the referenced value is present, `set(obj, maybe(o), nothing)` deletes it
+- if the value is absent:
+    - accessing `maybe(o)(obj)` returns `default`
+    - `modify` doesn't do anything
+    - `set` inserts the new value
+
+Whether the referenced value is present or not, is determined by `hasoptic(obj, o)`.
+
+`@maybe` is the macro form available for convenience: `@maybe ...` is equivalent to `maybe(@o ...)`.
+
+## Examples
+
+```julia
+julia> o = maybe(@o _.a)
+
+julia> o((a=1, b=2))
+1
+julia> o((b=2,))
+# nothing
+
+julia> set((a=1, b=2), o, 10)
+(a = 10, b = 2)
+julia> set((b=2,), o, 10)
+(b = 2, a = 10)
+
+julia> modify(x -> x+10, (a=1, b=2), o)
+(a = 11, b = 2)
+julia> modify(x -> x+10, (b=2,), o)
+(b = 2,)
+
+julia> modify(x -> x+10, ((a=1,), (a=2, b=3), (b=4,)), o ∘ Elements())
+((a = 11,), (a = 12, b = 3), (b = 4,))
+```
+"""
 maybe(o; default=nothing) = MaybeOptic(o, default)
 
-OpticStyle(::Type{<:MaybeOptic}) = Val(:maybe)
-
-Accessors.composed_optic_style(m::Val{:maybe}, ::Any) = m
-Accessors.composed_optic_style(::Any, m::Val{:maybe}) = m
-Accessors.composed_optic_style(::Val{:maybe}, m::Val{:maybe}) = m
-
-@inline function Accessors._set(obj, optic::ComposedFunction, val, ::Val{:maybe})
-    inner_obj = optic.inner(obj)
-    inner_val = set(inner_obj, optic.outer, val)
-    set(obj, optic.inner, inner_val)
+struct MaybeStyle{P}
+    parent::P
 end
 
-function Accessors._modify(f, obj, optic::ComposedFunction, ::Val{:maybe})
-    otr = optic.outer
-    inr = optic.inner
-    modify(obj, inr) do o1
-        modify(f, o1, otr)
+OpticStyle(::Type{<:MaybeOptic{O}}) where O = MaybeStyle(OpticStyle(O))
+
+Accessors.composed_optic_style(m::MaybeStyle, s::Any) = MaybeStyle(Accessors.composed_optic_style(m.parent, s))
+Accessors.composed_optic_style(s::Any, m::MaybeStyle) = MaybeStyle(Accessors.composed_optic_style(s, m.parent))
+Accessors.composed_optic_style(ma::MaybeStyle, mb::MaybeStyle) = MaybeStyle(Accessors.composed_optic_style(ma.parent, mb.parent))
+
+@inline Accessors._set(obj, optic::ComposedFunction, val, ::MaybeStyle{Accessors.SetBased}) =
+    set(obj, optic.inner,
+        set(optic.inner(obj), optic.outer, val))
+
+@inline Accessors._set(obj, optic::ComposedFunction, val, ::MaybeStyle{Accessors.ModifyBased}) =
+    modify(Returns(val), obj, optic)
+
+Accessors._modify(f, obj, optic::ComposedFunction, ::MaybeStyle) =
+    modify(obj, optic.inner) do o1
+        modify(f, o1, optic.outer)
     end
-end
 
 (o::MaybeOptic)(obj) = hasoptic(obj, o.o) ? o.o(obj) : o.default
 set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
@@ -60,7 +103,7 @@ set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable
 
 
 oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
-oget(obj, o, default) = hasoptic(obj, o) ? o(obj) : default
+oget(obj, o, default=nothing) = hasoptic(obj, o) ? o(obj) : default
 
 
 set(obj, fa::FixArgs{typeof(get), <:Tuple{Placeholder,Any,Any}, <:NamedTuple{()}}, val) =
@@ -89,3 +132,20 @@ hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse), Type{T}}) where {T} = !i
 # without it: cases when hasoptic throws, but optic actually exists
 # with it: cases when hasoptic=true, but optic doesn't exist
 hasoptic(obj, o) = !isnothing(obj)
+
+
+# convenience macros
+macro oget(ref, default=nothing)
+    obj, optic = parse_obj_optic(ref)
+    return :($oget($obj, $optic, $default))
+end
+
+macro osomething(args...)
+    return :($osomething($(map(args) do arg
+        :($Accessors.@optic $arg)
+    end...))) |> esc
+end
+
+macro maybe(o, default=nothing)
+    return :($maybe(($Accessors.@optic $o); default=$default)) |> esc
+end
