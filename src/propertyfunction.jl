@@ -6,6 +6,8 @@ end
 
 Base.show(io::IO, pf::PropertyFunction) = get(io, :compact, false) ? print(io, pf.expr) : print(io, "(@o ", pf.expr, ")")
 Base.show(io::IO, ::MIME"text/plain", pf::PropertyFunction) = show(io, pf)
+Base.:(==)(a::PropertyFunction, b::PropertyFunction) = a.expr == b.expr
+Base.hash(pf::PropertyFunction, h::UInt) = hash(pf.expr, h)
 
 Accessors._shortstring(prev, o::PropertyFunction) = sprint(show, o; context=:compact => true)
 
