@@ -32,6 +32,24 @@ _esc_and_dot_name_to_broadcasted(f::Symbol) =
         esc(f)
     end
 
+
+# changes from upstream:
+# - call parse_obj_optic_underscore_only to allow `@o 123`
+function Accessors.opticmacro(optictransform::Function, ex)
+    obj, optic = parse_obj_optic_underscore_only(ex)
+    if obj != esc(:_)
+        msg = """Cannot parse optic $ex. Lens expressions must start with _, got $obj instead."""
+        throw(ArgumentError(msg))
+    end
+    :($(optictransform)($optic))
+end
+parse_obj_optic_underscore_only(ex) =
+    if tree_contains(ex, :_)
+        Accessors.parse_obj_optic(ex)
+    else
+        esc(:_), :(Returns($(esc(ex))))
+    end
+
 # changes from upstream:
 # https://github.com/JuliaObjects/Accessors.jl/pull/103
 # creating:
