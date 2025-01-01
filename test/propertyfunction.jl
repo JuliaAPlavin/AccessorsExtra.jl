@@ -152,9 +152,21 @@ end
     @test filterview((@o _.xy.y > _.z.im + 100), B).xy.y == 110:10:1000
     @test sortperm(B, by=(@o _.xy.y ≤ 100)) == [11:100; 1:10]
     @test sortperm(B, by=!(@o _.xy.y > _.z.im + 100)) == [11:100; 1:10]
-    # test that it throws on actual item permutation, not comparison
-    @test_throws "setindex! not defined for StepRange" sort!(B, by=(@o _.xy.y ≤ 100))
-    @test_throws "setindex! not defined for StepRange" sort!(B, by=!(@o _.xy.y > _.z.im + 100))
+    # test that it throws on actual item permutation, not comparison:
+    # @test_throws "setindex! not defined for StepRange" sort!(B, by=(@o _.xy.y ≤ 100))
+    # @test_throws "setindex! not defined for StepRange" sort!(B, by=!(@o _.xy.y > _.z.im + 100))
+
+    B = StructArray(
+        xy=repeat([1,2,3], outer=4),
+        z=StructArray{ComplexF64}(
+            re=collect(1:12),
+            im=collect(0.01:0.01:0.12),
+        )
+    )
+    o = @o _.xy
+    @test sortperm(B, by=o) == sortperm(B, by=x->o(x))
+    @test sort(B, by=o) == sort(B, by=x->o(x))
+    @test sort!(deepcopy(B), by=o) == sort!(deepcopy(B), by=x->o(x))
 end
 
 @testitem "structarrays - containeroptic" begin

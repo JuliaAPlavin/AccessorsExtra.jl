@@ -50,10 +50,11 @@ for m in methods(Base.Sort._sort!)
     Base.Order.Perm <: params[4] || continue
     params[3] === Any && continue
 
-    @eval function Base.Sort._sort!(v::AbstractVector, a::$(params[3]), o::Base.Order.By{<:PROPFUNCTYPES}, kw)
-        newo = modify(rawfunc, o, @o _.by)
-        return Base.Sort._sort!(extract_properties_recursive(v, propspec(o.by)), a, newo, kw)
-    end
+    # XXX: wrong! only sorts the properties used in `by=...`, other components are kept as-is!
+    # @eval function Base.Sort._sort!(v::AbstractVector, a::$(params[3]), o::Base.Order.By{<:PROPFUNCTYPES}, kw)
+    #     newo = modify(rawfunc, o, @o _.by)
+    #     return Base.Sort._sort!(extract_properties_recursive(v, propspec(o.by)), a, newo, kw)
+    # end
 
     @eval function Base.Sort._sort!(v::AbstractVector, a::$(params[3]), o::Base.Order.Perm{<:Base.Order.By{<:PROPFUNCTYPES}}, kw)
         newo = Base.Order.Perm(
