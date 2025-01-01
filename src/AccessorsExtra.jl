@@ -45,6 +45,8 @@ include("construct.jl")
 include("bystep.jl")
 include("testing.jl")
 
+include("../ext/LinearAlgebraExt.jl")
+
 
 function __init__()
     if isdefined(Base.Experimental, :register_error_hint)
