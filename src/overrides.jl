@@ -17,22 +17,6 @@ function foldtree_pre(op, init, ex::Expr)
     return foldl((acc, x) -> foldtree_pre(op, acc, x), ex.args; init=curval)
 end
 
-# todo: remove this when Accessors is released
-_secondarg(_, x) = x
-_esc_and_dot_name_to_broadcasted(f) = esc(f)
-_esc_and_dot_name_to_broadcasted(f::Symbol) =
-    if f == :.
-    # eg, in @set a[:] .= 1
-        # the returned function will be called as func(a, 1)
-        :(Base.BroadcastFunction($_secondarg))
-    elseif startswith(string(f), '.')
-        # eg, in @set a[:] .+= 1 or @o _ .+ 1
-        :(Base.BroadcastFunction($(esc(Symbol(string(f)[2:end])))))
-    else
-        esc(f)
-    end
-
-
 # changes from upstream:
 # - call parse_obj_optic_underscore_only to allow `@o 123`
 function Accessors.opticmacro(optictransform::Function, ex)
@@ -148,7 +132,7 @@ function _parse_obj_optics(ex::Expr)
             optic = :($funcvallens($(esc.(args)...),))
         elseif length(args) == 1
             arg = only(args)
-            f = _esc_and_dot_name_to_broadcasted(f)
+            f = Accessors._esc_and_dot_name_to_broadcasted(f)
             if Base.isexpr(arg, :(...))
                 obj, frontoptic = _parse_obj_optics(only(arg.args))
                 optic = :(splat($f))
@@ -159,7 +143,7 @@ function _parse_obj_optics(ex::Expr)
                 optic = f
             end
         elseif any(args_contain_under)
-            f = _esc_and_dot_name_to_broadcasted(f)
+            f = Accessors._esc_and_dot_name_to_broadcasted(f)
             if count(args_contain_under) == 1
                 # single function argument is optic target - create Fix1, Fix2, or FixArgs optic
                 # multi-arg broadcasts also fall here, no matter if regular function or operator
