@@ -11,6 +11,27 @@ barebones_string(optic) = @p let
 end
 
 
+_split_unitstr_from_optic(o) = _split_unitstr_from_optic(Union{}, o)
+_split_unitstr_from_optic(obj, o) = (o, nothing)
+_split_unitstr_from_optic(obj, ::typeof(rad2deg)) = (identity, "°")
+function _split_unitstr_from_optic(obj, o::ComposedFunction)
+    opart, unit = _split_unitstr_from_optic(first(getall(obj, o.inner)), o.outer)
+    (opart ∘₁ o.inner, unit)
+end
+function _split_unitstr_from_optic(::Type{T}, o::ComposedFunction) where {T}
+    opart, unit = _split_unitstr_from_optic(_eltype(Base.promote_op(getall, T, typeof(o.inner))), o.outer)
+    (opart ∘₁ o.inner, unit)
+end
+function _split_unitstr_from_optic(obj, o::AccessorsExtra.ContextOptic)
+    oc = stripcontext(o)
+    oshowc, unit = _split_unitstr_from_optic(obj, oc)
+    (set(o, stripcontext, oshowc), unit)
+end
+
+_eltype(T) = eltype(T)
+_eltype(::Type{Union{}}) = Union{}
+
+
 
 # XXX: piracy, should upstream the changes
 function Accessors.show_optic(io::IO, optic)

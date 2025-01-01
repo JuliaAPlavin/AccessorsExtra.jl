@@ -127,3 +127,29 @@ end
     @test barebones_string(Returns(123)) == "123"
     @test barebones_string(@osomething _.a 123) == "a || 123"
 end
+
+@testitem "split unit" begin
+    using AccessorsExtra: _split_unitstr_from_optic
+    using Unitful
+
+    @test _split_unitstr_from_optic(identity) == (identity, nothing)
+    @test _split_unitstr_from_optic(rad2deg) == (identity, "°")
+    @test _split_unitstr_from_optic(@o rad2deg(_.a)) == ((@o _.a), "°")
+    @test _split_unitstr_from_optic(@o ustrip(u"km", _.a)) == ((@o _.a), "km")
+
+    @test _split_unitstr_from_optic(Int, identity) == (identity, nothing)
+    @test _split_unitstr_from_optic(Int, rad2deg) == (identity, "°")
+    @test _split_unitstr_from_optic((a=1,), @o rad2deg(_.a)) == ((@o _.a), "°")
+    @test _split_unitstr_from_optic((a=1,), @o ustrip(u"km", _.a)) == ((@o _.a), "km")
+
+    @test _split_unitstr_from_optic(ustrip) == ((@o _), nothing)
+    @test _split_unitstr_from_optic(123, ustrip) == ((@o _), "")
+    @test _split_unitstr_from_optic(123u"m", ustrip) == ((@o _), "m")
+    @test _split_unitstr_from_optic((a=123u"m",), @o ustrip(_.a)) == ((@o _.a), "m")
+    @test _split_unitstr_from_optic(typeof(123), ustrip) == ((@o _), "")
+    @test _split_unitstr_from_optic(typeof(123u"m"), ustrip) == ((@o _), "m")
+    @test _split_unitstr_from_optic(typeof((a=123u"m",)), @o ustrip(_.a)) == ((@o _.a), "m")
+
+    @test _split_unitstr_from_optic(@o rad2deg(_.a |> enumerated(∗) |> _.b)) == ((@o _.a |> enumerated(∗) |> _.b), "°")
+    @test _split_unitstr_from_optic((@o ustrip(u"km", _.a[∗])) |> enumerated) == ((@o _.a[∗]) |> enumerated, "km")
+end
