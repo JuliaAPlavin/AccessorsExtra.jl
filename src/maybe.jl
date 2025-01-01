@@ -159,7 +159,7 @@ Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
 
 @inline hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
 @inline hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
-@inline hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))
+@inline hasoptic(obj, o::IndexLens) = !isnothing(obj) && haskey(obj, only(o.indices))
 
 @inline hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)
 
