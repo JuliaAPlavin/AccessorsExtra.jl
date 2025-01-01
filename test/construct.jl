@@ -147,3 +147,19 @@ end
     
     end
 end
+
+@testitem "setall + construct" begin
+    using AccessorsExtra: setall_or_construct, nvals_optic
+
+    @test nvals_optic((a=1, b=2, c=3), @o _.a) == 1
+    @test nvals_optic((a=1, b=2, c=3), @o _.a _.b _.c) == 3
+    @test nvals_optic((a=1, b=2, c=3), @o _[∗ₚ]) == 3
+    @test nvals_optic(@o _.a) == 1
+    @test nvals_optic(@o _.a _.b _.c) == 3
+    @test nvals_optic(NamedTuple, @o _.a _.b _.c) == 3
+
+    @test setall_or_construct((a=1, b=2, c=3), (@o _.a), ["a"]) == (a="a", b=2, c=3)
+    @test setall_or_construct((a=1, b=2, c=3), (@o _[∗ₚ]), 5:7) == (a=5, b=6, c=7)
+    @test setall_or_construct(NamedTuple, (@o _.a), ["a"]) == (a="a",)
+    @test setall_or_construct((@o _.a), ["a"]) == (a="a",)
+end
