@@ -160,6 +160,8 @@ end
     @test maybe(first)((i for i in 1:0)) == nothing
     @test maybe(last)((i for i in 1:3)) == 3
     @test maybe(last)((i for i in 1:0)) == nothing
+
+    @test maybe(@o _.a _.b) === maybe(@o _.a) ++ maybe(@o _.b)
 end
 
 @testitem "@maybe" begin
