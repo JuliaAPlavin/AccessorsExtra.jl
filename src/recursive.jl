@@ -1,7 +1,11 @@
-struct Children end
+struct Children{DO}
+    fallback_optic::DO
+end
+Children() = Children(Properties())
+
 @inline OpticStyle(::Type{<:Children}) = ModifyBased()
 @inline _chooseoptic_byval(obj, c::Children) = _chooseoptic_bytype(typeof(obj), c)
-@inline _chooseoptic_bytype(::Type, ::Children) = Properties()
+@inline _chooseoptic_bytype(::Type, c::Children) = c.fallback_optic
 @inline _chooseoptic_bytype(::Type{<:Type}, ::Children) = ConcatOptics(())
 @inline _chooseoptic_bytype(::Type{<:Tuple}, ::Children) = Elements()
 @inline _chooseoptic_bytype(::Type{<:AbstractArray}, ::Children) = Elements()
