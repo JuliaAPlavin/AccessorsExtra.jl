@@ -171,4 +171,19 @@ end
 
     @test tree_concatoptic(String, (@o _[∗ₚ])) === concat()
     @test flat_concatoptic(String, (@o _[∗ₚ])) === concat()
+
+    o = tree_concatoptic(Union{Nothing, @NamedTuple{a::Int64, b::Float64}}, (@o _[∗ₚ]))
+    @test getall(nothing, o) === (nothing, nothing)
+    @test getall((a=1, b=2.0), o) === (1, 2.0)
+
+    o = tree_concatoptic(Union{Nothing, @NamedTuple{a::Union{Nothing, @NamedTuple{b::Int64, c::String}}}}, (@o _[∗ₚ][∗ₚ]))
+    @test getall(nothing, o) === (nothing, nothing)
+    @test getall((a=nothing,), o) === (nothing, nothing)
+    @test getall((a=(b=1, c="2"),), o) === (1, "2")
+
+    os = flat_concatoptic(Union{Nothing, @NamedTuple{a::Int64, b::Float64}}, (@o _[∗ₚ])) |> AccessorsExtra._optics
+    @test os === ((@maybe _.a), (@maybe _.b))
+
+    os = flat_concatoptic(Union{Nothing, @NamedTuple{a::Union{Nothing, @NamedTuple{b::Int64}}}}, (@o _[∗ₚ][∗ₚ])) |> AccessorsExtra._optics
+    @test os === ((@maybe _.b) ∘ (@maybe _.a),)
 end

@@ -164,6 +164,15 @@ function tree_concatoptic(obj::Type, o::ComposedFunction)
     end
     concat(optics...)
 end
+# XXX: try to handle Union + maybe more uniformly
+function tree_concatoptic(::Type{Union{Nothing,T}}, o::ComposedFunction) where {T}
+    inner_optic = tree_concatoptic(T, o.inner)
+    outer_obj_types = Core.Compiler.return_type(getall, Tuple{T, typeof(o.inner)}) |> _eltypes
+    optics = map(outer_obj_types, _optics(inner_optic)) do OT, oin
+        tree_concatoptic(OT, o.outer) ∘₁ maybe(oin)
+    end
+    concat(optics...)
+end
 tree_concatoptic(obj::Type, o::ConcatOptics) =
     concat(map(o.optics) do oin
         tree_concatoptic(obj, oin)
@@ -183,6 +192,11 @@ tree_concatoptic(obj::Type{<:AbstractVector}, o::Elements) = ConcatOptics(ntuple
 function tree_concatoptic(obj::Type{T}, o::Properties) where {T}
     NT = Core.Compiler.return_type(getproperties, Tuple{T})
     concat(map(PropertyLens, fieldnames(NT))...)
+end
+# XXX: try to handle Union + maybe more uniformly
+function tree_concatoptic(::Type{Union{Nothing,T}}, ::Properties) where {T}
+    NT = Core.Compiler.return_type(getproperties, Tuple{T})
+    concat(map(maybe∘PropertyLens, fieldnames(NT))...)
 end
 
 ∘₁(a, b) = a ∘ b

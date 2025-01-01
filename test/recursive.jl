@@ -96,6 +96,10 @@ end
     @test tree_concatoptic(obj, RecursiveOfType(Number)) === (@o _.a) ++ (((@o _[1].c) ++ (@o _[2].c)) ∘ (@o _.bs))
     @test tree_concatoptic(obj, RecursiveOfType(NamedTuple)) === identity
 
+    @test tree_concatoptic(@NamedTuple{a::Int64, b::Float64}, RecursiveOfType(Number)) === (@o _.a) ++ (@o _.b)
+    @test tree_concatoptic(Union{Nothing, @NamedTuple{a::Int64, b::Float64}}, RecursiveOfType(Number)) === (@maybe _.a) ++ (@maybe _.b)
+    @test tree_concatoptic(Union{Nothing, @NamedTuple{a::Union{Nothing, @NamedTuple{b::Int64, c::Float64, d::String}}}}, RecursiveOfType(Number)) === ((@maybe _.b) ++ (@maybe _.c)) ∘ (@maybe _.a)
+
     @test flat_concatoptic((1,""), RecursiveOfType(Number)) === @o _[1]
     @test_broken flat_concatoptic((a=1, b=[2,3], c=""), RecursiveOfType(Number)) === @o _.a _.b[∗]
     @test flat_concatoptic((a=1, b=SVector(2,3), c=""), RecursiveOfType(Number)) === @o _.a _.b[1] _.b[2]
