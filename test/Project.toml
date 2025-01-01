@@ -31,7 +31,6 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"  # only needed for running upst
 
 [compat]
 Aqua = "0.8"
-ColorTypes = "0.11"
 CompatHelperLocal = "0.1.24"
 DictArrays = "0.1.4"
 Dictionaries = "0.3,0.4"
@@ -43,7 +42,6 @@ InverseFunctions = "0.1.7"
 OffsetArrays = "1.12.7"
 Skipper = "0.1.11"
 StaticArrays = "1.5.6"
-StructArrays = "0.6.8"
 Tables = "1"
 TestItemRunner = "1"
 TestItems = "1"
