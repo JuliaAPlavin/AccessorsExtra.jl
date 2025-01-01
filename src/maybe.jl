@@ -64,17 +64,17 @@ Accessors.composed_optic_style(ma::MaybeStyle, mb::MaybeStyle) = MaybeStyle(Acce
 @inline Accessors._set(obj, optic::ComposedFunction, val, ::MaybeStyle{Accessors.ModifyBased}) =
     modify(Returns(val), obj, optic)
 
-Accessors._modify(f, obj, optic::ComposedFunction, ::MaybeStyle) =
+@inline Accessors._modify(f, obj, optic::ComposedFunction, ::MaybeStyle) =
     modify(obj, optic.inner) do o1
         modify(f, o1, optic.outer)
     end
 
-(o::MaybeOptic)(obj) = hasoptic(obj, o.o) ? o.o(obj) : o.default
-set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
-set(obj, o::MaybeOptic, val) = hasoptic(obj, o.o) ? set(obj, o.o, val) : insert(obj, o.o, val)
+@inline (o::MaybeOptic)(obj) = hasoptic(obj, o.o) ? o.o(obj) : o.default
+@inline set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
+@inline set(obj, o::MaybeOptic, val) = hasoptic(obj, o.o) ? set(obj, o.o, val) : insert(obj, o.o, val)
 
 @inline getall(obj, o::MaybeOptic) = (o(obj),)
-setall(obj, o::MaybeOptic, vals) = hasoptic(obj, o.o) ? setall(obj, o.o, vals) : obj
+@inline setall(obj, o::MaybeOptic, vals) = hasoptic(obj, o.o) ? setall(obj, o.o, vals) : obj
 
 function modify(f, obj, o::MaybeOptic)
     if hasoptic(obj, o.o)
@@ -90,7 +90,7 @@ function modify(f, obj, o::MaybeOptic)
     end
 end
 
-delete(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
+@inline delete(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
 
 
 Accessors._shortstring(prev, o::MaybeOptic) = Accessors._shortstring(prev, o.o) * "?" * (
@@ -103,10 +103,10 @@ struct OSomething{OS}
 end
 Broadcast.broadcastable(o::OSomething) = Ref(o)
 osomething(optics...) = OSomething(optics)
-(o::OSomething)(obj) = hasoptic(obj, first(o.os)) ? first(o.os)(obj) : (@delete first(o.os))(obj)
-(o::OSomething{Tuple{}})(obj) = error("no optic in osomething applicable to $obj")
-set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os), val) : set(obj, (@delete first(o.os)), val)
-set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
+@inline (o::OSomething)(obj) = hasoptic(obj, first(o.os)) ? first(o.os)(obj) : (@delete first(o.os))(obj)
+@inline (o::OSomething{Tuple{}})(obj) = error("no optic in osomething applicable to $obj")
+@inline set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os), val) : set(obj, (@delete first(o.os)), val)
+@inline set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
 
 function Base.show(io::IO, os::OSomething)
     compact = get(io, :compact, false)
@@ -119,36 +119,36 @@ function Base.show(io::IO, os::OSomething)
 end
 Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
 
-oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
-oget(obj, o, default=nothing) = hasoptic(obj, o) ? o(obj) : default
+@inline oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
+@inline oget(obj, o, default=nothing) = hasoptic(obj, o) ? o(obj) : default
 
 
-set(obj, fa::FixArgsT(get, (Placeholder,Any,Any)), val) =
+@inline set(obj, fa::FixArgsT(get, (Placeholder,Any,Any)), val) =
     haskey(obj, fa.args[2]) ? set(obj, IndexLens((fa.args[2],)), val) : insert(obj, IndexLens((fa.args[2],)), val)
-set(obj, fa::FixArgsT(get, (Any,Placeholder,Any)), val) =
+@inline set(obj, fa::FixArgsT(get, (Any,Placeholder,Any)), val) =
     haskey(obj, fa.args[3]) ? set(obj, IndexLens((fa.args[3],)), val) : insert(obj, IndexLens((fa.args[3],)), val)
 
 
-hasoptic(obj, o::ComposedFunction) = hasoptic(obj, o.inner) && hasoptic(o.inner(obj), o.outer)
+@inline hasoptic(obj, o::ComposedFunction) = hasoptic(obj, o.inner) && hasoptic(o.inner(obj), o.outer)
 
-hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
-hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
-hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))
+@inline hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
+@inline hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
+@inline hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))
 
-hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)
+@inline hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)
 
-hasoptic(obj, ::typeof(first)) = !isempty(obj)
-hasoptic(obj, ::typeof(last)) = !isempty(obj)
-hasoptic(obj, ::typeof(only)) = length(obj) == 1
+@inline hasoptic(obj, ::typeof(first)) = !isempty(obj)
+@inline hasoptic(obj, ::typeof(last)) = !isempty(obj)
+@inline hasoptic(obj, ::typeof(only)) = length(obj) == 1
 
 # should override call, set, modify for efficiency?
-hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse), Type{T}}) where {T} = !isnothing(tryparse(T, x))
+@inline hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse), Type{T}}) where {T} = !isnothing(tryparse(T, x))
 # hasoptic(x::AbstractString, o::Base.Fix2{Type{T}}) where {T <: Union{Date, Time, DateTime}} = # XXX - what to put here?
 
 # fallback definition
 # without it: cases when hasoptic throws, but optic actually exists
 # with it: cases when hasoptic=true, but optic doesn't exist
-hasoptic(obj, o) = !isnothing(obj)
+@inline hasoptic(obj, o) = !isnothing(obj)
 
 
 # convenience macros
