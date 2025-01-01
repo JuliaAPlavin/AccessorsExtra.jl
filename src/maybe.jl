@@ -106,6 +106,16 @@ osomething(optics...) = OSomething(optics)
 set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os), val) : set(obj, (@delete first(o.os)), val)
 set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
 
+function Base.show(io::IO, os::OSomething)
+    compact = get(io, :compact, false)
+    print(io, compact ? "some(" : "osomething(")
+    for (i, o) in enumerate(os.os)
+        i == 1 || print(io, ", ")
+        Accessors.show_optic(io, o)
+    end
+    print(io, ")")
+end
+Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
 
 oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
 oget(obj, o, default=nothing) = hasoptic(obj, o) ? o(obj) : default

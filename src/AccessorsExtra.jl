@@ -69,6 +69,10 @@ function __init__()
 end
 
 
+Accessors._shortstring(prev, o::Returns) = sprint(show, o.value)
+Accessors._shortstring(prev, os::OSomething) =
+    (prev == "_" ? "" : "(") * join(map(barebones_string, os.os), " || ") * (prev == "_" ? "" : ") ∘ $(prev)")
+
 barebones_string(optic::Base.Splat) = sprint(Accessors.show_optic, optic; context=:compact => true)
 barebones_string(optic::Union{Base.Fix1,Base.Fix2}) = sprint(Accessors.show_optic, optic; context=:compact => true)
 barebones_string(optic::typeof(identity)) = "_"
@@ -76,6 +80,10 @@ barebones_string(optic) = @p let
     sprint(Accessors.show_optic, optic; context=:compact => true)
     replace(__, "_." => "", "_[" => "[")
 end
+	
+function Base.show(io::IO, os::OSomething)
+end
+Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
 
 
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)

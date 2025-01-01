@@ -89,6 +89,8 @@ end
     @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b); context=:compact => true) == "(_.b)ᵢ ∘ _.a[∗ₚ] |> selfcontext(identity)"
     @test sprint(show, (@o _.a + _.b)) == "(@o _.a + _.b)"
     @test sprint(show, (@o _.a + _.b); context=:compact => true) == "_.a + _.b"
+    @test sprint(show, (@osomething _.a 123)) == "osomething((@o _.a), (@o 123))"
+    @test sprint(show, (@osomething _.a 123); context=:compact => true) == "some(_.a, 123)"
 
     @test map(flat_concatoptic((a=1, b=(2, 3)), (@o _.a exp(_.b[∗]))).optics) do o
         sprint(show, o; context=:compact => true)
@@ -113,4 +115,6 @@ end
     @test barebones_string(@maybe _.a 0.2) == "a?0.2"
     @test barebones_string(@maybe _.a + _.b) == "a + b?"
     @test barebones_string(exp ∘ (@maybe _.a + _.b 0.2)) == "exp(a + b?0.2)"
+    @test barebones_string(Returns(123)) == "123"
+    @test barebones_string(@osomething _.a 123) == "a || 123"
 end
