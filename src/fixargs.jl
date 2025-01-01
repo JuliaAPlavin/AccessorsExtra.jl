@@ -38,7 +38,6 @@ Base.show(io::IO, fa::FixArgs) = Accessors.show_optic(io, fa)
 Base.show(io::IO, ::MIME"text/plain", fa::FixArgs) = show(io, fa)
 
 Accessors._shortstring(prev, fa::FixArgs) = "$(fa.f)($(_args_str(prev, fa.args))$(_args_str(prev, fa.kwargs)))"
-Accessors._shortstring(prev, fa::FixArgsT(Base.literal_pow, (Any, Placeholder, Val))) = Accessors._shortstring(prev, Base.Fix2(fa.args[1], _extract_val(fa.args[3])))
 _args_str(prev, args::Tuple) = @p let
     args
     map(_ isa Placeholder ? prev : _)

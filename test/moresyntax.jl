@@ -113,9 +113,4 @@ end
     @test barebones_string(@maybe _.a 0.2) == "a?0.2"
     @test barebones_string(@maybe _.a + _.b) == "a + b?"
     @test barebones_string(exp ∘ (@maybe _.a + _.b 0.2)) == "exp(a + b?0.2)"
-
-    # pow and literal_pow:
-    @test barebones_string(@o _ ^ 2.5) == "_ ^ 2.5"
-    @test barebones_string(@o _ ^ 2) == "_ ^ 2"
-    @test barebones_string(@o 2 ^ _) == "2 ^ _"
 end
