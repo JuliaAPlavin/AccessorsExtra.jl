@@ -127,6 +127,11 @@ set(obj, os::ContainerOptic{<:Dict}, vals) =
         set(obj, o, v)
     end
 
+delete(obj, os::ContainerOptic) = foldl(delete, os.optics; init=obj)
+insert(obj, os::ContainerOptic, vals) = foldl(zip(os.optics, vals), init=obj) do acc, (o, v)
+    insert(acc, o, v)
+end
+
 # XXX: should deprecate
 macro optic₊(ex)
     esc(:( $Accessors.@o $ex ))

@@ -69,6 +69,7 @@ end
 
 @testitem "concat container" begin
     using StaticArrays
+    using AccessorsExtra: insert
 
     AccessorsExtra.@allinferred o set modify begin
     o = @o (_.a.b, _.c)
@@ -96,6 +97,8 @@ end
     @test o(m) == SVector(1, 3)
     @test set(m, o, SVector(4, 5)) == (a=(b=4, c=2), c=5)
     @test modify(xs -> 2*xs, m, o) == (a=(b=2, c=2), c=6)
+    @test delete(m, o) == (;a=(c=2,))
+    @test insert((;a=(;), d=5), o, (1, 2)) == (a=(;b=1), d=5, c=2)
 
     o = @o Pair(_.a.b, _.c)
     m = (a=(b=1, c=2), c=3)
@@ -128,6 +131,8 @@ end
     m = (a=(b=1, c=2), c=3)
     @test o(m) == (x=[1, 3], y=2)
     @test set(m, o, (x=[5, 6], y=7)) == (a=(b=5, c=7), c=6)
+    @test delete(m, o) == (;a=(;))
+    @test insert((;a=(;)), o, ([1,2], 3)) == (a=(b=1, c=3), c=2)
 end
 
 @testitem "concat container on structarrays" begin
