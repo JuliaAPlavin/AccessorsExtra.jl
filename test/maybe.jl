@@ -50,13 +50,13 @@ end
         @test modify(x -> nothing, (;), o) == (;)
 
         @test getall((a=(b=1,),), o) == (1,)
-        @test getall((a=(;),), o) == (nothing,)
-        @test getall((;), o) == (nothing,)
-        @test getall(nothing, o) == (nothing,)
+        @test getall((a=(;),), o) == ()
+        @test getall((;), o) == ()
+        @test getall(nothing, o) == ()
         @test setall((a=(b=1,),), o, (5,)) == (a=(b=5,),)
-        @test setall((a=(;),), o, (123,)) == (a=(;),)
-        @test setall((;), o, (123,)) == (;)
-        @test setall(nothing, o, (123,)) == nothing
+        @test setall((a=(;),), o, ()) == (a=(;),)
+        @test setall((;), o, ()) == (;)
+        @test setall(nothing, o, ()) == nothing
     end
 
     for obj in ((5,), (a=5,), [5], Dict(1 => 5),)
@@ -124,16 +124,16 @@ end
     @test_broken set("2020-02-03", o, Date(1234, 5, 6)) == "1234/05/06"
 
     o = maybe(@o _.a) ∘ Elements()
-    @test getall(((a=1,), (b=2,)), o) === (1, nothing)
-    @test getall(((b=2,),), o) === (nothing,)
-    @test getall(((),), o) === (nothing,)
+    @test getall(((a=1,), (b=2,)), o) === (1,)
+    @test getall(((b=2,),), o) === ()
+    @test getall(((),), o) === ()
     @test modify(x -> x+1, ((a=1,), (b=2,)), o) === ((a=2,), (b=2,))
     @test modify(x -> nothing, ((a=1,), (b=2,)), o) === ((;), (b=2,))
     @test set(((a=1,), (b=2,)), o, 10) === ((a=10,), (b=2,))
     @test set(((a=1,), (b=2,)), o, nothing) === ((;), (b=2,))
-    @test setall(((a=1,), (b=2,)), o, (10, 123)) === ((a=10,), (b=2,))
-    @test_throws "tried to assign 0 elements to 2 destinations" setall(((a=1,), (b=2,)), o, ()) === ((a=10,), (b=2,))
-    @test_throws "tried to assign 1 elements to 2 destinations" setall(((a=1,), (b=2,)), o, (10,)) === ((a=10,), (b=2,))
+    @test setall(((a=1,), (b=2,)), o, (10,)) === ((a=10,), (b=2,))
+    @test_throws "tried to assign 0 elements to 1 destinations" setall(((a=1,), (b=2,)), o, ()) === ((a=10,), (b=2,))
+    @test_throws "tried to assign 2 elements to 1 destinations" setall(((a=1,), (b=2,)), o, (10, 20)) === ((a=10,), (b=2,))
 
     # specify default value in maybe() - semantic not totally clear...
     # also see "get(...) as optic"
