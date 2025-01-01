@@ -73,7 +73,7 @@ Accessors._modify(f, obj, optic::ComposedFunction, ::MaybeStyle) =
 set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
 set(obj, o::MaybeOptic, val) = hasoptic(obj, o.o) ? set(obj, o.o, val) : insert(obj, o.o, val)
 
-getall(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? getall(obj, o.o) : ()
+@inline getall(obj, o::MaybeOptic) = (o(obj),)
 setall(obj, o::MaybeOptic, vals) = hasoptic(obj, o.o) ? setall(obj, o.o, vals) : obj
 
 function modify(f, obj, o::MaybeOptic)
