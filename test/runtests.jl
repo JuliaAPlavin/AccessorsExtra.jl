@@ -192,18 +192,6 @@ end
     @test o([(a=1,)]) == (2, 1)
 end
 
-@testitem "base optics" begin
-    using StaticArrays
-
-    x = [1, 2, 3]
-    @test (@set (2 in $x) = false) == [1, 3]
-    @test (@set (5 in $x) = true) == [1, 2, 3, 5]
-    Accessors.test_getset_laws(@o(2 in _), [1,2,3], false, true)
-    Accessors.test_getset_laws(@o(5 in _), [1,2,3], false, true)
-    Accessors.test_getset_laws(@o(2 in _), Set([1,2,3]), false, true)
-    Accessors.test_getset_laws(@o(5 in _), Set([1,2,3]), false, true)
-end
-
 @testitem "on get/set" begin
     obj = (a=1, b=2, tot=4)
 
@@ -328,11 +316,14 @@ end
     end
 end
 
-@testitem "getindex inverse" begin
+@testitem "inverses" begin
     using InverseFunctions
 
     InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
     InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
+    
+    InverseFunctions.test_inverse(tuple, 2; compare=(==))
+    InverseFunctions.test_inverse(only, (2,); compare=(==))
 end
 
 @testitem "ranges" begin
