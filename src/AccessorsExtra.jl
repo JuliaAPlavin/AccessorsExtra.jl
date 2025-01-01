@@ -162,6 +162,21 @@ set(obj, o::Union{Base.Fix1{typeof(max)}, Base.Fix2{typeof(max)}}, val) = val �
 set(obj, o::Union{Base.Fix1{typeof(min)}, Base.Fix2{typeof(min)}}, val) = val ≤ o.x ? val : throw(ArgumentError("Value $val is higher than the other `min` argument $(o.x)"))
 set(obj, o::FixArgsT(clamp, (Placeholder, Any, Any)), val) = o.args[2] ≤ val ≤ o.args[3] ? val : throw(ArgumentError("Value $val is out of `clamp` bounds $(o.args[2]) .. $(o.args[3])"))
 
+# and these methods:
+@inline function insert(obj::Tuple, l::IndexLens{<:Tuple{AbstractVector}}, val)
+    @assert issorted(only(l.indices))
+    foldl(tuple.(only(l.indices), val), init=obj) do obj, (i, v)
+        @insert obj[i] = v
+    end
+end
+@inline function delete(obj::Tuple, l::IndexLens{<:Tuple{AbstractVector}})
+    @assert issorted(only(l.indices))
+    foldl(reverse(only(l.indices)), init=obj) do obj, i
+        @delete obj[i]
+    end
+end
+    
+
 # for f in (map,)
 #     for m in methods(f)
 #         m.recursion_relation = Returns(true)

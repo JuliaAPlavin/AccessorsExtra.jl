@@ -393,6 +393,16 @@ end
     @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @o keys(_)[∗])
 end
 
+@testitem "multiindex insert/delete" begin
+    cmp = (a, b) -> collect(a) == collect(b)
+    Accessors.test_getset_laws((@o _[[1,3]]), [4,5,6], ["7", "8"], [9, 10]; cmp)
+    Accessors.test_getset_laws((@o _[[1,3]]), (4,5,6), ["7", "8"], [9, 10]; cmp)
+    Accessors.test_getset_laws((@o _[1:2]), (4,5,6), ["7", "8"], [9, 10]; cmp)
+    Accessors.test_getset_laws((@o _[1:2]), (4,5,6), ("7", "8"), (9, 10); cmp)
+    # Accessors.test_insertdelete_laws((@o _[[1,2]]), [4,5,6], ["7", "8"]; cmp)
+    Accessors.test_insertdelete_laws((@o _[[1,3]]), (4,5,6), ["7", "8"]; cmp)
+end
+
 @testitem "_" begin
     import CompatHelperLocal as CHL
     CHL.@check()
