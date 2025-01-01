@@ -80,10 +80,6 @@ barebones_string(optic) = @p let
     sprint(Accessors.show_optic, optic; context=:compact => true)
     replace(__, "_." => "", "_[" => "[")
 end
-	
-function Base.show(io::IO, os::OSomething)
-end
-Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
 
 
 Base.@propagate_inbounds set(obj, lens::Base.Fix2{typeof(view)}, val) = setindex!(obj, val, lens.x)
@@ -163,5 +159,11 @@ InverseFunctions.inverse(::typeof(only)) = tuple
 set(obj, o::Union{Base.Fix1{typeof(max)}, Base.Fix2{typeof(max)}}, val) = val ≥ o.x ? val : throw(ArgumentError("Value $val is lower than the other `max` argument $(o.x)"))
 set(obj, o::Union{Base.Fix1{typeof(min)}, Base.Fix2{typeof(min)}}, val) = val ≤ o.x ? val : throw(ArgumentError("Value $val is higher than the other `min` argument $(o.x)"))
 set(obj, o::FixArgsT(clamp, (Placeholder, Any, Any)), val) = o.args[2] ≤ val ≤ o.args[3] ? val : throw(ArgumentError("Value $val is out of `clamp` bounds $(o.args[2]) .. $(o.args[3])"))
+
+# for f in (map,)
+#     for m in methods(f)
+#         m.recursion_relation = Returns(true)
+#     end
+# end
 
 end
