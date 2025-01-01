@@ -58,6 +58,10 @@ for kws in [(:rev,), (:by,), (:rev, :by), (:by, :rev)]
     @eval modify(f, obj, o::FixArgsT(sort, (Placeholder,), NamedTuple{$kws})) = @modify(f, obj[sortperm(obj; o.kwargs...)])
 end
 
+InverseFunctions.inverse(f::FixArgsT(Base.literal_pow, (typeof(^), Placeholder, Val))) = Base.Fix2(invlitpow_arg2, f.args[3])
+InverseFunctions.inverse(f::Base.Fix2{typeof(invlitpow_arg2)}) = fixargs(Base.literal_pow, ^, Placeholder(), f.x)
+_extract_val(::Val{P}) where {P} = P
+
 # adapted from InverseFunctions
 function invlitpow_arg2(x::Number, p::Val)
     ip = Val(inv(_extract_val(p)))
@@ -70,7 +74,3 @@ function invlitpow_arg2(x::Number, p::Val)
         isinteger(inv(p)) ? Base.literal_pow(^, x, ip) : throw(DomainError(x, "inverse for x^$p is not defined at $x"))
     end
 end
-
-InverseFunctions.inverse(f::FixArgsT(Base.literal_pow, (typeof(^), Placeholder, Val))) = Base.Fix2(invlitpow_arg2, f.args[3])
-InverseFunctions.inverse(f::Base.Fix2{typeof(invlitpow_arg2)}) = fixargs(Base.literal_pow, ^, Placeholder(), f.x)
-_extract_val(::Val{P}) where {P} = P
