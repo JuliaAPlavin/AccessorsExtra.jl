@@ -4,11 +4,6 @@ using StructArrays
 using StructArrays: Tables
 import AccessorsExtra: extract_properties_recursive
 using AccessorsExtra.Accessors
-using AccessorsExtra.ConstructionBase
-
-# XXX: piracy, but kinda hard to upstream
-ConstructionBase.setproperties(x::StructArray, patch::NamedTuple) = @modify(cs -> setproperties(cs, patch), StructArrays.components(x))
-ConstructionBase.setproperties(x::StructArray{<:Tuple}, patch::Tuple) = @modify(cs -> setproperties(cs, patch), StructArrays.components(x))
 
 extract_properties_recursive(x::StructArray, props_nt::NamedTuple) =
     StructArray(extract_properties_recursive(StructArrays.components(x), props_nt))
