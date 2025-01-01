@@ -402,22 +402,6 @@ end
     @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @o keys(_)[∗])
 end
 
-@testitem "literal pow" begin
-    using Unitful
-    using AccessorsExtra: inverse
-
-    f1(x) = x^2
-    f2(x) = sqrt(x)
-    f3(x) = (@o _^2)(x)
-    f4(x) = inverse(@o _^2)(x)
-    f5(x, y) = @set $x^2 = y
-    @test (@inferred f1(2u"m")) == 4u"m"^2
-    @test (@inferred f2(4u"m")) == 2u"m"^(1//2)
-    @test (@inferred f3(2u"m")) == 4u"m"^2
-    @test (@inferred f4(4u"m")) == 2u"m"^(1//2)
-    @test (@inferred f5(2u"m", 4u"m")) == 2u"m"^(1//2)
-end
-
 @testitem "_" begin
     import CompatHelperLocal as CHL
     CHL.@check()

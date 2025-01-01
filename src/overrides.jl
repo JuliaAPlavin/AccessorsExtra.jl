@@ -121,11 +121,6 @@ function _parse_obj_optics(ex::Expr)
         is_bcast = @capture(ex, tmpf_.(tmpargs__))
         @debug "Captured f_(args__)" f args is_bcast
 
-        if f === (:^) && length(args) == 2 && args[2] isa Int
-            args = [f, args[1], Val(args[2])]
-            f = Base.literal_pow
-        end
-
         args_contain_under = map(arg -> tree_contains(arg, :_), args)
         f_contains_under = tree_contains(f, :_)
         f_contains_under && any(args_contain_under) && error("Either the function or the arguments can contain an underscore, not both")

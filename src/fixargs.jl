@@ -56,7 +56,3 @@ for kws in [(:rev,), (:by,), (:rev, :by), (:by, :rev)]
     @eval set(obj, o::FixArgsT(sort, (Placeholder,), NamedTuple{$kws}), val) = @set obj[sortperm(obj; o.kwargs...)] = val
     @eval modify(f, obj, o::FixArgsT(sort, (Placeholder,), NamedTuple{$kws})) = @modify(f, obj[sortperm(obj; o.kwargs...)])
 end
-
-InverseFunctions.inverse(f::FixArgsT(Base.literal_pow, (typeof(^), Placeholder, Val))) =
-    fixargs(Base.literal_pow, ^, Placeholder(), Val(inv(_extract_val(f.args[3]))))
-_extract_val(::Val{P}) where {P} = P
