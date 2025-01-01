@@ -129,7 +129,7 @@ set(obj, os::ContainerOptic{<:Dict}, vals) =
 
 # XXX: should deprecate
 macro optic₊(ex)
-    :( $Accessors.@o $ex)
+    esc(:( $Accessors.@o $ex ))
 end
 
 
