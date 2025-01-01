@@ -42,6 +42,7 @@ include("regex.jl")
 include("replace.jl")
 include("moremacros.jl")
 include("construct.jl")
+include("nicer_show.jl")
 include("bystep.jl")
 include("testing.jl")
 
@@ -68,19 +69,6 @@ function __init__()
             end
         end
     end
-end
-
-
-Accessors._shortstring(prev, o::Returns) = sprint(show, o.value)
-Accessors._shortstring(prev, os::OSomething) =
-    (prev == "_" ? "" : "(") * join(map(barebones_string, os.os), " || ") * (prev == "_" ? "" : ") ∘ $(prev)")
-
-barebones_string(optic::Base.Splat) = sprint(Accessors.show_optic, optic; context=:compact => true)
-barebones_string(optic::Union{Base.Fix1,Base.Fix2}) = sprint(Accessors.show_optic, optic; context=:compact => true)
-barebones_string(optic::typeof(identity)) = "_"
-barebones_string(optic) = @p let
-    sprint(Accessors.show_optic, optic; context=:compact => true)
-    replace(__, "_." => "", "_[" => "[")
 end
 
 
@@ -115,8 +103,6 @@ function set(obj, f::Base.Fix1{typeof(getindex)}, val)
     ix === nothing && throw(ArgumentError("value $val not found in $(f.x)"))
     return ix
 end
-
-Accessors._shortstring(prev, o::Base.Splat) = "$(o.f)($prev...)"
 
 # unambiguous for unitranges, but tension with general array @set first(x)...
 # piracy

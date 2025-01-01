@@ -92,11 +92,31 @@ end
 
 @inline delete(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
 
-
-Accessors._shortstring(prev, o::MaybeOptic) = Accessors._shortstring(prev, o.o) * "?" * (
-    isnothing(o.default) || ismissing(o.default) || (o.default isa Number && isnan(o.default)) ?
-    "" : string(o.default)
-)
+function Base.show(io::IO, o::MaybeOptic)
+    if get(io, :compact, false)
+        print(io, o.o)
+        if isnothing(o.default)
+            print(io, "?")
+        else
+            print(io, " || ", o.default)
+        end
+    else
+        print(io, "(@maybe ")
+        Accessors.show_optic(IOContext(io, :compact => true), o.o)
+        if o.default != nothing
+            print(io, " ", o.default)
+        end
+        print(io, ")")
+    end
+end
+function Accessors._shortstring(prev, o::MaybeOptic)
+    res = Accessors._shortstring(prev, o.o)
+    if isnothing(o.default) || ismissing(o.default) || (o.default isa Number && isnan(o.default))
+        res *= "?"
+    else
+        res *= " || " * sprint(show, o.default; context=:compact => true)
+    end
+end
 
 struct OSomething{OS}
     os::OS
@@ -109,13 +129,19 @@ osomething(optics...) = OSomething(optics)
 @inline set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
 
 function Base.show(io::IO, os::OSomething)
-    compact = get(io, :compact, false)
-    print(io, compact ? "some(" : "osomething(")
-    for (i, o) in enumerate(os.os)
-        i == 1 || print(io, ", ")
-        Accessors.show_optic(io, o)
+    if get(io, :compact, false)
+        for (i, o) in enumerate(os.os)
+            i == 1 || print(io, " || ")
+            Accessors.show_optic(IOContext(io, :compact => true), o)
+        end
+    else
+        print(io, "(@osomething ")
+        for (i, o) in enumerate(os.os)
+            i == 1 || print(io, " ")
+            Accessors.show_optic(IOContext(io, :compact => true), o)
+        end
+        print(io, ")")
     end
-    print(io, ")")
 end
 Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
 
