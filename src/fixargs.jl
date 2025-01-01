@@ -58,19 +58,6 @@ for kws in [(:rev,), (:by,), (:rev, :by), (:by, :rev)]
     @eval modify(f, obj, o::FixArgsT(sort, (Placeholder,), NamedTuple{$kws})) = @modify(f, obj[sortperm(obj; o.kwargs...)])
 end
 
-InverseFunctions.inverse(f::FixArgsT(Base.literal_pow, (typeof(^), Placeholder, Val))) = Base.Fix2(invlitpow_arg2, f.args[3])
-InverseFunctions.inverse(f::Base.Fix2{typeof(invlitpow_arg2)}) = fixargs(Base.literal_pow, ^, Placeholder(), f.x)
+InverseFunctions.inverse(f::FixArgsT(Base.literal_pow, (typeof(^), Placeholder, Val))) =
+    fixargs(Base.literal_pow, ^, Placeholder(), Val(inv(_extract_val(f.args[3]))))
 _extract_val(::Val{P}) where {P} = P
-
-# adapted from InverseFunctions
-function invlitpow_arg2(x::Number, p::Val)
-    ip = Val(inv(_extract_val(p)))
-    if InverseFunctions.is_real_type(typeof(x))
-        x ≥ zero(x) ? Base.literal_pow(^, x, ip) :  # x > 0 - trivially invertible
-            isinteger(p) && isodd(Integer(p)) ? copysign(Base.literal_pow(^, abs(x), ip), x) :  # p odd - invertible even for x < 0
-            throw(DomainError(x, "inverse for x^$p is not defined at $x"))
-    else
-        # complex x^p is invertible only for p = 1/n
-        isinteger(inv(p)) ? Base.literal_pow(^, x, ip) : throw(DomainError(x, "inverse for x^$p is not defined at $x"))
-    end
-end

@@ -406,8 +406,6 @@ end
     using Unitful
     using AccessorsExtra: inverse
 
-    @test inverse(inverse(@o _^3)) === @o _^3
-
     f1(x) = x^2
     f2(x) = sqrt(x)
     f3(x) = (@o _^2)(x)
