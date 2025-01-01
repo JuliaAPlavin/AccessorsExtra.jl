@@ -7,6 +7,11 @@ end
 @testitem "basic" begin
     using StaticArrays
 
+    struct UV{T} <: FieldVector{2, T}
+        u::T
+        v::T
+    end
+
     AccessorsExtra.@allinferred set modify getall setall begin
 
     or = RecursiveOfType(Number)
@@ -26,6 +31,11 @@ end
     @test getall(m, or) === (1, 1, 3)
     @test modify(x->x+10, m, or) === (a=11, bs=SVector((c=11, d="2"), (c=13, d="xxx")))
     @test setall(m, or, (10, 20, 30)) === (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
+
+    m = (a=1, bs=UV((c=1, d="2"), (c=3, d="xxx")))
+    @test getall(m, or) === (1, 1, 3)
+    @noinf @test modify(x->x+10, m, or) === (a=11, bs=UV((c=11, d="2"), (c=13, d="xxx")))
+    @test setall(m, or, (10, 20, 30)) === (a=10, bs=UV((c=20, d="2"), (c=30, d="xxx")))
 
     m = (a=1, bs=SizedVector{2}([(c=1, d="2"), (c=3, d="xxx")]))
     @test getall(m, or) === (1, 1, 3)

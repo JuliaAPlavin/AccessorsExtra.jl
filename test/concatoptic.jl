@@ -193,3 +193,33 @@ end
     os = flat_concatoptic(Union{Nothing, @NamedTuple{a::Union{Nothing, @NamedTuple{b::Int64}}}}, (@o _[∗ₚ][∗ₚ])) |> AccessorsExtra._optics
     @test os === ((@maybe _.b) ∘ (@maybe _.a),)
 end
+
+@testitem "flatten with arrays" begin
+    using AccessorsExtra: tree_concatoptic, ConcatOptics
+    using StaticArrays
+
+    struct U{T} <: FieldVector{1, T}
+        u::T
+    end
+
+    struct UV{T} <: FieldVector{2, T}
+        u::T
+        v::T
+    end
+
+    @test tree_concatoptic(SVector{0, Int}, (@o _[∗])) == concat()
+    @test tree_concatoptic(SVector{1, Int}, (@o _[∗])) == ConcatOptics(((@o _[1]),))
+    @test tree_concatoptic(SVector{2, Int}, (@o _[∗])) == @o _[1] _[2]
+    @test_broken tree_concatoptic(SVector{2, Int}, (@o _[∗ₚ])) == @o _.x _.y  # https://github.com/JuliaArrays/StaticArrays.jl/pull/1289
+    @test tree_concatoptic(U{Float64}, (@o _[∗])) == ConcatOptics(((@o _[1]),))
+    @test tree_concatoptic(U{Float64}, (@o _[∗ₚ])) == @o _.u
+    @test tree_concatoptic(UV{Float64}, (@o _[∗])) == @o _[1] _[2]
+    @test tree_concatoptic(UV{Float64}, (@o _[∗ₚ])) == @o _.u _.v
+
+    @test tree_concatoptic(Vector{Int}, (@o _[∗ₚ])) == concat()
+    @test tree_concatoptic(Matrix{Int}, (@o _[∗ₚ])) == concat()
+    @test tree_concatoptic(Array{Int,3}, (@o _[∗ₚ])) == concat()
+    @test tree_concatoptic(Vector{Int}, (@o _[∗])) == @o _[∗]
+    @test tree_concatoptic(Matrix{Int}, (@o _[∗])) == @o _[∗]
+    @test tree_concatoptic(Array{3, Int}, (@o _[∗])) == @o _[∗]
+end

@@ -222,8 +222,18 @@ _eltypes(::Type{T}) where {T<:Tuple} = fieldtypes(T)
 _eltypes(::Type{T}) where {T<:AbstractVector} = ntuple(Returns(eltype(T)), _typelength(T))  # only for StaticArrays
 
 _typelength(::Type{T}) where {T<:Tuple} = fieldcount(T)
-# only for StaticArrays:
-_typelength(::Type{T}) where {T<:AbstractVector} = fieldcount(only(fieldtypes(T))) # this hack because length(T) doesn't work due to worldage
+_typelength(::Type{T}) where {T<:Array} = error("Cannot determine length of $T in compile time")
+# only for StaticArrays,
+# this hack needed because length(T) doesn't work due to worldage
+function _typelength(::Type{T}) where {T<:AbstractVector}
+    if fieldnames(T) == (:data,)
+        # SVector, MVector
+        return fieldcount(only(fieldtypes(T)))
+    else
+        # custom FieldVector
+        fieldcount(T)
+    end
+end
 
 @generated function setall(obj::T, or::ORT, vals::VT) where {T,ORT<:RecursiveOfType,VT}
     expr, cnt = _setall_T(T, ORT, Val(1))

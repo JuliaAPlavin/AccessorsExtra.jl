@@ -189,6 +189,7 @@ end
 tree_concatoptic(obj::Type{<:NTuple{N,Any}}, o::Elements) where {N} = ConcatOptics(ntuple(i -> IndexLens((i,)), N))
 tree_concatoptic(obj::Type{<:Integer}, o::Elements) = @o _[]
 tree_concatoptic(obj::Type{<:AbstractArray}, o::Elements) = @o _[∗]
+tree_concatoptic(obj::Type{<:Array}, o::Elements) = @o _[∗]
 tree_concatoptic(obj::Type{<:AbstractVector}, o::Elements) = ConcatOptics(ntuple(i -> IndexLens((i,)), _typelength(obj)))
 function tree_concatoptic(obj::Type{T}, o::Properties) where {T}
     NT = Core.Compiler.return_type(getproperties, Tuple{T})
