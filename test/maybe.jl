@@ -207,5 +207,5 @@ end
     @test osomething(@o(_.a), @o(_.b)) === @osomething _.a _.b
     @test osomething(@o(_.a), @o(f(_.b))) === @osomething _.a f(_.b)
     @test osomething(@o(_.a), @o NaN) === @osomething _.a NaN
-    @test osomething(@o(_.a), @o 0/0) === @osomething _.a NaN
+    @test osomething(@o(_.a), @o 0/0) === @osomething _.a 0/0
 end
