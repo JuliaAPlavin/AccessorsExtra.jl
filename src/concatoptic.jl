@@ -165,6 +165,7 @@ function tree_concatoptic(obj::Type, o::ComposedFunction)
     concat(optics...)
 end
 # XXX: try to handle Union + maybe more uniformly
+tree_concatoptic(::Type{Nothing}, o::ComposedFunction) = @invoke tree_concatoptic(Nothing::Type, o)
 function tree_concatoptic(::Type{Union{Nothing,T}}, o::ComposedFunction) where {T}
     inner_optic = tree_concatoptic(T, o.inner)
     outer_obj_types = Core.Compiler.return_type(getall, Tuple{T, typeof(o.inner)}) |> _eltypes
@@ -194,6 +195,7 @@ function tree_concatoptic(obj::Type{T}, o::Properties) where {T}
     concat(map(PropertyLens, fieldnames(NT))...)
 end
 # XXX: try to handle Union + maybe more uniformly
+tree_concatoptic(::Type{Nothing}, ::Properties) = concat()
 function tree_concatoptic(::Type{Union{Nothing,T}}, ::Properties) where {T}
     NT = Core.Compiler.return_type(getproperties, Tuple{T})
     concat(map(maybe∘PropertyLens, fieldnames(NT))...)

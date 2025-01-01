@@ -172,6 +172,12 @@ end
     @test tree_concatoptic(String, (@o _[∗ₚ])) === concat()
     @test flat_concatoptic(String, (@o _[∗ₚ])) === concat()
 
+    @test tree_concatoptic(Nothing, (@o _[∗ₚ])) === concat()
+    @test flat_concatoptic(Nothing, (@o _[∗ₚ])) === concat()
+
+    @test tree_concatoptic(Nothing, (@o _[∗ₚ][∗ₚ])) === concat()
+    @test flat_concatoptic(Nothing, (@o _[∗ₚ][∗ₚ])) === concat()
+
     o = tree_concatoptic(Union{Nothing, @NamedTuple{a::Int64, b::Float64}}, (@o _[∗ₚ]))
     @test getall(nothing, o) === (nothing, nothing)
     @test getall((a=1, b=2.0), o) === (1, 2.0)
