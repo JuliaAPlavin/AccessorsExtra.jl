@@ -90,6 +90,8 @@ function modify(f, obj, o::MaybeOptic)
     end
 end
 
+delete(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
+
 
 Accessors._shortstring(prev, o::MaybeOptic) = Accessors._shortstring(prev, o.o) * "?" * (
     isnothing(o.default) || ismissing(o.default) || (o.default isa Number && isnan(o.default)) ?

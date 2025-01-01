@@ -12,7 +12,7 @@
 end
 
 @testitem "maybe" begin
-    AccessorsExtra.@allinferred modify set getall setall begin
+    AccessorsExtra.@allinferred modify set getall setall delete begin
     # @test set(1, something, 2) == 2
     # @test set(Some(1), something, 2) == Some(2)
 
@@ -29,6 +29,10 @@ end
     @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
     @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
     @test_throws Exception modify(x -> nothing, (;), o)
+
+    @test delete((a=[1, 2],), o) == (a=[1],)
+    @test delete((a=[1],), o) == (a=[1],)
+    @test_throws Exception delete((;), o)
 
     for o in (maybe(@o _.a) ⨟ maybe(@o(_.b)), maybe(@o _.a.b))
         @test o((a=(b=1,),)) == 1
