@@ -137,13 +137,14 @@ Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
 
 @inline hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)
 
-@inline hasoptic(obj, ::typeof(first)) = !isempty(obj)
-@inline hasoptic(obj, ::typeof(last)) = !isempty(obj)
-@inline hasoptic(obj, ::typeof(only)) = length(obj) == 1
+@inline hasoptic(obj, ::typeof(length)) = !isnothing(obj) && Base.IteratorSize(typeof(obj)) isa Union{Base.HasLength, Base.HasShape}
+@inline hasoptic(obj, ::typeof(first)) = !isnothing(obj) && !isempty(obj)
+@inline hasoptic(obj, ::typeof(last)) = !isnothing(obj) && !isempty(obj)
+@inline hasoptic(obj, ::typeof(only)) = !isnothing(obj) && length(obj) == 1
 
-# should override call, set, modify for efficiency?
-@inline hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse), Type{T}}) where {T} = !isnothing(tryparse(T, x))
-# hasoptic(x::AbstractString, o::Base.Fix2{Type{T}}) where {T <: Union{Date, Time, DateTime}} = # XXX - what to put here?
+# XXX: should override call, set, modify for efficiency?
+@inline hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse)}) = !isnothing((@set o.f = tryparse)(x))
+@inline hasoptic(x::AbstractString, o::FixArgs{typeof(parse)}) = !isnothing((@set o.f = tryparse)(x))
 
 # fallback definition
 # without it: cases when hasoptic throws, but optic actually exists

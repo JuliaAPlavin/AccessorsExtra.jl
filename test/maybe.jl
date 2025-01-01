@@ -12,6 +12,8 @@
 end
 
 @testitem "maybe" begin
+    using Dates
+
     AccessorsExtra.@allinferred modify set getall setall delete begin
     # @test set(1, something, 2) == 2
     # @test set(Some(1), something, 2) == Some(2)
@@ -96,6 +98,13 @@ end
     @test o(()) === nothing
     @test o(nothing) === nothing
 
+    o = maybe(length)
+    @test o([1, 2, 3]) == 3
+    @test o([]) == 0
+    @test o((i for i in 1:10 if i % 2 == 1)) === nothing
+    @test_broken o(:abc) === nothing
+    @test o(nothing) === nothing
+
     o = maybe(@o parse(Int, _))
     @test o("1") == 1
     @test o("a") === nothing
@@ -104,6 +113,15 @@ end
     @test modify(x -> x+1, "a", o) == "a"
     @test set("1", o, 2) == "2"
     @test_broken set("a", o, 2) == "2"
+
+    o = maybe(@o parse(Date, _, dateformat"Y/m/d"))
+    @test o("2020/02/03") == Date(2020, 2, 3)
+    @test o("2020-02-03") === nothing
+    @test o(nothing) === nothing
+    @test_broken modify(x -> x+Day(1), "2020/02/03", o) == "2020/02/04"
+    @test modify(x -> x+Day(1), "2020-02-03", o) == "2020-02-03"
+    @test_broken set("2020/02/03", o, Date(1234, 5, 6)) == "1234/05/06"
+    @test_broken set("2020-02-03", o, Date(1234, 5, 6)) == "1234/05/06"
 
     o = maybe(@o _.a) ∘ Elements()
     @test getall(((a=1,), (b=2,)), o) === (1, nothing)
