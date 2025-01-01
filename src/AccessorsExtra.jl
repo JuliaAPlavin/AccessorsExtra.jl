@@ -16,7 +16,7 @@ export
     @replace, @push, @pushfirst, @pop, @popfirst,
     @getall, @setall,
     construct, @construct,
-    RecursiveOfType,
+    RecursiveOfType, RecursivePred,
     keyed, enumerated, selfcontext, stripcontext, hascontext,
     maybe, osomething, oget, hasoptic, @maybe, @oget, @osomething,
     modifying, onget, onset, ongetset,

@@ -1,3 +1,9 @@
+@testitem "RecursivePred" begin
+    m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
+    @test (@getall m |> RecursivePred(x -> x isa Number)) == (1, 1, 3)
+    @test (@getall m |> RecursivePred(x -> x isa Number && x < 2)) == (1, 1)
+end
+
 @testitem "basic" begin
     using StaticArrays
 

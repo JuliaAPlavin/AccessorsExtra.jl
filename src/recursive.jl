@@ -11,6 +11,65 @@ struct Children end
 @inline setall(obj, c::Children, vals) = setall(obj, _chooseoptic_byval(obj, c), vals)
 
 
+# lots of duplication: RecursivePred vs RecursiveOfType, getall vs modify, etc
+# could in principle combine them, but Julia optimization heuristics are prohibitive to this kind of recursive functions
+
+struct RecursivePred{OT,RT,ORD,O}
+    outpred::OT
+    recpred::RT
+    order::ORD
+    optic::O
+end
+Broadcast.broadcastable(o::RecursivePred) = Ref(o)
+function RecursivePred(out, optic=Children(); recurse=Returns(true), order=nothing)
+    _check_order(order)
+    RecursivePred(out, recurse, Val(order), optic)
+end
+OpticStyle(::Type{<:RecursivePred}) = ModifyBased()
+
+function modify(f, obj, or::RecursivePred, objs...)
+    recurse(o, bs...) = _walk_modify(var"#self#", f, o, or, bs...)
+    _walk_modify(recurse, f, obj, or, objs...)
+end
+_walk_modify(recurse, f, obj, or::RecursivePred{<:Any,<:Any,Val{ORD}}, objs...) where {ORD} =
+    if or.outpred(obj)
+        if ORD === nothing || !or.recpred(obj)
+            f(obj, objs...)
+        elseif ORD === :pre
+            modify(recurse, f(obj, objs...), or.optic, objs...)
+        elseif ORD === :post
+            f(modify(recurse, obj, or.optic, objs...), objs...)
+        else
+            error("Unknown order: $ORD")
+        end
+    elseif or.recpred(obj)
+        modify(recurse, obj, or.optic, objs...)
+    else
+        obj
+    end
+
+function getall(obj, or::RecursivePred)
+    recurse(o) = _walk_getall(var"#self#", o, or)
+    _walk_getall(recurse, obj, or)
+end
+_walk_getall(recurse, obj, or::RecursivePred{<:Any,<:Any,Val{ORD}}) where {ORD} =
+    if or.outpred(obj)
+        if ORD === nothing || !or.recpred(obj)
+            return (obj,)
+        elseif ORD === :pre
+            return (obj, _getall(recurse, obj, or.optic)...)
+        elseif ORD === :post
+            return (_getall(recurse, obj, or.optic)..., obj)
+        else
+            error("Unknown order: $ORD")
+        end
+    elseif or.recpred(obj)
+        _getall(recurse, obj, or.optic)
+    else
+        ()
+    end
+
+
 """    RecursiveOfType(out::Type, [optic=Children()]; [recurse::Type=Any])
 
 Optic that references all values of type `out` located arbitrarily deep.
