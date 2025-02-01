@@ -131,6 +131,7 @@ end
 @testitem "split unit" begin
     using AccessorsExtra: _split_unitstr_from_optic
     using Unitful
+    using DateFormats
 
     @test _split_unitstr_from_optic(identity) == (identity, nothing)
     @test _split_unitstr_from_optic(rad2deg) == (identity, "°")
@@ -152,4 +153,8 @@ end
 
     @test _split_unitstr_from_optic(@o rad2deg(_.a |> enumerated(∗) |> _.b)) == ((@o _.a |> enumerated(∗) |> _.b), "°")
     @test _split_unitstr_from_optic((@o ustrip(u"km", _.a[∗])) |> enumerated) == ((@o _.a[∗]) |> enumerated, "km")
+
+    @test _split_unitstr_from_optic(julian_day) == (identity, "JD")
+    @test _split_unitstr_from_optic(@o mjd(_.a)) == ((@o _.a), "MJD")
+    @test _split_unitstr_from_optic(@o yeardecimal(_.a)) == ((@o _.a), "yr")
 end
