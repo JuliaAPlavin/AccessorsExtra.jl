@@ -1,13 +1,5 @@
 name: Export Pluto notebooks
 on:
-    push:
-        branches:
-            - main
-            - master
-        paths:
-          - 'test/notebook.jl'  # to keep old url working
-          - 'examples/notebook.jl'
-          - '.github/workflows/ExportPluto.yml'
     workflow_dispatch:
 
 env:
