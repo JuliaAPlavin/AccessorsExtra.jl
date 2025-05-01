@@ -52,7 +52,7 @@ end
     using Tables
     using StructArrays
     using TypedTables
-    using AccessorsExtra.Accessors: test_getset_laws
+    using AccessorsExtra.Accessors: test_getset_laws, test_insertdelete_laws
 
     cmp(a, b) = rowtable(a) == rowtable(b)
     cmp(a::T, b::T) where {T} = a == b
@@ -65,7 +65,7 @@ end
         @test set(tbl, Tables.columns, tblbase)::typeof(tbl) == tbl
         test_getset_laws(Tables.columns, tbl, (c=[1.0], d=["2"]), (a=[1], b=[2]); cmp)
         test_getset_laws((@o Tables.columns(_).a), tbl, [1.0, 2.0], [:x, :y]; cmp)
-        # test_insertdelete_laws((@o Tables.columns(_).c), tbl, [1.0, 2.0])
+        test_insertdelete_laws((@o Tables.columns(_).c), tbl, [1.0, 2.0])
     end
 
     # table types with materializer() returning the same type
@@ -81,7 +81,7 @@ end
         test_getset_laws(columntable, tbl, (c=[1.0], d=["2"]), (a=[1], b=[2]); cmp)
         test_getset_laws((@o columntable(_).a), tbl, [1.0, 2.0], [2, 3]; cmp)
         test_getset_laws((@o rowtable(_)[1]), tbl, (a=3, b="x"), (a=2, b="3"); cmp)
-        # test_insertdelete_laws((@o columntable(_).c), tbl, [1.0, 2.0])
+        test_insertdelete_laws((@o columntable(_).c), tbl, [1.0, 2.0]; cmp)
     end
 end
 
