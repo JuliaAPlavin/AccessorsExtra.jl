@@ -1,5 +1,7 @@
 @testitem "basic" begin
     using AccessorsExtra: propspec, Placeholder as P
+
+    AccessorsExtra.@allinferred o propspec begin
     o = @o _.a + 1
     @test propspec(o) == (a=P(),)
     @test o((a=2,)) == 3
@@ -11,6 +13,7 @@
     @test propspec(o) == (a=P(), b=(c=P(),))
     @test_broken propspec(o) == propspec(typeof(o))
     @test o((a=2, b=(c=3,))) == 5
+    @test delete((x=1, a=2, b=(c=3, d=4)), o) == (x=1, b=(;d=4))
 
     o = @o exp10(_.a + _.b.c)
     @test propspec(o) == (a=P(), b=(c=P(),))
@@ -23,6 +26,7 @@
     o = @o round(Int, _.a.b + _.a.c + _.b.d + _.b.d)
     @test propspec(o) == (a=(b=P(), c=P()), b=(d=P(),))
     @test o((a=(b=1, c=2), b=(d=3,))) == 9
+    end
 
     macro mym_str(expr)
         expr
