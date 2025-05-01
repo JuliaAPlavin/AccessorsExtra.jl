@@ -25,6 +25,9 @@
 
         @test construct(NamedTuple, @o(_.a) => 1, @o(_.b) => "") === (a=1, b="")
         @test construct(NamedTuple) === (;)
+
+        @test construct(Vector{Any}, (@o _[1]) => 10, (@o _[3]) => 20) == [10, nothing, 20]
+        @test construct(Vector{Int}, (@o _[1]) => 10, (@o _[3]) => 20)[[1,3]] == [10, 20]
     end
 end
 
@@ -101,6 +104,9 @@ end
     test_construct_laws(SVector{2}, @o(_.y) => 4, @o(_.x) => 5)
     test_construct_laws(SVector{2,Float32}, @o(_.x) => 4, @o(_.y) => 5)
     test_construct_laws(SVector{2,Real}, @o(_.x) => 4, @o(_.y) => 5, inferred=false, type=SVector{2,<:Real})
+
+    test_construct_laws(Vector{Int}, (@o _[1]) => 10, (@o _[3]) => 20)
+    test_construct_laws(Vector{Any}, (@o _[1]) => 10, (@o _[3]) => 20)
 end
 
 @testitem "macro" begin
