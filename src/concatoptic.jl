@@ -187,7 +187,7 @@ function tree_concatoptic(obj::Type, o)
     if length(getall_eltypes) == 1
         o
     else
-        throw(MethodError(tree_concatoptic, (o, obj)))
+        throw(MethodError(tree_concatoptic, (obj, o)))
     end
 end
 tree_concatoptic(obj::Type{<:NTuple{N,Any}}, o::Elements) where {N} = ConcatOptics(ntuple(i -> IndexLens((i,)), N))
