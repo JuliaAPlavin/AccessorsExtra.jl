@@ -12,7 +12,7 @@ Some highlights:
 julia> obj = (a=1, b=(2, 3, "4"))
 
 # multi-valued optics
-julia> o = @optic₊ (_.a, _.b[2])
+julia> o = @o (_.a, _.b[2])
 julia> o(obj)
 (1, 3)
 julia> @set o(obj) = (:x, :y)
@@ -32,12 +32,14 @@ julia> o(obj)
 julia> o((a=1, c=3))
 nothing
 
-# optical optics: @oget
-julia> @oget obj.a.b[1]
-2
-julia> @oget obj.c.d
+# optional optics: @oget
+julia> @oget obj.a
+1
+julia> @oget obj.c
 nothing
-julia> @oget obj.c.d obj.a.b[1]
+julia> @oget obj.b[10]
+nothing
+julia> @oget obj.c obj.b[10] obj.b[1]  # returns the first found value
 2
 ```
 
