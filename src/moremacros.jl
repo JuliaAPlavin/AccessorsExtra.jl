@@ -27,6 +27,7 @@ macro popfirst(ref)
     :($popfirst($obj, $optic))
 end
 
+# XXX: should upstream?
 macro getall(ref)
     obj, optic = parse_obj_optic(ref)
     :($getall($obj, $optic))

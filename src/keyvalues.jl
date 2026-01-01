@@ -1,4 +1,5 @@
 # trivial setters
+# XXX: piracy, upstream
 set(obj::AbstractArray, ::typeof(values), vals::AbstractArray) = (@assert axes(obj) == axes(vals); vals)
 # XXX: setall should be improved in Accessors, see OffsetArrays tests
 # set(obj::AbstractArray, ::typeof(values), vals) = setall(obj, Elements(), vals)

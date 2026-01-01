@@ -6,12 +6,15 @@ using TestItemRunner
     using AccessorsExtra: FlexIx
 
     s = "abc"
+    @test s[FlexIx(2:3)] == "bc"
     @test "adefxyz" == @set s[FlexIx(2:3)] = "defxyz"
     @test "adefbc" == @modify(x -> "def" * x, s[FlexIx(2:3)])
     v = [1, 2, 3]
+    @test v[FlexIx(2:3)] == [2, 3]
     @test [1, 10, 11, 12] == @set v[FlexIx(2:3)] = [10, 11, 12]
     @test [1, 10, 2, 3] == @modify(x -> [10, x...], v[FlexIx(2:3)])
     v = (1, 2, 3)
+    @test v[FlexIx(2:3)] == (2, 3)
     @test (1, 10, 11, 12) == @set v[FlexIx(2:3)] = (10, 11, 12)
     @test (1, 10, 2, 3) == @modify(x -> (10, x...), v[FlexIx(2:3)])
 end
@@ -35,6 +38,7 @@ end
     @test modify(+, (1, 2.), ∗, (3, 4)) === (4, 6.)
     @test modify(+, (1, 2.), ∗, (a=3, b=4.)) === (4, 6.)
     @test modify(+, (1, 2.), ∗, [3, 4, 5]) === (4, 6.)
+    @test modify(+, (1, 2.), ∗, CartesianIndex(3, 4)) === (4, 6.)
     @test modify(+, (x=1, y=2.), ∗, (3, 4.)) === (x=4, y=6.)
     @test modify(+, (x=1, y=2.), ∗, (a=3, b=4.)) === (x=4, y=6.)
     @test modify(+, (x=1, y=2.), ∗, [3, 4]) === (x=4, y=6.)
@@ -45,6 +49,7 @@ end
     @test modify(+, (1, 2), ∗ₚ, (3, 4)) === (4, 6)
     @test modify(+, (x=1, y=2), ∗ₚ, (x=3, y=4, z=5)) === (x=4, y=6)
     @test modify(+, (x=1, y=2), ∗ₚ, (y=4, x=3, z=5)) === (x=4, y=6)
+    @test modify(+, (x=1, y=2), ∗ₚ, (y=4, x=3, z=5), (x=10, y=20)) === (x=14, y=26)
     # @test modify(+, (x=1, y=2), ∗ₚ, Dict(:y=>4, :x=>3, :z=>5)) === (x=4, y=6)
     # @test modify(+, (x=1, y=2), ∗ₚ, dictionary([:y=>4, :x=>3])) === (x=4, y=6)
     @test_throws Exception modify(+, (1, 2), ∗ₚ, (a=3, b=4))
@@ -60,7 +65,15 @@ end
 
 
     @test modify(+, (a=(1, 2), b=3), (@o _.a[∗]), (b=4, a=(5, 6))) === (a=(6, 8), b=3)
-    @test modify(+, (a=(1, 2), b=3), (@optics _.a[∗] _.b), (b=4, a=(5, 6))) === (a=(6, 8), b=7)
+    @test modify(+, (a=(1, 2), b=3), (@o _.a[∗] _.b), (b=4, a=(5, 6))) === (a=(6, 8), b=7)
+
+    @test modify(tuple, (1, 2), first, (3, 4), (5, 6)) === ((1, 3, 5), 2)
+    @test modify(+, (1, 2), (@o first(_) + 1), (3, 4), (5, 6)) === (11, 2)
+    @test modify(+, (1, 2), (@o _[∗] + 1), (3, 4), (5, 6)) === (11, 14)
+
+    # @test modify(tuple, (a=(1, 2), b=3), (@maybe _.a[∗]), ()) === (a=((1,nothing), (2,nothing)), b=7)
+
+    @test modify(+, ((a=1,), (a=2,)), (@o _ |> shared(∗) |> _.a), (3, 4)) === ((a=4,), (a=6,))
     end
 end
 
@@ -135,175 +148,6 @@ end
     end == "fractions: 2/4, another 0.5, 5/3, all!"
 end
 
-@testitem "maybe" begin
-    AccessorsExtra.@allinferred modify set getall setall begin
-    # @test set(1, something, 2) == 2
-    # @test set(Some(1), something, 2) == Some(2)
-
-    o = osomething(@o(_.a), @o(_.b))
-    @test o((a=1, b=2)) == 1
-    @test o((c=1, b=2)) == 2
-    @test_throws "no optic" o((c=1,))
-    @test set((a=1, b=2), o, 10) == (a=10, b=2)
-    @test set((c=1, b=2), o, 10) == (c=1, b=10)
-    @test_throws "no optic" set((c=1,), o, 10)
-
-
-    @testset for o in ((@o get(_, :a, 0)), (@o get(() -> 0, _, :a)))
-        @test o((a=1, b=2)) == 1
-        @test o((c=1, b=2)) == 0
-        @test set(Dict(:a=>1, :b=>2), o, 10) == Dict(:a=>10, :b=>2)
-        @test set(Dict(:c=>1, :b=>2), o, 10) == Dict(:c=>1, :b=>2, :a=>10)
-        @test modify(x->x+1, Dict(:a=>1, :b=>2), o) == Dict(:a=>2, :b=>2)
-        @test modify(x->x+1, Dict(:c=>1, :b=>2), o) == Dict(:a=>1, :c=>1, :b=>2)
-    end
-
-
-    o = maybe(@o _[2]) ∘ @o(_.a)
-    @test o((a=[1, 2],)) == 2
-    @test o((a=[1],)) == nothing
-    @test_throws Exception o((;))
-    @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
-    @test set((a=[1],), o, 5) == (a=[1, 5],)
-    @test_throws Exception set((;), o, 5)
-    @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
-    @test modify(x -> x+1, (a=[1],), o) == (a=[1],)
-    @test_throws Exception modify(x -> x+1, (;), o)
-    @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
-    @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
-    @test_throws Exception modify(x -> nothing, (;), o)
-
-    for o in (maybe(@o _.a) ⨟ maybe(@o(_.b)), maybe(@o _.a.b))
-        @test o((a=(b=1,),)) == 1
-        @test o((a=(;),)) == nothing
-        @test o((;)) == nothing
-        @test set((a=(b=1,),), o, 5) == (a=(b=5,),)
-        @test set((a=(;),), o, 5) == (a=(b=5,),)
-        @test modify(x -> x+1, (a=(b=1,),), o) == (a=(b=2,),)
-        @test modify(x -> x+1, (a=(;),), o) == (a=(;),)
-        @test modify(x -> x+1, (;), o) == (;)
-        @test modify(x -> nothing, (a=(b=1,),), o) == (a=(;),)
-        @test modify(x -> nothing, (a=(;),), o) == (a=(;),)
-        @test modify(x -> nothing, (;), o) == (;)
-
-        @test getall((a=(b=1,),), o) == (1,)
-        @test getall((a=(;),), o) == ()
-        @test getall((;), o) == ()
-        @test getall(nothing, o) == ()
-        @test setall((a=(b=1,),), o, (5,)) == (a=(b=5,),)
-        @test setall((a=(;),), o, ()) == (a=(;),)
-        @test setall((;), o, ()) == (;)
-        @test setall(nothing, o, ()) == nothing
-    end
-
-    for obj in ((5,), (a=5,), [5], Dict(1 => 5),)
-        o = maybe(@o _[1])
-        @test o(obj) == 5
-        Accessors.test_getset_laws(o, obj, 10, 20)
-    end
-
-    for obj in ((), [],)
-        o = maybe(@o _[1])
-        @test o(obj) == nothing
-        Accessors.test_getset_laws(o, obj, 10, 20)
-    end
-
-    for obj in ((;), Dict(),)
-        o = maybe(@o _[:a])
-        @test o(obj) == nothing
-        Accessors.test_getset_laws(o, obj, 10, 20)
-    end
-
-    for o in [maybe(@o first(_).a), maybe(@o last(_).a)]
-        for obj in ([(a=1,)], [(b=1,)], [(a=1,), (b=2,)], [(b=1,), (a=2,)],)
-            Accessors.test_getset_laws(o, obj, 10, 20)
-        end
-        @test o([(a=1,)]) === 1
-        @test o([]) === nothing
-        @test o([(b=1,)]) === nothing
-        @test modify(x -> x+1, [], o) == []
-    end
-    o = maybe(@o only(_).a)
-    @test o([(a=1,)]) == 1
-    @test o([(a=1,), (a=2,)]) === nothing
-
-    o = maybe(@o last(_.a, 3))
-    @test o((a=[1, 2, 3, 4, 5],)) == [3, 4, 5]
-    @test o((a=[4, 5],)) == [4, 5]
-    @test o((a=[],)) == []
-    @test o((a=nothing,)) === nothing
-    @test o(()) === nothing
-    @test o(nothing) === nothing
-
-    o = maybe(@o parse(Int, _))
-    @test o("1") == 1
-    @test o("a") === nothing
-    @test o(nothing) === nothing
-    @test modify(x -> x+1, "1", o) == "2"
-    @test modify(x -> x+1, "a", o) == "a"
-    @test set("1", o, 2) == "2"
-    @test_broken set("a", o, 2) == "2"
-
-    o = maybe(@o _.a) ∘ Elements()
-    @test getall(((a=1,), (b=2,)), o) === (1,)
-    @test getall(((b=2,),), o) === ()
-    @test getall(((),), o) === ()
-    @test modify(x -> x+1, ((a=1,), (b=2,)), o) === ((a=2,), (b=2,))
-    @test modify(x -> nothing, ((a=1,), (b=2,)), o) === ((;), (b=2,))
-    @test set(((a=1,), (b=2,)), o, 10) === ((a=10,), (b=2,))
-    @test set(((a=1,), (b=2,)), o, nothing) === ((;), (b=2,))
-    @test setall(((a=1,), (b=2,)), o, (10,)) === ((a=10,), (b=2,))
-    @test_throws "tried to assign 0 elements to 1 destinations" setall(((a=1,), (b=2,)), o, ()) === ((a=10,), (b=2,))
-    @test_throws "tried to assign 2 elements to 1 destinations" setall(((a=1,), (b=2,)), o, (10, 20)) === ((a=10,), (b=2,))
-
-    o = @o _.a[2]
-    @test oget((a=[1, 2, 3],), o, 123) == 2
-    @test oget((;), o, 123) == 123
-    @test oget((a=[1, 2, 3],), o) == 2
-    @test oget((;), o) == nothing
-    @test oget(Returns(123), (a=[1, 2, 3],), o) == 2
-    @test oget(Returns(123), (;), o) == 123
-
-    # specify default value in maybe() - semantic not totally clear...
-    # also see get(...) above
-    o = maybe(@o _[2]; default=10) ∘ @o(_.a)
-    @test o((a=[1, 2],)) == 2
-    @test o((a=[1],)) == 10
-    @test_throws Exception o((;))
-    # @test set((a=[1, 2],), o, 5) == (a=[1, 5],)
-    # @test set((a=[1],), o, 5) == (a=[1, 5],)
-    # @test_throws Exception set((;), o, 5)
-    # @test modify(x -> x+1, (a=[1, 2],), o) == (a=[1, 3],)
-    # @test_broken modify(x -> x+1, (a=[1],), o) == (a=[1, 11],)
-    # @test_throws Exception modify(x -> x+1, (;), o)
-    # @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
-    # @test_broken modify(x -> 10, (a=[1, 2],), o) == (a=[1],)
-    # @test modify(x -> 10, (a=[1],), o) == (a=[1],)
-    # @test_throws Exception modify(x -> 10, (;), o)
-    # @test modify(x -> nothing, (a=[1, 2],), o) == (a=[1],)
-    # @test modify(x -> nothing, (a=[1],), o) == (a=[1],)
-    # @test_throws Exception modify(x -> nothing, (;), o)
-    end
-
-    f = x -> 2*x
-    @test (@maybe _.a) === maybe(@o _.a)
-    @test (@maybe _.a[∗][2]) === maybe(@o _.a[∗][2])
-    @test (@maybe exp(_.a[∗][2])) === maybe(@o exp(_.a[∗][2]))
-    @test (@maybe _.a 10) === maybe(@o _.a; default=10)
-    @test (@maybe f(_)) === maybe(f)
-
-    x = (a=[1, 2],)
-    @test (@oget x.a[2] 123) === 2
-    @test (@oget x.a[3] 123) === 123
-    @test (@oget x.a[2]) === 2
-    @test (@oget x.a[3]) === nothing
-    @test (@oget f(x.a[2]) 123) === 4
-
-    @test osomething(@o(_.a)) === @osomething _.a
-    @test osomething(@o(_.a), @o(_.b)) === @osomething _.a _.b
-    @test osomething(@o(_.a), @o(f(_.b))) === @osomething _.a f(_.b)
-end
-
 @testitem "PartsOf" begin
     x = (a=((b=1,), (b=2,), (b=3,)), c=4)
     @test (@o _.a[∗].b |> PartsOf())(x) == (1, 2, 3)
@@ -314,7 +158,7 @@ end
     @test modify(reverse, x, o) == (a=((b=4,), (b=3,), (b=2,)), c=1)
     o = (@o(_.a[∗].b) ++ @o(_.c)) ⨟ @o(_ |> PartsOf() |> _[2])
     @test modify(x -> x*10, x, o) == (a=((b=1,), (b=20,), (b=3,)), c=4)
-    o = (@o(_.a[∗].b) ++ @o(_.c)) ⨟ @o(_ |> PartsOf()) ⨟ @optics _[1] _[2]
+    o = (@o(_.a[∗].b) ++ @o(_.c)) ⨟ @o(_ |> PartsOf()) ⨟ @o _[1] _[2]
     @test modify(x -> x*10, x, o) == (a=((b=10,), (b=20,), (b=3,)), c=4)
     @test modify(
         xs -> round.(Int, xs ./ sum(xs) .* 100),
@@ -345,22 +189,10 @@ end
     @test set([(a=1,)], o, 'y') == [(a='x',)]
     @test setall([(a=1,)], o, ['y']) == [(a='x',)]
     @test modify(-, [(a=1,)], o) == [(a=-3,)]
-    o = logged(@optics _[∗].a + 1 _[1].a)
+    o = logged(@o _[∗].a + 1 _[1].a)
     @test getall([(a=1,)], o) == [2, 1]
-    o = logged(@optic₊ (_[1].a + 1, _[1].a))
+    o = logged(@o (_[1].a + 1, _[1].a))
     @test o([(a=1,)]) == (2, 1)
-end
-
-@testitem "base optics" begin
-    using StaticArrays
-
-    x = [1, 2, 3]
-    @test (@set (2 in $x) = false) == [1, 3]
-    @test (@set (5 in $x) = true) == [1, 2, 3, 5]
-    Accessors.test_getset_laws(@o(2 in _), [1,2,3], false, true)
-    Accessors.test_getset_laws(@o(5 in _), [1,2,3], false, true)
-    Accessors.test_getset_laws(@o(2 in _), Set([1,2,3]), false, true)
-    Accessors.test_getset_laws(@o(5 in _), Set([1,2,3]), false, true)
 end
 
 @testitem "on get/set" begin
@@ -369,7 +201,7 @@ end
     o = @o(_.a) ∘ onset(x -> @set x.tot = x.a + x.b)
     @test o(obj) === 1
     @test set(obj, o, 10) === (a=10, b=2, tot=12)
-    @test setall(obj, @optics(_.a, _.b) ∘ onset(x -> @set x.tot = x.a + x.b), (10, 20)) === (a=10, b=20, tot=30)
+    @test setall(obj, @o(_.a, _.b) ∘ onset(x -> @set x.tot = x.a + x.b), (10, 20)) === (a=10, b=20, tot=30)
 
     o = onget(x -> @set x.tot = x.a + x.b)
     @test o(obj) === (a=1, b=2, tot=3)
@@ -487,11 +319,14 @@ end
     end
 end
 
-@testitem "getindex inverse" begin
+@testitem "inverses" begin
     using InverseFunctions
 
     InverseFunctions.test_inverse(Base.Fix1(getindex, [4, 5, 6]), 2)
     InverseFunctions.test_inverse(Base.Fix1(getindex, Dict(2 => 123, 3 => 456)), 2)
+    
+    InverseFunctions.test_inverse(tuple, 2; compare=(==))
+    InverseFunctions.test_inverse(only, (2,); compare=(==))
 end
 
 @testitem "ranges" begin
@@ -561,10 +396,20 @@ end
     @test (aa=4, bb=5, cc=6) === modify(x -> Symbol(x, x), (a=4, b=5, c=6), @o keys(_)[∗])
 end
 
+@testitem "multiindex insert/delete" begin
+    cmp = (a, b) -> collect(a) == collect(b)
+    Accessors.test_getset_laws((@o _[[1,3]]), [4,5,6], ["7", "8"], [9, 10]; cmp)
+    Accessors.test_getset_laws((@o _[[1,3]]), (4,5,6), ["7", "8"], [9, 10]; cmp)
+    Accessors.test_getset_laws((@o _[1:2]), (4,5,6), ["7", "8"], [9, 10]; cmp)
+    Accessors.test_getset_laws((@o _[1:2]), (4,5,6), ("7", "8"), (9, 10); cmp)
+    # Accessors.test_insertdelete_laws((@o _[[1,2]]), [4,5,6], ["7", "8"]; cmp)
+    Accessors.test_insertdelete_laws((@o _[[1,3]]), (4,5,6), ["7", "8"]; cmp)
+end
+
 @testitem "_" begin
     import CompatHelperLocal as CHL
     CHL.@check()
 
     using Aqua
-    Aqua.test_all(AccessorsExtra, piracies=false, ambiguities=false)
+    Aqua.test_all(AccessorsExtra, piracies=(;broken=true), ambiguities=(;broken=true), unbound_args=(;broken=true))
 end

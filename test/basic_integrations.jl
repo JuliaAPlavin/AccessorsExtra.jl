@@ -29,15 +29,16 @@ end
     using StructArrays
     using StructArrays.Tables
 
+    # these setproperties() are upstreamed to StructArrays:
     s = StructArray(a=[1, 2, 3])
     @test setproperties(s, a=10:12)::StructArray == StructArray(a=10:12)
     @test_throws ArgumentError setproperties(s, b=10:12)
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(a=[2, 3, 4])
-
     s = StructArray(([1, 2, 3],))
     @test setproperties(s, (10:12,))::StructArray == StructArray((10:12,))
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
 
+    # upstreamed to Accessors:
     s = StructArray(([1, 2, 3], [4, 5, 6]))
     @test (@set propertynames(s) = (:a, :b)) === StructArray(a=s.:1, b=s.:2)
     @test (@set propertynames(s) = (1, 2)) === s
@@ -78,7 +79,7 @@ end
     @testset for tblfunc in [rowtable, columntable, Tables.dictrowtable, Tables.dictcolumntable, StructArray, Table]
         tbl = tblfunc(tblbase)
         test_getset_laws(columntable, tbl, (c=[1.0], d=["2"]), (a=[1], b=[2]); cmp)
-        test_getset_laws((@o columntable(_).a), tbl, [1.0], [2]; cmp)
+        test_getset_laws((@o columntable(_).a), tbl, [1.0, 2.0], [2, 3]; cmp)
         test_getset_laws((@o rowtable(_)[1]), tbl, (a=3, b="x"), (a=2, b="3"); cmp)
         # test_insertdelete_laws((@o columntable(_).c), tbl, [1.0, 2.0])
     end

@@ -46,6 +46,7 @@ julia> modify(x -> x+10, ((a=1,), (a=2, b=3), (b=4,)), o ∘ Elements())
 ```
 """
 maybe(o; default=nothing) = MaybeOptic(o, default)
+maybe(o::ConcatOptics; kwargs...) = @modify(o -> maybe(o; kwargs...), _optics(o)[∗])
 
 struct MaybeStyle{P}
     parent::P
@@ -64,17 +65,17 @@ Accessors.composed_optic_style(ma::MaybeStyle, mb::MaybeStyle) = MaybeStyle(Acce
 @inline Accessors._set(obj, optic::ComposedFunction, val, ::MaybeStyle{Accessors.ModifyBased}) =
     modify(Returns(val), obj, optic)
 
-Accessors._modify(f, obj, optic::ComposedFunction, ::MaybeStyle) =
+@inline Accessors._modify(f, obj, optic::ComposedFunction, ::MaybeStyle) =
     modify(obj, optic.inner) do o1
         modify(f, o1, optic.outer)
     end
 
-(o::MaybeOptic)(obj) = hasoptic(obj, o.o) ? o.o(obj) : o.default
-set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
-set(obj, o::MaybeOptic, val) = hasoptic(obj, o.o) ? set(obj, o.o, val) : insert(obj, o.o, val)
+@inline (o::MaybeOptic)(obj) = hasoptic(obj, o.o) ? o.o(obj) : o.default
+@inline set(obj, o::MaybeOptic, val::Nothing) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
+@inline set(obj, o::MaybeOptic, val) = hasoptic(obj, o.o) ? set(obj, o.o, val) : insert(obj, o.o, val)
 
-getall(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? getall(obj, o.o) : ()
-setall(obj, o::MaybeOptic, vals) = hasoptic(obj, o.o) ? setall(obj, o.o, vals) : obj
+@inline getall(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? getall(obj, o.o) : ()
+@inline setall(obj, o::MaybeOptic, vals) = hasoptic(obj, o.o) ? setall(obj, o.o, vals) : obj
 
 function modify(f, obj, o::MaybeOptic)
     if hasoptic(obj, o.o)
@@ -90,62 +91,127 @@ function modify(f, obj, o::MaybeOptic)
     end
 end
 
+@inline delete(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
+
+function Base.show(io::IO, o::MaybeOptic)
+    if get(io, :compact, false)
+        print(io, o.o)
+        if isnothing(o.default)
+            print(io, "?")
+        else
+            print(io, " || ", o.default)
+        end
+    else
+        print(io, "(@maybe ")
+        Accessors.show_optic(IOContext(io, :compact => true), o.o)
+        if o.default != nothing
+            print(io, " ", o.default)
+        end
+        print(io, ")")
+    end
+end
+function Accessors._shortstring(prev, o::MaybeOptic)
+    res = Accessors._shortstring(prev, o.o)
+    if isnothing(o.default) || ismissing(o.default) || (o.default isa Number && isnan(o.default))
+        res *= "?"
+    else
+        res *= " || " * sprint(show, o.default; context=:compact => true)
+    end
+end
 
 struct OSomething{OS}
     os::OS
 end
 Broadcast.broadcastable(o::OSomething) = Ref(o)
 osomething(optics...) = OSomething(optics)
-(o::OSomething)(obj) = hasoptic(obj, first(o.os)) ? first(o.os)(obj) : (@delete first(o.os))(obj)
-(o::OSomething{Tuple{}})(obj) = error("no optic in osomething applicable to $obj")
-set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os), val) : set(obj, (@delete first(o.os)), val)
-set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
+@inline (o::OSomething)(obj) = hasoptic(obj, first(o.os)) ? first(o.os)(obj) : (@delete first(o.os))(obj)
+@inline (o::OSomething{Tuple{}})(obj) = error("no optic in osomething applicable to $obj")
+@inline set(obj, o::OSomething, val) = hasoptic(obj, first(o.os)) ? set(obj, first(o.os), val) : set(obj, (@delete first(o.os)), val)
+@inline set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
+
+function Base.show(io::IO, os::OSomething)
+    if get(io, :compact, false)
+        for (i, o) in enumerate(os.os)
+            i == 1 || print(io, " || ")
+            Accessors.show_optic(IOContext(io, :compact => true), o)
+        end
+    else
+        print(io, "(@osomething ")
+        for (i, o) in enumerate(os.os)
+            i == 1 || print(io, " ")
+            Accessors.show_optic(IOContext(io, :compact => true), o)
+        end
+        print(io, ")")
+    end
+end
+Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
+
+@inline oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
+@inline oget(obj, o, default=nothing) = hasoptic(obj, o) ? o(obj) : default
 
 
-oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
-oget(obj, o, default=nothing) = hasoptic(obj, o) ? o(obj) : default
-
-
-set(obj, fa::FixArgs{typeof(get), <:Tuple{Placeholder,Any,Any}, <:NamedTuple{()}}, val) =
+@inline set(obj, fa::FixArgsT(get, (Placeholder,Any,Any)), val) =
     haskey(obj, fa.args[2]) ? set(obj, IndexLens((fa.args[2],)), val) : insert(obj, IndexLens((fa.args[2],)), val)
-set(obj, fa::FixArgs{typeof(get), <:Tuple{Any,Placeholder,Any}, <:NamedTuple{()}}, val) =
+@inline set(obj, fa::FixArgsT(get, (Any,Placeholder,Any)), val) =
     haskey(obj, fa.args[3]) ? set(obj, IndexLens((fa.args[3],)), val) : insert(obj, IndexLens((fa.args[3],)), val)
 
 
-hasoptic(obj, o::ComposedFunction) = hasoptic(obj, o.inner) && hasoptic(o.inner(obj), o.outer)
+@inline hasoptic(obj, o::ComposedFunction) = hasoptic(obj, o.inner) && hasoptic(o.inner(obj), o.outer)
 
-hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
-hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
-hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))
+@inline hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
+@inline hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
+@inline hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))
 
-hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)
+@inline hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)
 
-hasoptic(obj, ::typeof(first)) = hasoptic(obj, @optic _[firstindex(obj)])
-hasoptic(obj, ::typeof(last)) = hasoptic(obj, @optic _[lastindex(obj)])
-hasoptic(obj, ::typeof(only)) = length(obj) == 1
+@inline hasoptic(obj, ::typeof(length)) = Base.IteratorSize(typeof(obj)) isa Union{Base.HasLength, Base.HasShape}
+@inline hasoptic(obj, ::typeof(first)) = !isempty(obj)
+@inline hasoptic(obj, ::typeof(last)) = !isempty(obj)
+@inline hasoptic(obj, ::typeof(only)) = length(obj) == 1
 
-# should override call, set, modify for efficiency?
-hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse), Type{T}}) where {T} = !isnothing(tryparse(T, x))
-# hasoptic(x::AbstractString, o::Base.Fix2{Type{T}}) where {T <: Union{Date, Time, DateTime}} = # XXX - what to put here?
+# handle nothing for all optic types with hasoptic() defined above:
+for O in [:IndexLens]
+    @eval hasoptic(::Nothing, ::$O) = false
+end
+for O in [:length, :first, :last, :only]
+    @eval hasoptic(::Nothing, ::typeof($O)) = false
+end
+
+
+# XXX: should override call, set, modify for efficiency?
+@inline hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse)}) = !isnothing((@set o.f = tryparse)(x))
+@inline hasoptic(x::AbstractString, o::FixArgs{typeof(parse)}) = !isnothing((@set o.f = tryparse)(x))
+insert(x::AbstractString, f::Base.Fix1{typeof(parse)}, y) = set(x, f, y)
+insert(x::AbstractString, f::FixArgs{typeof(parse)}, y) = set(x, f, y)
 
 # fallback definition
 # without it: cases when hasoptic throws, but optic actually exists
 # with it: cases when hasoptic=true, but optic doesn't exist
-hasoptic(obj, o) = !isnothing(obj)
+@inline hasoptic(obj, o) = !isnothing(obj)
+hasoptic(obj, ::Returns) = true
 
 
 # convenience macros
-macro oget(ref, default=nothing)
-    obj, optic = parse_obj_optic(ref)
-    return :($oget($obj, $optic, $default))
+macro oget(refs...)
+    foldr(refs, init=nothing) do ref, curexpr
+        obj, optic = parse_obj_optic(ref)
+        quote
+            optic = $optic
+            if $hasoptic($obj, optic)
+                optic($obj)
+            else
+                $curexpr
+            end
+        end
+    end
 end
 
 macro osomething(args...)
     return :($osomething($(map(args) do arg
-        :($Accessors.@optic $arg)
+        :($Accessors.@o $arg)
     end...))) |> esc
 end
 
 macro maybe(o, default=nothing)
-    return :($maybe(($Accessors.@optic $o); default=$default)) |> esc
+    return :($maybe(($Accessors.@o $o); default=$default)) |> esc
 end

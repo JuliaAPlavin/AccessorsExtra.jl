@@ -123,9 +123,39 @@ macro construct(exprs...)
     end
     ov_pairs = map(args) do arg
         @assert MacroTools.@capture arg (optic_ = value_)
-        :($Accessors.@optic($optic) => $value)
+        :($Accessors.@o($optic) => $value)
     end
     return :(
         $construct($(T), $(ov_pairs...))
     ) |> esc
 end
+
+
+macro define_construct_by_set(T, pairtypes)
+    @assert Base.isexpr(pairtypes, :tuple)
+    argtypes = pairtypes.args
+    pairargs = ntuple(length(argtypes)) do i
+        Symbol(:p, i)
+    end
+    pairdefs = ntuple(length(argtypes)) do i
+        name = Symbol(:p, i)
+        :($name::$Pair{<:$(esc(argtypes[i]))})
+    end
+    :( $AccessorsExtra.construct(::$Type{T}, $(pairdefs...)) where {T<:$(esc(T))} = $construct_by_set(T, ($(pairargs...),)) )
+end
+
+construct_by_set(T, pairs) = setall(init_for_construct(T), concat(first.(pairs)...), last.(pairs))
+function init_for_construct end
+
+
+
+
+# uniform interface for setall + construct: pass either an object (uses setall) or a type, or nothing at all (use construct)
+setall_or_construct(x0, optic, vs) = setall(x0, optic, vs)
+setall_or_construct(::Type{T}, optic, vs) where {T} = construct(T, (_optics(optic) .=> vs)...)
+setall_or_construct(optic, vs) = construct((_optics(optic) .=> vs)...)
+nvals_optic(x0, optic) = length(getall(x0, optic))
+# assume that each individual optic only refers to a single value
+# is anything else even potentially meaningful?
+nvals_optic(::Type{T}, optic) where {T} = length(_optics(optic))
+nvals_optic(optic) = length(_optics(optic))

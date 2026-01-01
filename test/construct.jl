@@ -34,6 +34,7 @@ end
         @test construct((@o _.a) => 1, (@o _.b) => "") === (a=1, b="")
         @test construct(Any, a=1, b="") === (a=1, b="")
         @test construct(a=1, b="") === (a=1, b="")
+
         # @test construct((@o _[static(1)]) => 1, (@o _[static(2)]) => "") === (1, "")
         # @test construct((@o _[static(2)]) => 1, (@o _[static(1)]) => "") === (1, "")
 
@@ -47,9 +48,10 @@ end
         @test_broken construct((@o _.b[1:3][∗]) => 2, (@o _.a) => 1) == (b=[2, 2, 2], a=1)
 
         @test construct((@o _.a) => 1, (@o _.b[1]) => 2, (@o _.b[2]) => 3) === (a=1, b=(2, 3))
-        @test construct((@o _.a) => 1, (@optics _.b[1] _.b[2]) => 2) === (a=1, b=(2, 2))
+        @test construct((@o _.a) => 1, (@o _.b[1] _.b[2]) => 2) === (a=1, b=(2, 2))
+
+        @noinf @test construct((@o _[1]) => 1, (@o _[2]) => "") === (1, "")
     end
-    @test construct((@o _[1]) => 1, (@o _[2]) => "") === (1, "")
     @test_throws Exception construct((@o _[2]) => 1, (@o _[1]) => "") === (1, "")
     @test_throws MethodError construct((@o _.a) => 1, (@o _[1]) => "")
 end
@@ -98,6 +100,7 @@ end
     test_construct_laws(SVector{2}, @o(_.x) => 4, @o(_.y) => 5)
     test_construct_laws(SVector{2}, @o(_.y) => 4, @o(_.x) => 5)
     test_construct_laws(SVector{2,Float32}, @o(_.x) => 4, @o(_.y) => 5)
+    test_construct_laws(SVector{2,Real}, @o(_.x) => 4, @o(_.y) => 5, inferred=false, type=SVector{2,<:Real})
 end
 
 @testitem "macro" begin
@@ -144,4 +147,20 @@ end
     @test res ≈ SVector(3, 3) / √2
     
     end
+end
+
+@testitem "setall + construct" begin
+    using AccessorsExtra: setall_or_construct, nvals_optic
+
+    @test nvals_optic((a=1, b=2, c=3), @o _.a) == 1
+    @test nvals_optic((a=1, b=2, c=3), @o _.a _.b _.c) == 3
+    @test nvals_optic((a=1, b=2, c=3), @o _[∗ₚ]) == 3
+    @test nvals_optic(@o _.a) == 1
+    @test nvals_optic(@o _.a _.b _.c) == 3
+    @test nvals_optic(NamedTuple, @o _.a _.b _.c) == 3
+
+    @test setall_or_construct((a=1, b=2, c=3), (@o _.a), ["a"]) == (a="a", b=2, c=3)
+    @test setall_or_construct((a=1, b=2, c=3), (@o _[∗ₚ]), 5:7) == (a=5, b=6, c=7)
+    @test setall_or_construct(NamedTuple, (@o _.a), ["a"]) == (a="a",)
+    @test setall_or_construct((@o _.a), ["a"]) == (a="a",)
 end

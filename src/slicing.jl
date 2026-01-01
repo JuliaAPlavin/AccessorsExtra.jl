@@ -1,15 +1,15 @@
 # XXX: should upstream all of these – but cannot because FixArgs not in Base
 
-InverseFunctions.inverse(f::FixArgs{typeof(eachslice), <:Tuple{Placeholder}, <:NamedTuple{(:dims,)}}) =
+InverseFunctions.inverse(f::FixArgsT(eachslice, (Placeholder,), (dims=Any,))) =
     @o stack(_, dims=f.kwargs.dims)
-InverseFunctions.inverse(f::FixArgs{typeof(stack), <:Tuple{Placeholder}, <:NamedTuple{(:dims,)}}) =
+InverseFunctions.inverse(f::FixArgsT(stack, (Placeholder,), (dims=Any,))) =
     @o eachslice(_, dims=f.kwargs.dims)
 
 stack_dropped(iter; dims, drop) = stack(iter; dims)
 
-InverseFunctions.inverse(f::FixArgs{typeof(eachslice), <:Tuple{Placeholder}, <:NamedTuple{(:dims, :drop)}}) =
+InverseFunctions.inverse(f::FixArgsT(eachslice, (Placeholder,), (dims=Any, drop=Any))) =
     @o stack_dropped(_, dims=f.kwargs.dims, drop=f.kwargs.drop)
-InverseFunctions.inverse(f::FixArgs{typeof(stack_dropped), <:Tuple{Placeholder}, <:NamedTuple{(:dims, :drop)}}) =
+InverseFunctions.inverse(f::FixArgsT(stack_dropped, (Placeholder,), (dims=Any, drop=Any))) =
     @o eachslice(_, dims=f.kwargs.dims, drop=f.kwargs.drop)
 
 # XXX: piracy

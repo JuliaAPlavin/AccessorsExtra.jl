@@ -24,13 +24,20 @@ concat(optics...) = @p let
 end
 concat(; optics...) = isempty(optics) ? ConcatOptics(()) : ConcatOptics(values(optics))
 _optics(o) = (o,)
-_optics(o::ConcatOptics) = o.optics
+@accessor _optics(o::ConcatOptics) = o.optics
 
 OpticStyle(::Type{<:ConcatOptics}) = ModifyBased()
 
 macro optics(exs...)
     optic_exs = map(exs) do ex
-        :($Accessors.@optic($ex))
+        :($Accessors.@o $ex)
+    end
+    :( $concat($(optic_exs...)) ) |> esc
+end
+# same as @optics – should just use @optic and deprecate @optics?..
+macro optic(ex1, ex2, exs...)
+    optic_exs = map([ex1, ex2, exs...]) do ex
+        :($Accessors.@o $ex)
     end
     :( $concat($(optic_exs...)) ) |> esc
 end
@@ -105,7 +112,7 @@ end
     @modify(o -> o(obj), values($(os.optics))[∗])
 
 function set(obj, os::ContainerOptic{<:Union{Tuple,Pair,AbstractArray}}, vals::Union{Tuple,Pair,AbstractArray})
-    length(os.optics) == length(vals) || throw(DimensionMismatch("length mismatch between optics ($(length(os))) and values ($(length(vals)))"))
+    length(os.optics) == length(vals) || throw(DimensionMismatch("length mismatch between optics ($(length(os.optics))) and values ($(length(vals)))"))
     foldl(map(tuple, os.optics, vals); init=obj) do obj, (o, v)
         set(obj, o, v)
     end
@@ -120,28 +127,14 @@ set(obj, os::ContainerOptic{<:Dict}, vals) =
         set(obj, o, v)
     end
 
-macro optic₊(ex)
-    process_optic₊(ex) |> esc
+delete(obj, os::ContainerOptic) = foldl(delete, os.optics; init=obj)
+insert(obj, os::ContainerOptic, vals) = foldl(zip(os.optics, vals), init=obj) do acc, (o, v)
+    insert(acc, o, v)
 end
 
-function process_optic₊(ex)
-    if Base.isexpr(ex, :tuple) || Base.isexpr(ex, :vect)
-        oex = @modify(ex.args[∗]) do arg
-            if MacroTools.@capture arg (key_ = optic_)
-                :( $key = $(process_optic₊(optic)) )
-            else
-                process_optic₊(arg)
-            end
-        end
-        :( $ContainerOptic($oex) )
-    elseif iscall(ex, :SVector) || iscall(ex, :MVector) || iscall(ex, :Pair) || iscall(ex, :(=>))
-        oex = @modify(ex.args[2:end][∗]) do arg
-            process_optic₊(arg)
-        end
-        :( $ContainerOptic($oex) )
-    else
-        :( $Accessors.@optic $ex )
-    end
+# XXX: should deprecate
+macro optic₊(ex)
+    esc(:( $Accessors.@o $ex ))
 end
 
 
@@ -165,9 +158,23 @@ _flatten(o) = o
 tree_concatoptic(obj, o) = tree_concatoptic(typeof(obj), o)
 function tree_concatoptic(obj::Type, o::ComposedFunction)
     inner_optic = tree_concatoptic(obj, o.inner)
-    outer_obj_types = Core.Compiler.return_type(getall, Tuple{obj, typeof(o.inner)}) |> _eltypes
+    getall_type = Core.Compiler.return_type(getall, Tuple{obj, typeof(o.inner)})
+    if inner_optic === (∗) && getall_type <: AbstractVector
+         return tree_concatoptic(eltype(getall_type), o.outer) ∘₁ inner_optic
+    end
+    outer_obj_types = getall_type |> _eltypes
     optics = map(outer_obj_types, _optics(inner_optic)) do OT, oin
         tree_concatoptic(OT, o.outer) ∘₁ oin
+    end
+    concat(optics...)
+end
+# XXX: try to handle Union + maybe more uniformly
+tree_concatoptic(::Type{Nothing}, o::ComposedFunction) = @invoke tree_concatoptic(Nothing::Type, o)
+function tree_concatoptic(::Type{Union{Nothing,T}}, o::ComposedFunction) where {T}
+    inner_optic = tree_concatoptic(T, o.inner)
+    outer_obj_types = Core.Compiler.return_type(getall, Tuple{T, typeof(o.inner)}) |> _eltypes
+    optics = map(outer_obj_types, _optics(inner_optic)) do OT, oin
+        tree_concatoptic(OT, o.outer) ∘₁ maybe(oin)
     end
     concat(optics...)
 end
@@ -186,10 +193,17 @@ end
 tree_concatoptic(obj::Type{<:NTuple{N,Any}}, o::Elements) where {N} = ConcatOptics(ntuple(i -> IndexLens((i,)), N))
 tree_concatoptic(obj::Type{<:Integer}, o::Elements) = @o _[]
 tree_concatoptic(obj::Type{<:AbstractArray}, o::Elements) = @o _[∗]
+tree_concatoptic(obj::Type{<:Array}, o::Elements) = @o _[∗]
 tree_concatoptic(obj::Type{<:AbstractVector}, o::Elements) = ConcatOptics(ntuple(i -> IndexLens((i,)), _typelength(obj)))
 function tree_concatoptic(obj::Type{T}, o::Properties) where {T}
     NT = Core.Compiler.return_type(getproperties, Tuple{T})
     concat(map(PropertyLens, fieldnames(NT))...)
+end
+# XXX: try to handle Union + maybe more uniformly
+tree_concatoptic(::Type{Nothing}, ::Properties) = concat()
+function tree_concatoptic(::Type{Union{Nothing,T}}, ::Properties) where {T}
+    NT = Core.Compiler.return_type(getproperties, Tuple{T})
+    concat(map(maybe∘PropertyLens, fieldnames(NT))...)
 end
 
 ∘₁(a, b) = a ∘ b

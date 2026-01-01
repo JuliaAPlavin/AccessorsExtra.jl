@@ -3,7 +3,7 @@ module AccessorsExtra
 using Reexport
 @reexport using Accessors
 using CompositionsBase
-import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBased, ModifyBased
+import Accessors: set, modify, delete, insert, getall, setall, OpticStyle, SetBased, ModifyBased, @optic
 using DataPipes
 @reexport using ConstructionBase
 using InverseFunctions
@@ -16,18 +16,20 @@ export
     @replace, @push, @pushfirst, @pop, @popfirst,
     @getall, @setall,
     construct, @construct,
-    RecursiveOfType,
+    RecursiveOfType, RecursivePred,
     keyed, enumerated, selfcontext, stripcontext, hascontext,
     maybe, osomething, oget, hasoptic, @maybe, @oget, @osomething,
     modifying, onget, onset, ongetset,
     FlexIx,
     get_steps, logged
 
-include("overrides.jl")
+include("utils.jl")
+include("fixargs.jl")
 include("concatoptic.jl")
+include("overrides.jl")
+include("and_or.jl")
 include("keyvalues.jl")
 include("flexix.jl")
-include("fixargs.jl")
 include("propertyfunction.jl")
 include("slicing.jl")
 include("recursive.jl")
@@ -40,13 +42,33 @@ include("regex.jl")
 include("replace.jl")
 include("moremacros.jl")
 include("construct.jl")
+include("nicer_show.jl")
 include("bystep.jl")
 include("testing.jl")
 
+include("../ext/LinearAlgebraExt.jl")
 
-barebones_string(optic) = @p let
-    sprint(show, optic; context=:compact => true)
-    replace(__, "_." => "", "_[" => "[")
+
+function __init__()
+    if isdefined(Base.Experimental, :register_error_hint)
+        Base.Experimental.register_error_hint(MethodError) do io, exc, argtypes, kwargs
+            if exc.f === construct
+                println(io); println(io)
+                T = argtypes[1]
+                # T isa Type || println(io, "First argument to `construct` should be a type, got $T")
+                IU = get(Base.loaded_modules, Base.PkgId(Base.UUID("b77e0a4c-d291-57a0-90e8-8db25a27a240"), "InteractiveUtils"), nothing)
+                isnothing(IU) && (println(io, "Load InteractiveUtils for more hints"); return)
+                argstrs = map(argtypes[2:end]) do at
+                    at isa Type{<:Pair} ? "::$(at.parameters[1]) => ..." : "not a Pair! $at"
+                end
+                println(io, "Called as:\nconstruct($T, $(join(argstrs, ", ")))\n")
+                println(io, "Available for construct($T):")
+                for m in IU.methodswith(Type{<:T}, construct; supertypes=false)
+                    println(io, m)
+                end
+            end
+        end
+    end
 end
 
 
@@ -81,22 +103,6 @@ function set(obj, f::Base.Fix1{typeof(getindex)}, val)
     ix === nothing && throw(ArgumentError("value $val not found in $(f.x)"))
     return ix
 end
-
-Accessors._shortstring(prev, o::Base.Splat) = "$(o.f)($prev...)"
-
-
-struct ⩓{F,G}
-    f::F
-    g::G
-end
-(c::⩓)(x) = c.f(x) && c.g(x)
-
-struct ⩔{F,G}
-    f::F
-    g::G
-end
-(c::⩔)(x) = c.f(x) || c.g(x)
-
 
 # unambiguous for unitranges, but tension with general array @set first(x)...
 # piracy
@@ -134,6 +140,33 @@ ongetset(f) = onget(f) ∘ onset(f)
 
 
 # should probably try to upstream:
-set(obj, o::Base.Fix1{typeof(in)}, val::Bool) = val ? union(obj, (o.x,)) : setdiff(obj, (o.x,))
+InverseFunctions.inverse(::typeof(tuple)) = only
+InverseFunctions.inverse(::typeof(only)) = tuple
+
+# min and max as well
+set(obj, o::Union{Base.Fix1{typeof(max)}, Base.Fix2{typeof(max)}}, val) = val ≥ o.x ? val : throw(ArgumentError("Value $val is lower than the other `max` argument $(o.x)"))
+set(obj, o::Union{Base.Fix1{typeof(min)}, Base.Fix2{typeof(min)}}, val) = val ≤ o.x ? val : throw(ArgumentError("Value $val is higher than the other `min` argument $(o.x)"))
+set(obj, o::FixArgsT(clamp, (Placeholder, Any, Any)), val) = o.args[2] ≤ val ≤ o.args[3] ? val : throw(ArgumentError("Value $val is out of `clamp` bounds $(o.args[2]) .. $(o.args[3])"))
+
+# and these methods:
+@inline function insert(obj::Tuple, l::IndexLens{<:Tuple{AbstractVector}}, val)
+    @assert issorted(only(l.indices))
+    foldl(tuple.(only(l.indices), val), init=obj) do obj, (i, v)
+        @insert obj[i] = v
+    end
+end
+@inline function delete(obj::Tuple, l::IndexLens{<:Tuple{AbstractVector}})
+    @assert issorted(only(l.indices))
+    foldl(reverse(only(l.indices)), init=obj) do obj, i
+        @delete obj[i]
+    end
+end
+    
+
+# for f in (map,)
+#     for m in methods(f)
+#         m.recursion_relation = Returns(true)
+#     end
+# end
 
 end
