@@ -63,7 +63,10 @@ function __init__()
                 end
                 println(io, "Called as:\nconstruct($T, $(join(argstrs, ", ")))\n")
                 println(io, "Available for construct($T):")
-                for m in IU.methodswith(Type{<:T}, construct; supertypes=false)
+                for m in unique(vcat(
+                    IU.methodswith(Type{T}, construct; supertypes=false),
+                    IU.methodswith(Type{<:T}, construct; supertypes=false)
+                ))
                     println(io, m)
                 end
             end
