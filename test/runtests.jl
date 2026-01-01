@@ -6,12 +6,15 @@ using TestItemRunner
     using AccessorsExtra: FlexIx
 
     s = "abc"
+    @test s[FlexIx(2:3)] == "bc"
     @test "adefxyz" == @set s[FlexIx(2:3)] = "defxyz"
     @test "adefbc" == @modify(x -> "def" * x, s[FlexIx(2:3)])
     v = [1, 2, 3]
+    @test v[FlexIx(2:3)] == [2, 3]
     @test [1, 10, 11, 12] == @set v[FlexIx(2:3)] = [10, 11, 12]
     @test [1, 10, 2, 3] == @modify(x -> [10, x...], v[FlexIx(2:3)])
     v = (1, 2, 3)
+    @test v[FlexIx(2:3)] == (2, 3)
     @test (1, 10, 11, 12) == @set v[FlexIx(2:3)] = (10, 11, 12)
     @test (1, 10, 2, 3) == @modify(x -> (10, x...), v[FlexIx(2:3)])
 end
