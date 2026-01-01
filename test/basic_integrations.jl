@@ -1,6 +1,8 @@
 @testitem "Dictionaries" begin
     using Dictionaries
+    using DictionariesExtra
     using UnionCollections
+    using StaticArrays
     const UnionDictionary = Base.get_extension(UnionCollections, :DictionariesExt).UnionDictionary
 
     dct = dictionary([:a => 1, :b => 2])
@@ -9,6 +11,9 @@
     @test @set(dct[:a] = 10.)::DT == dictionary([:a => 10, :b => 2])
     @test @delete(dct[:a])::typeof(dct) == dictionary([:b => 2])
     @test @insert(dct[:c] = 5.)::DT == dictionary([:a => 1, :b => 2, :c => 5])
+    @test getall(dct, ∗)::Vector{Int} == [1, 2]
+    @test setall(dct, ∗, [10, 20])::typeof(dct) == dictionary([:a => 10, :b => 20])
+    @test setall(dct, ∗, (10., 20.))::DT == dictionary([:a => 10, :b => 20])
 
     dct = ArrayDictionary(dct)
     DT = ArrayDictionary{Symbol,Float64}
@@ -16,6 +21,20 @@
     @test @set(dct[:a] = 10.)::DT == dictionary([:a => 10, :b => 2])
     @test @delete(dct[:a])::typeof(dct) == dictionary([:b => 2])
     @test @insert(dct[:c] = 5.)::DT == dictionary([:a => 1, :b => 2, :c => 5])
+
+    @testset for (dct, TV, DT) in [
+            (GenericValsDictionary([:a, :b], [1, 2]),        Vector{Int},    GenericValsDictionary{Symbol,Float64,Vector{Float64}}),
+            (GenericValsDictionary([:a, :b], SVector(1, 2)), Tuple{Int,Int}, GenericValsDictionary{Symbol,Float64,SVector{2,Float64}}),
+            # (GenericValsDictionary([:a, :b], (1, 2)),        Tuple{Int,Int}, GenericValsDictionary{Symbol,Float64,Tuple{Float64,Float64}}),
+        ]
+        @test @set(dct[:a] = 10)::typeof(dct) == dictionary([:a => 10, :b => 2])
+        @test @set(dct[:a] = 10.)::DT == dictionary([:a => 10, :b => 2])
+        @test_broken @delete(dct[:a])::typeof(dct) == dictionary([:b => 2])
+        @test_broken @insert(dct[:c] = 5.)::DT == dictionary([:a => 1, :b => 2, :c => 5])
+        @test getall(dct, ∗)::TV == TV([1, 2])
+        @test setall(dct, ∗, [10, 20])::typeof(dct) == dictionary([:a => 10, :b => 20])
+        @test setall(dct, ∗, (10., 20.))::DT == dictionary([:a => 10, :b => 20])
+    end
 
     dct = unioncollection(dct)
     DT = UnionDictionary{Symbol,Union{Int,Float64}}

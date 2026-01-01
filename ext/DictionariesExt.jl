@@ -54,6 +54,12 @@ function Accessors.insert(d::AbstractDictionary, l::IndexLens, v)
     )
 end
 Accessors.delete(d::AbstractDictionary, l::IndexLens) = delete!(_copydict(d), only(l.indices))
+
+# XXX: these methods assume that there are no holes in values
+Accessors.getall(d::AbstractDictionary, o::Elements) = getall(d.values, o)
+Accessors.setall(d::AbstractDictionary, o::Elements, vs) = constructorof(typeof(d))(keys(d), setall(d.values, o, vs))
+
+
 # cannot just copy(d) or similar(d) because of https://github.com/andyferris/Dictionaries.jl/issues/98
 # _copydict(d::AbstractDictionary) = copyto!(similar(d), d)
 # instead, we rely on fieldnames (indices and values), and that the dictionary can be reconstructed from them
