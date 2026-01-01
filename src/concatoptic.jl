@@ -24,7 +24,7 @@ concat(optics...) = @p let
 end
 concat(; optics...) = isempty(optics) ? ConcatOptics(()) : ConcatOptics(values(optics))
 _optics(o) = (o,)
-_optics(o::ConcatOptics) = o.optics
+@accessor _optics(o::ConcatOptics) = o.optics
 
 OpticStyle(::Type{<:ConcatOptics}) = ModifyBased()
 
