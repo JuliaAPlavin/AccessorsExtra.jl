@@ -106,7 +106,7 @@ end
     using StaticArrays
 
     @test tree_concatoptic((1,""), RecursiveOfType(Number)) === @o _[1]
-    @test_broken tree_concatoptic((a=1, b=[2,3], c=""), RecursiveOfType(Number)) === @o _.a _.b[∗]
+    @test tree_concatoptic((a=1, b=[2,3], c=""), RecursiveOfType(Number)) === @o _.a _.b[∗]
     @test tree_concatoptic((a=1, b=SVector(2,3), c=""), RecursiveOfType(Number)) === (@o _.a) ++ (((@o _[1]) ++ (@o _[2])) ∘ (@o _.b))
     obj = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     @test tree_concatoptic(obj, RecursiveOfType(Number)) === (@o _.a) ++ (((@o _[1].c) ++ (@o _[2].c)) ∘ (@o _.bs))
@@ -118,7 +118,7 @@ end
     @test tree_concatoptic(Union{Nothing, @NamedTuple{a::Union{Nothing, @NamedTuple{b::Int64, c::Float64, d::String}}}}, RecursiveOfType(Number)) === ((@maybe _.b) ++ (@maybe _.c)) ∘ (@maybe _.a)
 
     @test flat_concatoptic((1,""), RecursiveOfType(Number)) === @o _[1]
-    @test_broken flat_concatoptic((a=1, b=[2,3], c=""), RecursiveOfType(Number)) === @o _.a _.b[∗]
+    @test flat_concatoptic((a=1, b=[2,3], c=""), RecursiveOfType(Number)) === @o _.a _.b[∗]
     @test flat_concatoptic((a=1, b=SVector(2,3), c=""), RecursiveOfType(Number)) === @o _.a _.b[1] _.b[2]
     obj = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     @test flat_concatoptic(obj, RecursiveOfType(Number)) === @o _.a _.bs[1].c _.bs[2].c

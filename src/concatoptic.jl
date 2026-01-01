@@ -158,7 +158,11 @@ _flatten(o) = o
 tree_concatoptic(obj, o) = tree_concatoptic(typeof(obj), o)
 function tree_concatoptic(obj::Type, o::ComposedFunction)
     inner_optic = tree_concatoptic(obj, o.inner)
-    outer_obj_types = Core.Compiler.return_type(getall, Tuple{obj, typeof(o.inner)}) |> _eltypes
+    getall_type = Core.Compiler.return_type(getall, Tuple{obj, typeof(o.inner)})
+    if inner_optic === (∗) && getall_type <: AbstractVector
+         return tree_concatoptic(eltype(getall_type), o.outer) ∘₁ inner_optic
+    end
+    outer_obj_types = getall_type |> _eltypes
     optics = map(outer_obj_types, _optics(inner_optic)) do OT, oin
         tree_concatoptic(OT, o.outer) ∘₁ oin
     end
