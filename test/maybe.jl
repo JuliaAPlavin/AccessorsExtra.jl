@@ -186,6 +186,17 @@ end
     @test oget((a=[1],), o) == nothing
 end
 
+@testitem "misc funcs" begin
+    using Distributions.StatsBase
+
+    coll = rand(10)
+    @testset for f in [mean, median, mad, std, (@o quantile(_, 0.5)), (@o percentile(_, 20))]
+        @test oget(coll, f, 0) == f(coll)
+        @test oget(empty(coll), f, 0) == 0
+        @test oget(nothing, f, 0) == 0
+    end
+end
+
 @testitem "@oget" begin
     f = x -> 2*x
     x = (a=[1, 2],)
