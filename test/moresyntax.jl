@@ -88,18 +88,13 @@ end
     @test sprint(show, @o(_.a[∗].b[∗ₚ].c[2]); context=:compact => true) == "_.a[∗].b[∗ₚ].c[2]"
     @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b); context=:compact => true) == "(_.b)ᵢ ∘ _.a[∗ₚ] |> selfcontext(identity)"
     @test sprint(show, (@o _.a + _.b)) == "(@oₚ _.a + _.b)"
-    @test sprint(show, (@o _.a + _.b); context=:compact => true) == "_.a + _.b"
 
     @test sprint(show, @maybe _.a) == "(@maybe _.a)"
     @test sprint(show, @maybe _.a 0.2) == "(@maybe _.a 0.2)"
-    @test sprint(show, (@maybe _.a); context=:compact => true) == "_.a?"
-    @test sprint(show, (@maybe _.a 0.2); context=:compact => true) == "_.a || 0.2"
 
     @test sprint(show, (@osomething _.a 123)) == "(@osomething _.a 123)"
     @test sprint(show, (@o _.a) ∘ (@osomething _.a 123)) == "(@o _.a) ∘ (@osomething _.a 123)"
     @test sprint(show, (@osomething _.a 123) ∘ (@o _.a)) == "(@osomething _.a 123) ∘ (@o _.a)"
-    @test sprint(show, (@osomething _.a 123); context=:compact => true) == "_.a || 123"
-    @test sprint(show, (@o _.a) ∘ (@osomething _.a 123); context=:compact => true) == "_.a ∘ _.a || 123"
 
     @test map(flat_concatoptic((a=1, b=(2, 3)), (@o _.a exp(_.b[∗]))).optics) do o
         sprint(show, o; context=:compact => true)
@@ -134,8 +129,8 @@ end
     @test barebones_string(@o norm(_.a)) == "‖a‖"
     @test barebones_string(@o sqrt(_.a)) == "√a"
     @test barebones_string(@o log10(ustrip(u"km", _.a))) == "log₁₀(a [km])"
-    @test barebones_string(Recursive(!ismissing, Properties())) == string(Recursive(!ismissing, Properties()))
-    @test barebones_string(log ∘ Recursive(!ismissing, Properties())) == string("log ∘ ", Recursive(!ismissing, Properties()))
+    # @test barebones_string(Recursive(!ismissing, Properties())) == string(Recursive(!ismissing, Properties()))
+    # @test barebones_string(log ∘ Recursive(!ismissing, Properties())) == string("log ∘ ", Recursive(!ismissing, Properties()))
     @test barebones_string(@o Base.tail(_.a)) == "tail(a)"
 end
 

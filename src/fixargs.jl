@@ -37,6 +37,7 @@ end
 Base.show(io::IO, fa::FixArgs) = Accessors.show_optic(io, fa)
 Base.show(io::IO, ::MIME"text/plain", fa::FixArgs) = show(io, fa)
 
+Accessors._shortstring(prev, fa::FixArgs) = "$(fa.f)($(_args_str(prev, fa.args))$(_args_str(prev, fa.kwargs)))"
 _shortstring(prev, fa::FixArgs) = "$(fa.f)($(_args_str(prev, fa.args))$(_args_str(prev, fa.kwargs)))"
 _args_str(prev, args::Tuple) = @p let
     args

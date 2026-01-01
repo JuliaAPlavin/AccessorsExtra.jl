@@ -50,6 +50,7 @@ end
 OpticStyle(::Type{Keyed{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Keyed) = print(io, "keyed(", co.o, ")")
 _shortstring(prev, o::Keyed) = "$prev |> keyed($(o.o))"
+Accessors._shortstring(prev, o::Keyed) = "$prev |> keyed($(o.o))"
 
 keyed(o) = Keyed(o)
 keyed(o::PropertyLens{p}) where {p} = _ContextValOnly(p) ∘ o
@@ -61,6 +62,7 @@ end
 OpticStyle(::Type{Enumerated{O}}) where {O} = ModifyBased()
 Base.show(io::IO, co::Enumerated) = print(io, "enumerated(", co.o, ")")
 _shortstring(prev, o::Enumerated) = "$prev |> enumerated($(o.o))"
+Accessors._shortstring(prev, o::Enumerated) = "$prev |> enumerated($(o.o))"
 
 enumerated(o) = Enumerated(o)
 
@@ -73,6 +75,7 @@ set(o::SelfContext, ::typeof(stripcontext), v) = error("Not implemented")
 OpticStyle(::Type{<:SelfContext}) = ModifyBased()
 Base.show(io::IO, co::SelfContext) = print(io, "selfcontext(", co.f, ")")
 _shortstring(prev, o::SelfContext) = "$prev |> selfcontext($(o.f))"
+Accessors._shortstring(prev, o::SelfContext) = "$prev |> selfcontext($(o.f))"
 selfcontext(f=identity) = SelfContext(f)
 
 modify(f, obj, o::SelfContext) = modify(f, obj, _ContextValOnly(o.f(obj)))
