@@ -46,6 +46,7 @@ julia> modify(x -> x+10, ((a=1,), (a=2, b=3), (b=4,)), o ∘ Elements())
 ```
 """
 maybe(o; default=nothing) = MaybeOptic(o, default)
+maybe(o::ConcatOptics; kwargs...) = @modify(o -> maybe(o; kwargs...), _optics(o)[∗])
 
 struct MaybeStyle{P}
     parent::P
@@ -159,14 +160,23 @@ Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
 
 @inline hasoptic(obj::AbstractArray, o::IndexLens) = checkbounds(Bool, obj, o.indices...)
 @inline hasoptic(obj::Tuple, o::IndexLens) = only(o.indices) in keys(obj)
-@inline hasoptic(obj, o::IndexLens) = !isnothing(obj) && haskey(obj, only(o.indices))
+@inline hasoptic(obj, o::IndexLens) = haskey(obj, only(o.indices))
 
 @inline hasoptic(obj, ::PropertyLens{P}) where {P} = hasproperty(obj, P)
 
-@inline hasoptic(obj, ::typeof(length)) = !isnothing(obj) && Base.IteratorSize(typeof(obj)) isa Union{Base.HasLength, Base.HasShape}
-@inline hasoptic(obj, ::typeof(first)) = !isnothing(obj) && !isempty(obj)
-@inline hasoptic(obj, ::typeof(last)) = !isnothing(obj) && !isempty(obj)
-@inline hasoptic(obj, ::typeof(only)) = !isnothing(obj) && length(obj) == 1
+@inline hasoptic(obj, ::typeof(length)) = Base.IteratorSize(typeof(obj)) isa Union{Base.HasLength, Base.HasShape}
+@inline hasoptic(obj, ::typeof(first)) = !isempty(obj)
+@inline hasoptic(obj, ::typeof(last)) = !isempty(obj)
+@inline hasoptic(obj, ::typeof(only)) = length(obj) == 1
+
+# handle nothing for all optic types with hasoptic() defined above:
+for O in [:IndexLens]
+    @eval hasoptic(::Nothing, ::$O) = false
+end
+for O in [:length, :first, :last, :only]
+    @eval hasoptic(::Nothing, ::typeof($O)) = false
+end
+
 
 # XXX: should override call, set, modify for efficiency?
 @inline hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse)}) = !isnothing((@set o.f = tryparse)(x))
