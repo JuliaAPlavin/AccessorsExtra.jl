@@ -181,6 +181,8 @@ end
 # XXX: should override call, set, modify for efficiency?
 @inline hasoptic(x::AbstractString, o::Base.Fix1{typeof(parse)}) = !isnothing((@set o.f = tryparse)(x))
 @inline hasoptic(x::AbstractString, o::FixArgs{typeof(parse)}) = !isnothing((@set o.f = tryparse)(x))
+insert(x::AbstractString, f::Base.Fix1{typeof(parse)}, y) = set(x, f, y)
+insert(x::AbstractString, f::FixArgs{typeof(parse)}, y) = set(x, f, y)
 
 # fallback definition
 # without it: cases when hasoptic throws, but optic actually exists

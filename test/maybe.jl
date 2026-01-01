@@ -112,16 +112,16 @@ end
     @test modify(x -> x+1, "1", o) == "2"
     @test modify(x -> x+1, "a", o) == "a"
     @test set("1", o, 2) == "2"
-    @test_broken set("a", o, 2) == "2"
+    @test set("a", o, 2) == "2"
 
-    o = maybe(@o parse(Date, _, dateformat"Y/m/d"))
+    o = maybe(@o parse(Date, _, dateformat"YYYY/mm/dd"))
     @test o("2020/02/03") == Date(2020, 2, 3)
     @test o("2020-02-03") === nothing
     @test o(nothing) === nothing
-    @test_broken modify(x -> x+Day(1), "2020/02/03", o) == "2020/02/04"
+    @test modify(x -> x+Day(1), "2020/02/03", o) == "2020/02/04"
     @test modify(x -> x+Day(1), "2020-02-03", o) == "2020-02-03"
-    @test_broken set("2020/02/03", o, Date(1234, 5, 6)) == "1234/05/06"
-    @test_broken set("2020-02-03", o, Date(1234, 5, 6)) == "1234/05/06"
+    @test set("2020/02/03", o, Date(1234, 5, 6)) == "1234/05/06"
+    @test set("2020-02-03", o, Date(1234, 5, 6)) == "1234/05/06"
 
     o = maybe(@o _.a) ∘ Elements()
     @test getall(((a=1,), (b=2,)), o) === (1,)
