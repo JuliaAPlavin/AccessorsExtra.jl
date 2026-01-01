@@ -186,6 +186,7 @@ end
 # without it: cases when hasoptic throws, but optic actually exists
 # with it: cases when hasoptic=true, but optic doesn't exist
 @inline hasoptic(obj, o) = !isnothing(obj)
+hasoptic(obj, ::Returns) = true
 
 
 # convenience macros

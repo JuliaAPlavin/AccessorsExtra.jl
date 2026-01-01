@@ -223,6 +223,13 @@ end
     @test_throws ErrorException o((c=1, b=2))
     @test set((a=1, b=2), o, 10) == (a=10, b=2)
     @test_throws "error" set((c=1, b=2), o, 10)
+
+    o = osomething((@o _.a), (@o 123))
+    @test o((a=1, b=2)) == 1
+    @test o((c=1, b=2)) == 123
+    @test o(nothing) == 123
+    @test set((a=1, b=2), o, 10) == (a=10, b=2)
+    @test_throws "Returns" set((c=1, b=2), o, 10)
 end
 
 @testitem "@osomething" begin
