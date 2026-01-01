@@ -175,6 +175,10 @@ function _parse_obj_optics(ex::Expr)
     elseif Base.isexpr(ex, :macrocall)
         @debug "Captured macrocall" ex
         return esc(ex), ()
+    elseif @capture(ex, s_Symbol)
+        # the symbol can be wrapped in quote ... end, @capture unwraps it for reliable handling downstream
+        obj = esc(s)
+        return obj, ()
     end
 
     if !@isdefined optic
