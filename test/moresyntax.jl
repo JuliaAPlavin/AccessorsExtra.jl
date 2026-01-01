@@ -108,6 +108,8 @@ end
 
 @testitem "barebones string" begin
     using AccessorsExtra: barebones_string
+    using Unitful
+    using LinearAlgebra
 
     @test barebones_string(@o _.a[∗].b[∗ₚ].c[2]) == "a[∗].b[∗ₚ].c[2]"
     @test barebones_string(@o _[∗].b) == "[∗].b"
@@ -126,6 +128,15 @@ end
     @test barebones_string(exp ∘ (@maybe _.a + _.b 0.2)) == "exp(a + b || 0.2)"
     @test barebones_string(Returns(123)) == "123"
     @test barebones_string(@osomething _.a 123) == "a || 123"
+    @test barebones_string(@o abs(_.a)) == "|a|"
+    @test barebones_string(@o real(_.a)) == "Re(a)"
+    @test barebones_string(@o imag(_.a)) == "Im(a)"
+    @test barebones_string(@o norm(_.a)) == "‖a‖"
+    @test barebones_string(@o sqrt(_.a)) == "√a"
+    @test barebones_string(@o log10(ustrip(u"km", _.a))) == "log₁₀(a [km])"
+    @test barebones_string(Recursive(!ismissing, Properties())) == string(Recursive(!ismissing, Properties()))
+    @test barebones_string(log ∘ Recursive(!ismissing, Properties())) == string("log ∘ ", Recursive(!ismissing, Properties()))
+    @test barebones_string(@o Base.tail(_.a)) == "tail(a)"
 end
 
 @testitem "split unit" begin

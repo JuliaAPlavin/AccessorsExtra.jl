@@ -5,11 +5,11 @@ struct PropertyFunction{PNT, F}
 end
 
 Base.show(io::IO, pf::PropertyFunction) = get(io, :compact, false) ? print(io, pf.expr) : print(io, "(@oₚ ", pf.expr, ")")
-Base.show(io::IO, ::MIME"text/plain", pf::PropertyFunction) = show(io, pf)
+Base.show(io::IO, ::MIME"text/plain", pf::PropertyFunction) = print(io, pf.expr)
 Base.:(==)(a::PropertyFunction, b::PropertyFunction) = a.expr == b.expr
 Base.hash(pf::PropertyFunction, h::UInt) = hash(pf.expr, h)
 
-Accessors._shortstring(prev, o::PropertyFunction) = sprint(show, o; context=:compact => true)
+_shortstring(prev, o::PropertyFunction) = replace(sprint(show, MIME("text/plain"), o; context=:compact => true), "_." => "", "_[" => "[")
 
 (pf::PropertyFunction{props})(obj) where {props} = pf.func(obj)
 

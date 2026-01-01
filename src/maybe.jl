@@ -94,24 +94,15 @@ end
 @inline delete(obj, o::MaybeOptic) = hasoptic(obj, o.o) ? delete(obj, o.o) : obj
 
 function Base.show(io::IO, o::MaybeOptic)
-    if get(io, :compact, false)
-        print(io, o.o)
-        if isnothing(o.default)
-            print(io, "?")
-        else
-            print(io, " || ", o.default)
-        end
-    else
-        print(io, "(@maybe ")
-        Accessors.show_optic(IOContext(io, :compact => true), o.o)
-        if o.default != nothing
-            print(io, " ", o.default)
-        end
-        print(io, ")")
+    print(io, "(@maybe ")
+    Accessors.show_optic(IOContext(io, :compact => true), o.o)
+    if o.default != nothing
+        print(io, " ", o.default)
     end
+    print(io, ")")
 end
-function Accessors._shortstring(prev, o::MaybeOptic)
-    res = Accessors._shortstring(prev, o.o)
+function _shortstring(prev, o::MaybeOptic)
+    res = _shortstring(prev, o.o)
     if isnothing(o.default) || ismissing(o.default) || (o.default isa Number && isnan(o.default))
         res *= "?"
     else
@@ -130,21 +121,17 @@ osomething(optics...) = OSomething(optics)
 @inline set(obj, o::OSomething{Tuple{}}, val) = error("no optic in osomething applicable to $obj")
 
 function Base.show(io::IO, os::OSomething)
-    if get(io, :compact, false)
-        for (i, o) in enumerate(os.os)
-            i == 1 || print(io, " || ")
-            Accessors.show_optic(IOContext(io, :compact => true), o)
-        end
-    else
-        print(io, "(@osomething ")
-        for (i, o) in enumerate(os.os)
-            i == 1 || print(io, " ")
-            Accessors.show_optic(IOContext(io, :compact => true), o)
-        end
-        print(io, ")")
+    print(io, "(@osomething ")
+    for (i, o) in enumerate(os.os)
+        i == 1 || print(io, " ")
+        Accessors.show_optic(IOContext(io, :compact => true), o)
     end
+    print(io, ")")
 end
-Base.show(io::IO, ::MIME"text/plain", optic::OSomething) = show(io, optic)
+_shortstring(prev, o::OSomething) =
+    join(map(o.os) do oo
+        _shortstring(prev, oo)
+    end, " || ")
 
 @inline oget(default::Base.Callable, obj, o) = hasoptic(obj, o) ? o(obj) : default()
 @inline oget(obj, o, default=nothing) = hasoptic(obj, o) ? o(obj) : default
