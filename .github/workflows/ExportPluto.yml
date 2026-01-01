@@ -12,12 +12,17 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
             - name: Install Julia
-              uses: julia-actions/setup-julia@v1
+              uses: julia-actions/setup-julia@v2
               with:
                   version: 1
+
+            - name: Cache Julia artifacts & such
+              uses: julia-actions/cache@v2
+              with:
+                cache-registries: "true"
 
             - run: |
                   mkdir -p ~/.ssh
@@ -31,8 +36,7 @@ jobs:
                 julia -e 'using Pkg
                   Pkg.activate(mktempdir())
                   Pkg.add([
-                    Pkg.PackageSpec(name="PlutoSliderServer", version="0.3.2-0.3"),
-                    Pkg.PackageSpec(name="MsgPack"),
+                    Pkg.PackageSpec(name="PlutoSliderServer", version="1.0"),
                   ])
 
                   import PlutoSliderServer
@@ -45,7 +49,7 @@ jobs:
                   )'
 
             - name: Deploy to gh-pages
-              uses: JamesIves/github-pages-deploy-action@releases/v3
+              uses: JamesIves/github-pages-deploy-action@releases/v4
               with:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   BRANCH: gh-pages
