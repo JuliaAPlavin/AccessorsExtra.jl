@@ -38,6 +38,7 @@ end
     @test setproperties(s, (10:12,))::StructArray == StructArray((10:12,))
     @test @modify(c -> c .+ 1, s |> Properties()) == StructArray(([2, 3, 4],))
 
+    # upstreamed to Accessors:
     s = StructArray(([1, 2, 3], [4, 5, 6]))
     @test (@set propertynames(s) = (:a, :b)) === StructArray(a=s.:1, b=s.:2)
     @test (@set propertynames(s) = (1, 2)) === s

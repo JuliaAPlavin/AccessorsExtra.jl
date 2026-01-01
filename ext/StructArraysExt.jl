@@ -13,15 +13,4 @@ extract_properties_recursive(x::StructArray, props_nt::NamedTuple) =
 # XXX: piracy, should upstream
 Accessors.set(sa::StructArray, ::typeof(Tables.columns), cols) = set(sa, StructArrays.components, cols)
 
-# XXX: piracy, should upstream
-Accessors.set(x::StructArray, ::typeof(propertynames), names) =
-    if eltype(names) === Symbol
-        StructArray(NamedTuple{names}(values(StructArrays.components(x))))
-    elseif eltype(names) <: Integer
-        @assert names == ntuple(identity, length(names))
-        StructArray(values(StructArrays.components(x)))
-    else
-        error("invalid property names: $names")
-    end
-
 end
