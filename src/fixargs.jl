@@ -56,4 +56,18 @@ end
 for kws in [(:rev,), (:by,), (:rev, :by), (:by, :rev)]
     @eval set(obj, o::FixArgsT(sort, (Placeholder,), NamedTuple{$kws}), val) = @set obj[sortperm(obj; o.kwargs...)] = val
     @eval modify(f, obj, o::FixArgsT(sort, (Placeholder,), NamedTuple{$kws})) = @modify(f, obj[sortperm(obj; o.kwargs...)])
+
+    @eval function set(obj::AbstractVector, o::FixArgsT(sort, (Placeholder,), NamedTuple{$kws}), val)
+        res = similar(obj, eltype(val))
+        res[sortperm(obj; o.kwargs...)] = val
+        return res
+    end
+
+    @eval function modify(f, obj::AbstractVector, o::FixArgsT(sort, (Placeholder,), NamedTuple{$kws}))
+        perm = sortperm(obj; o.kwargs...)
+        val = f(obj[perm])
+        res = similar(obj, eltype(val))
+        res[perm] = val
+        return res
+    end
 end
