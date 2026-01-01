@@ -33,5 +33,5 @@ julia> o((a=1, c=3))
 nothing
 ```
 
-See the [Pluto notebook](https://aplavin.github.io/AccessorsExtra.jl/examples/notebook.html) for more details and usage examples.
+See the [Pluto notebook](https://aplavin.github.io/AccessorsExtra.jl/notebooks/examples.html) for more details and usage examples.
 
