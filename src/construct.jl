@@ -34,6 +34,19 @@ construct(::Type{NamedTuple}, args::Vararg{Pair{<:PropertyLens}}) =
         insert(acc, first(a), last(a))
     end
 
+
+function construct(::Type{T}, args::Vararg{Pair{<:IndexLens}}) where {T<:AbstractVector}
+	res = T(_default_vector_elt(eltype(T)), @p args maximum(only(_[1].indices)))
+	for (o, v) in args
+		res[only(o.indices)] = v
+	end
+	return res
+end
+
+_default_vector_elt(_) = undef
+_default_vector_elt(::Type{T}) where {T>:Nothing} = nothing
+
+
 # insert⁺ is a neat piece of functionality by itself!
 insert⁺(obj, optic, val) = insert(obj, optic, val)
 insert⁺(obj, os::ConcatOptics, val) = _foldl(os.optics; init=obj) do obj, o
@@ -50,6 +63,7 @@ insert⁺(obj, optic::ComposedFunction, val) =
     end
 
 default_empty_obj(::IndexLens{<:Tuple{<:Integer}}) = ()
+default_empty_obj(::IndexLens{Tuple{Symbol}}) = Dict{Symbol,Union{}}()
 default_empty_obj(::PropertyLens) = (;)
 default_empty_obj(::typeof(identity)) = nothing
 default_empty_obj(f::ComposedFunction) = default_empty_obj(f.inner)
