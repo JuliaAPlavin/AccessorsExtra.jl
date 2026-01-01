@@ -87,7 +87,7 @@ end
     @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b)) == "(ᵢ(@o _.b))ᵢ ∘ (@o _.a[∗ₚ] |> selfcontext(identity))"
     @test sprint(show, @o(_.a[∗].b[∗ₚ].c[2]); context=:compact => true) == "_.a[∗].b[∗ₚ].c[2]"
     @test sprint(show, @o(_.a[∗ₚ] |> selfcontext() |> _.b); context=:compact => true) == "(_.b)ᵢ ∘ _.a[∗ₚ] |> selfcontext(identity)"
-    @test sprint(show, (@o _.a + _.b)) == "(@o _.a + _.b)"
+    @test sprint(show, (@o _.a + _.b)) == "(@oₚ _.a + _.b)"
     @test sprint(show, (@o _.a + _.b); context=:compact => true) == "_.a + _.b"
 
     @test sprint(show, @maybe _.a) == "(@maybe _.a)"
