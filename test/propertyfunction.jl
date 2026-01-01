@@ -89,6 +89,9 @@ end
 end
 
 @testitem "no ambiguities" begin
+    using FlexiGroups
+    using StructArrays
+
     # @test map((@o isodd(_.a)), ((a=1,), (a=2,), (a=3,)))  # difficult to avoid ambiguities for tuples...
     @test map((@o isodd(_.a)), [(a=1,), (a=2,), (a=3,)]) == [true, false, true]
 
@@ -97,6 +100,11 @@ end
 
     @test findall((@o isodd(_.a)), ((a=1,), (a=2,), (a=3,))) == [1, 3]
     @test findall((@o isodd(_.a)), [(a=1,), (a=2,), (a=3,)]) == [1, 3]
+
+    gr = first(group_vg(x -> isodd(x.a), [(a=1,), (a=2,), (a=3,)]))
+    @test map((@o _.a), gr) == [1, 3]
+    gr = first(group_vg(x -> isodd(x.a), StructArray([(a=1,), (a=2,), (a=3,)])))
+    @test map((@o _.a), gr) == [1, 3]
 end
 
 @testitem "structarrays" begin
