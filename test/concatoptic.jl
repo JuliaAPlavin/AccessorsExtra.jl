@@ -213,7 +213,7 @@ end
     @test tree_concatoptic(SVector{0, Int}, (@o _[∗])) == concat()
     @test tree_concatoptic(SVector{1, Int}, (@o _[∗])) == ConcatOptics(((@o _[1]),))
     @test tree_concatoptic(SVector{2, Int}, (@o _[∗])) == @o _[1] _[2]
-    @test_broken tree_concatoptic(SVector{2, Int}, (@o _[∗ₚ])) == @o _.x _.y  # https://github.com/JuliaArrays/StaticArrays.jl/pull/1289
+    @test tree_concatoptic(SVector{2, Int}, (@o _[∗ₚ])) == @o _.x _.y
     @test tree_concatoptic(U{Float64}, (@o _[∗])) == ConcatOptics(((@o _[1]),))
     @test tree_concatoptic(U{Float64}, (@o _[∗ₚ])) == @o _.u
     @test tree_concatoptic(UV{Float64}, (@o _[∗])) == @o _[1] _[2]
