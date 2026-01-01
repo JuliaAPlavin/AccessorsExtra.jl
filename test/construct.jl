@@ -32,8 +32,8 @@ end
     AccessorsExtra.@allinferred construct begin
         @test construct(Any, (@o _.a) => 1, (@o _.b) => "") === (a=1, b="")
         @test construct((@o _.a) => 1, (@o _.b) => "") === (a=1, b="")
-        @test_broken construct(Any, a=1, b="") === (a=1, b="")
-        @test_broken construct(a=1, b="") === (a=1, b="")
+        @test construct(Any, a=1, b="") === (a=1, b="")
+        @test construct(a=1, b="") === (a=1, b="")
 
         # @test construct((@o _[static(1)]) => 1, (@o _[static(2)]) => "") === (1, "")
         # @test construct((@o _[static(2)]) => 1, (@o _[static(1)]) => "") === (1, "")

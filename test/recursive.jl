@@ -20,16 +20,16 @@ end
     @test modify(x->x+10, m, or) === (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
     @test setall(m, or, (10, 20, 30)) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @test setall(m, or, [10, 20, 30]) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
-    @test set(m, or, 123) === (a=123, bs=((c=123, d="2"), (c=123, d="xxx")))
+    @noinf @test set(m, or, 123) === (a=123, bs=((c=123, d="2"), (c=123, d="xxx")))
 
     m = (a=1, bs=[(c=1, d="2"), (c=3, d="xxx")])
     @test getall(m, or) == [1, 1, 3]
-    @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @noinf @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
     @test_throws Exception setall(m, or, [10, 20, 30])  # setall not supported with dynamic length vectors
 
     m = (a=1, bs=SVector((c=1, d="2"), (c=3, d="xxx")))
     @test getall(m, or) === (1, 1, 3)
-    @test modify(x->x+10, m, or) === (a=11, bs=SVector((c=11, d="2"), (c=13, d="xxx")))
+    @noinf @test modify(x->x+10, m, or) === (a=11, bs=SVector((c=11, d="2"), (c=13, d="xxx")))
     @test setall(m, or, (10, 20, 30)) === (a=10, bs=SVector((c=20, d="2"), (c=30, d="xxx")))
 
     m = (a=1, bs=UV((c=1, d="2"), (c=3, d="xxx")))
@@ -39,7 +39,7 @@ end
 
     m = (a=1, bs=SizedVector{2}([(c=1, d="2"), (c=3, d="xxx")]))
     @test getall(m, or) === (1, 1, 3)
-    @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
+    @noinf @test modify(x->x+10, m, or) == (a=11, bs=[(c=11, d="2"), (c=13, d="xxx")])
     @test_broken setall(m, or, (10, 20, 30)) === (a=10, bs=[(c=20, d="2"), (c=30, d="xxx")])
 
     m = (a=1, bs=CartesianIndex(2, 3))
@@ -82,7 +82,7 @@ end
 
     or = RecursiveOfType(Number, order=:pre)
     @test getall(m, or) == (1, 2+3im, 2, 3)
-    @test modify(x->x^2, m, or) == (a=1, b=25+144im)
+    @noinf @test modify(x->x^2, m, or) == (a=1, b=25+144im)
     @test_throws "setall not supported with order = pre" setall(m, or, (10, 20))
 
     or = RecursiveOfType(Number, order=:post)
@@ -93,7 +93,7 @@ end
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     or = RecursiveOfType(NamedTuple, order=:post)
     @test getall(m, or) === ((c = 1, d = "2"), (c = 3, d = "xxx"), m)
-    @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
+    @noinf @test modify(Dict ∘ pairs, m, or) == Dict(:a => 1, :bs => (Dict(:d => "2", :c => 1), Dict(:d => "xxx", :c => 3)))
 
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx", e=((;),))))
     @test getall(m, or) === ((c = 1, d = "2"), (;), (c = 3, d = "xxx", e = ((;),)), (a = 1, bs = ((c = 1, d = "2"), (c = 3, d = "xxx", e = ((;),)))))

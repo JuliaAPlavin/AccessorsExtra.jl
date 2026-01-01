@@ -127,7 +127,7 @@ end
     @test 20:20:2000 == @inferred map((@o _.xy.y + _.xy.y), B)
     @test 10.01:10.01:1001.0 == @inferred map((@o _.xy.y + _.z.im), B)
 
-    @test_broken (@inferred map((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B); true)
+    @test (@inferred map((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B); true)
     C = map((@o (a=_.xy.y+1, b=_.z.im + _.xy.y, c=(; _.xy.y,))), B)
     @test C[5] == (a = 51, b = 50.05, c = (y=50,))
     @test C.a == 11:10:1001

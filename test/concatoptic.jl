@@ -23,8 +23,7 @@
         @test setall(obj, o, (a="10", c="11")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
         @test setall(obj, o, (c="11", a="10")) === (a="10", bs=((c="11", d=3), (c=4, d=5)))
         @test modify(float, obj, o) === (a=1.0, bs=((c=2.0, d=3), (c=4, d=5)))
-        # doesn't infer due to "bounded recursion
-        @test_broken delete(obj, o) === (bs=((d=3,), (c=4, d=5)),)
+        @test delete(obj, o) === (bs=((d=3,), (c=4, d=5)),)
     end
     @test delete(obj, o) === (bs=((d=3,), (c=4, d=5)),)
     
