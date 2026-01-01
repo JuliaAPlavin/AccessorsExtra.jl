@@ -16,8 +16,8 @@ Accessors._shortstring(prev, o::PropertyFunction) = sprint(show, o; context=:com
 # XXX: these two are type-unstable because of flat_concatoptic
 function hasoptic(obj, pf::PropertyFunction)
     isnothing(obj) && return false
-    optics = flat_concatoptic(propspec(pf), RecursiveOfType(Placeholder))
-    return all(!isnothing, getall(obj, optics))
+    optics = flat_concatoptic(propspec(pf), RecursiveOfType(Placeholder)) |> _optics
+	return all(o -> hasoptic(obj, o) && !isnothing(o(obj)), optics)
 end
 
 function delete(obj, pf::PropertyFunction)
