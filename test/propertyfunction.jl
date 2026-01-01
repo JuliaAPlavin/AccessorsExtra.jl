@@ -71,6 +71,10 @@
 
     o = @o _.a .+ 1
     @test propspec(o) == (a=P(),)
+
+    o = @o _ > 5 ? :a : :b
+    @test propspec(o) == P()
+    @test o(6) == :a
 end
 
 @testitem "maybe" begin
