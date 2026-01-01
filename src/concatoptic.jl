@@ -183,12 +183,13 @@ tree_concatoptic(obj::Type, o::ConcatOptics) =
         tree_concatoptic(obj, oin)
     end...)
 function tree_concatoptic(obj::Type, o)
-    getall_eltypes = Core.Compiler.return_type(getall, Tuple{obj, typeof(o)}) |> _eltypes
-    if length(getall_eltypes) == 1
+    # XXX: why did I have all those check in the first place?
+    # getall_eltypes = Core.Compiler.return_type(getall, Tuple{obj, typeof(o)}) |> _eltypes
+    # if length(getall_eltypes) == 1
         o
-    else
-        throw(MethodError(tree_concatoptic, (obj, o)))
-    end
+    # else
+    #     throw(MethodError(tree_concatoptic, (obj, o)))
+    # end
 end
 tree_concatoptic(obj::Type{<:NTuple{N,Any}}, o::Elements) where {N} = ConcatOptics(ntuple(i -> IndexLens((i,)), N))
 tree_concatoptic(obj::Type{<:Integer}, o::Elements) = @o _[]
