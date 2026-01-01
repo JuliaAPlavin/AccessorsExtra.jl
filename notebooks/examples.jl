@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.38
+# v0.20.6
 
 using Markdown
 using InteractiveUtils
@@ -24,9 +24,6 @@ The [Accessors.jl](https://github.com/JuliaObjects/Accessors.jl) package defines
 This notebook showcases the stable and widely applicable pieces of functionality defined in `AccessorsExtra`. See the source code and tests for more.
 
 Optics and operations in `AccessorsExtra` attempt to have as little overhead as possible, often zero, with tests checking this.
-
-!!! note
-    Before Julia 1.9, `AccessorsExtra` focused on `Accessors` integrations with third-party packages. With package extensions available, these integrations are mostly put into `Accessors` itself, or into packages that define corresponding types.
 """
 
 # ╔═╡ 5ea94011-6019-47aa-9228-1df5af684d77
@@ -132,7 +129,7 @@ md"""
 
 # ╔═╡ cc5c1ee4-20aa-4324-b0e9-0f8db492e72c
 md"""
-## Optional optics: `maybe()`
+## Optional optics: `maybe()` and `@oget`
 
 Optional optics: reference a value that may or may not be present in the object. If not present, `modify()` doesn't do anything, and calling the optic returns `nothing`.
 
@@ -153,6 +150,22 @@ modify(-, (a=[1, 2],), o_mb)
 
 # ╔═╡ 10e5512f-df3b-49e9-bf03-222c05a1933a
 modify(-, (a=[1],), o_mb)
+
+# ╔═╡ 05a6de1b-fc64-43b5-b7e9-49789a893272
+md"""
+The `@oget` macro provides a more convenient way to access data that may or may not be present. It stops when encountering a non-existing value or `nothing`:
+"""
+
+# ╔═╡ 4fc97cf0-7045-4ce1-b7ce-8faaa1fc484d
+@oget obj.b[1]
+
+# ╔═╡ 841afae0-303a-4e1a-b1d8-b33c54787a02
+# returns nothing
+@oget obj.d.e
+
+# ╔═╡ 15e23d42-4215-4a9a-ab1e-7c036e77835b
+# returns the first existing value among several arguments
+@oget obj.d.e obj.b[1]
 
 # ╔═╡ d375ae9f-2530-44bc-bd93-2c89e9c58e2a
 md"""
@@ -237,64 +250,95 @@ BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
-AccessorsExtra = "~0.1.44"
-BenchmarkTools = "~1.3.2"
-PlutoUI = "~0.7.51"
+AccessorsExtra = "~0.1.95"
+BenchmarkTools = "~1.6.0"
+PlutoUI = "~0.7.62"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.1"
+julia_version = "1.10.9"
 manifest_format = "2.0"
-project_hash = "bc91f79172d3e32fac41af4ee7c37deb94920931"
+project_hash = "fde3ea233e4de16d07e2e8a262d3fb4a89fea851"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
-git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
+git-tree-sha1 = "6e1d2a35f2f90a4bc7c2ed98079b2ba09c35b83a"
 uuid = "6e696c72-6542-2067-7265-42206c756150"
-version = "1.1.4"
+version = "1.3.2"
 
 [[deps.Accessors]]
-deps = ["Compat", "CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "LinearAlgebra", "MacroTools", "Requires", "Test"]
-git-tree-sha1 = "2b301c2388067d655fe5e4ca6d4aa53b61f895b4"
+deps = ["CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "MacroTools"]
+git-tree-sha1 = "3b86719127f50670efe356bc11073d84b4ed7a5d"
 uuid = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
-version = "0.1.31"
+version = "0.1.42"
 
     [deps.Accessors.extensions]
-    AccessorsAxisKeysExt = "AxisKeys"
-    AccessorsIntervalSetsExt = "IntervalSets"
-    AccessorsStaticArraysExt = "StaticArrays"
-    AccessorsStructArraysExt = "StructArrays"
+    AxisKeysExt = "AxisKeys"
+    IntervalSetsExt = "IntervalSets"
+    LinearAlgebraExt = "LinearAlgebra"
+    StaticArraysExt = "StaticArrays"
+    StructArraysExt = "StructArrays"
+    TestExt = "Test"
+    UnitfulExt = "Unitful"
 
     [deps.Accessors.weakdeps]
     AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
     IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
-    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
-    StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-
-[[deps.AccessorsExtra]]
-deps = ["Accessors", "CompositionsBase", "ConstructionBase", "DataPipes", "InverseFunctions", "LinearAlgebra", "Reexport"]
-git-tree-sha1 = "29f0c4b26d44b4e6ee6ac334898b95e53997bd64"
-uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
-version = "0.1.44"
-
-    [deps.AccessorsExtra.extensions]
-    DictionariesExt = "Dictionaries"
-    DistributionsExt = "Distributions"
-    DomainSetsExt = "DomainSets"
-    StaticArraysExt = "StaticArrays"
-    StructArraysExt = "StructArrays"
-    TestExt = "Test"
-
-    [deps.AccessorsExtra.weakdeps]
-    Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
-    Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-    DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
+    LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
     StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
     StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
     Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+    Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[[deps.AccessorsExtra]]
+deps = ["Accessors", "CompositionsBase", "ConstructionBase", "DataPipes", "InverseFunctions", "LinearAlgebra", "Reexport"]
+git-tree-sha1 = "57be853354c1dc6f0470e27b1c47512dd6d57835"
+uuid = "33016aad-b69d-45be-9359-82a41f556fd4"
+version = "0.1.95"
+
+    [deps.AccessorsExtra.extensions]
+    ColorTypesExt = "ColorTypes"
+    DateFormatsExt = "DateFormats"
+    DatesExt = "Dates"
+    DictArraysExt = "DictArrays"
+    DictionariesExt = "Dictionaries"
+    DistributionsExt = "Distributions"
+    DomainSetsExt = "DomainSets"
+    FlexiGroupsExt = "FlexiGroups"
+    FlexiMapsExt = "FlexiMaps"
+    FlexiMapsStructArraysExt = ["FlexiMaps", "StructArrays"]
+    SkipperExt = "Skipper"
+    StaticArraysExt = "StaticArrays"
+    StatisticsExt = "Statistics"
+    StatsBaseExt = "StatsBase"
+    StructArraysExt = "StructArrays"
+    TablesExt = "Tables"
+    TestExt = "Test"
+    URIsExt = "URIs"
+    UnitfulExt = "Unitful"
+
+    [deps.AccessorsExtra.weakdeps]
+    ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
+    DateFormats = "44557152-fe0a-4de1-8405-416d90313ce6"
+    Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+    DictArrays = "e9958f2c-b184-4647-9c5a-224a61f6a14b"
+    Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
+    Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+    DomainSets = "5b8099bc-c8ec-5219-889f-1d9e522a28bf"
+    FlexiGroups = "1e56b746-2900-429a-8028-5ec1f00612ec"
+    FlexiMaps = "6394faf6-06db-4fa8-b750-35ccc60383f7"
+    Skipper = "fc65d762-6112-4b1c-b428-ad0792653d81"
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+    Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+    StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+    StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+    Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+    Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+    URIs = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
+    Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -307,22 +351,22 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[deps.BenchmarkTools]]
-deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
-git-tree-sha1 = "d9a9701b899b30332bbcb3e1679c41cce81fb0e8"
+deps = ["Compat", "JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "e38fbc49a620f5d0b660d7f543db1009fe0f8336"
 uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "1.3.2"
+version = "1.6.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "eb7f0f8307f71fac7c606984ea5fb2817275d6e4"
+git-tree-sha1 = "b10d0b65641d57b8b4d5e234446582de5047050d"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.11.4"
+version = "0.11.5"
 
 [[deps.Compat]]
-deps = ["UUIDs"]
-git-tree-sha1 = "7a60c856b9fa189eb34f5f8a6f6b5529b7942957"
+deps = ["TOML", "UUIDs"]
+git-tree-sha1 = "8ae8d32e09f0dcf42a36b90d4e17f5dd2e4c4215"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.6.1"
+version = "4.16.0"
 weakdeps = ["Dates", "LinearAlgebra"]
 
     [deps.Compat.extensions]
@@ -331,7 +375,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.1.0+0"
+version = "1.1.1+0"
 
 [[deps.CompositionsBase]]
 git-tree-sha1 = "802bb88cd69dfd1509f6670416bd4434015693ad"
@@ -343,23 +387,24 @@ weakdeps = ["InverseFunctions"]
     CompositionsBaseInverseFunctionsExt = "InverseFunctions"
 
 [[deps.ConstructionBase]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "738fec4d684a9a6ee9598a8bfee305b26831f28c"
+git-tree-sha1 = "76219f1ed5771adbb096743bff43fb5fdd4c1157"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
-version = "1.5.2"
+version = "1.5.8"
 
     [deps.ConstructionBase.extensions]
     ConstructionBaseIntervalSetsExt = "IntervalSets"
+    ConstructionBaseLinearAlgebraExt = "LinearAlgebra"
     ConstructionBaseStaticArraysExt = "StaticArrays"
 
     [deps.ConstructionBase.weakdeps]
     IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
+    LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
     StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [[deps.DataPipes]]
-git-tree-sha1 = "3b4bc031d472fbcee3335ceadd85b399dfdd8006"
+git-tree-sha1 = "29077a8d5c093f4e0988e92c0d76f56c4c581900"
 uuid = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
-version = "0.3.8"
+version = "0.3.18"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -375,37 +420,41 @@ uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[deps.FixedPointNumbers]]
 deps = ["Statistics"]
-git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
+git-tree-sha1 = "05882d6995ae5c12bb5f36dd2ed3f61c98cbb172"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
-version = "0.8.4"
+version = "0.8.5"
 
 [[deps.Hyperscript]]
 deps = ["Test"]
-git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+git-tree-sha1 = "179267cfa5e712760cd43dcae385d7ea90cc25a4"
 uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
-version = "0.0.4"
+version = "0.0.5"
 
 [[deps.HypertextLiteral]]
 deps = ["Tricks"]
-git-tree-sha1 = "c47c5fa4c5308f27ccaac35504858d8914e102f9"
+git-tree-sha1 = "7134810b1afce04bbc1045ca1985fbe81ce17653"
 uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
-version = "0.9.4"
+version = "0.9.5"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
-git-tree-sha1 = "d75853a0bdbfb1ac815478bacd89cd27b550ace6"
+git-tree-sha1 = "b6d6bfdd7ce25b0f9b2f6b3dd56b2673a66c8770"
 uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
-version = "0.2.3"
+version = "0.2.5"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[deps.InverseFunctions]]
-deps = ["Test"]
-git-tree-sha1 = "6667aadd1cdee2c6cd068128b3d226ebc4fb0c67"
+git-tree-sha1 = "a779299d77cd080bf77b97535acecd73e1c5e5cb"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
-version = "0.1.9"
+version = "0.1.17"
+weakdeps = ["Dates", "Test"]
+
+    [deps.InverseFunctions.extensions]
+    InverseFunctionsDatesExt = "Dates"
+    InverseFunctionsTestExt = "Test"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -448,15 +497,14 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.MIMEs]]
-git-tree-sha1 = "65f28ad4b594aebe22157d6fac869786a255b7eb"
+git-tree-sha1 = "c64d943587f7187e751162b3b84445bbbd79f691"
 uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
-version = "0.1.4"
+version = "1.1.0"
 
 [[deps.MacroTools]]
-deps = ["Markdown", "Random"]
-git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
+git-tree-sha1 = "72aebe0b5051e5143a079a4685a46da330a40472"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.10"
+version = "0.5.15"
 
 [[deps.Markdown]]
 deps = ["Base64"]
@@ -485,9 +533,9 @@ version = "0.3.23+4"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
-git-tree-sha1 = "a5aef8d4a6e8d81f171b2bd4be5265b01384c74c"
+git-tree-sha1 = "44f6c1f38f77cafef9450ff93946c53bd9ca16ff"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.5.10"
+version = "2.8.2"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -496,21 +544,21 @@ version = "1.10.0"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
-git-tree-sha1 = "b478a748be27bd2f2c73a7690da219d0844db305"
+git-tree-sha1 = "d3de2694b52a01ce61a036f18ea9c0f61c4a9230"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.51"
+version = "0.7.62"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
-git-tree-sha1 = "259e206946c293698122f63e2b513a7c99a244e8"
+git-tree-sha1 = "5aa36f7049a63a1528fe8f7c3f2113413ffd4e1f"
 uuid = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
-version = "1.1.1"
+version = "1.2.1"
 
 [[deps.Preferences]]
 deps = ["TOML"]
-git-tree-sha1 = "7eb1686b4f04b82f96ed7a4ea5890a4f0c7a09f1"
+git-tree-sha1 = "9306f6085165d270f7e3db02af26a400d580f5c6"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.4.0"
+version = "1.4.3"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -532,12 +580,6 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
 version = "1.2.2"
-
-[[deps.Requires]]
-deps = ["UUIDs"]
-git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
-uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.3.0"
 
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -579,14 +621,14 @@ deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[deps.Tricks]]
-git-tree-sha1 = "aadb748be58b492045b4f56166b5188aa63ce549"
+git-tree-sha1 = "6cae795a5a9313bbb4f60683f7263318fc7d1505"
 uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
-version = "0.1.7"
+version = "0.1.10"
 
 [[deps.URIs]]
-git-tree-sha1 = "074f993b0ca030848b897beff716d93aca60f06a"
+git-tree-sha1 = "cbbebadbcc76c5ca1cc4b4f3b0614b3e603b5000"
 uuid = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
-version = "1.4.2"
+version = "1.5.2"
 
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
@@ -603,7 +645,7 @@ version = "1.2.13+1"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.8.0+1"
+version = "5.11.0+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -649,6 +691,10 @@ version = "17.4.0+2"
 # ╠═c5791834-27fc-453f-9305-cb977a046d28
 # ╠═2f0f1190-2377-4b30-9e71-c9d8b3b5f4ec
 # ╠═10e5512f-df3b-49e9-bf03-222c05a1933a
+# ╠═05a6de1b-fc64-43b5-b7e9-49789a893272
+# ╠═4fc97cf0-7045-4ce1-b7ce-8faaa1fc484d
+# ╠═841afae0-303a-4e1a-b1d8-b33c54787a02
+# ╠═15e23d42-4215-4a9a-ab1e-7c036e77835b
 # ╟─d375ae9f-2530-44bc-bd93-2c89e9c58e2a
 # ╠═20350429-74ae-475b-baee-2528fd77e4c4
 # ╟─bf9f7247-8aa2-4fc8-974a-65ba71021f96

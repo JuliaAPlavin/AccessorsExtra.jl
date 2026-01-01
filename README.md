@@ -25,12 +25,20 @@ julia> getall(obj, o)
 julia> modify(x -> x+1, obj, o)
 (a = 2, b = (3, 4, "4"))
 
-# optional optics
-julia> o = maybe(@optic _.b[2])
+# optional optics: maybe()
+julia> o = maybe(@o _.b[2])
 julia> o(obj)
 3
 julia> o((a=1, c=3))
 nothing
+
+# optical optics: @oget
+julia> @oget obj.a.b[1]
+2
+julia> @oget obj.c.d
+nothing
+julia> @oget obj.c.d obj.a.b[1]
+2
 ```
 
 See the [Pluto notebook](https://aplavin.github.io/AccessorsExtra.jl/notebooks/examples.html) for more details and usage examples.
