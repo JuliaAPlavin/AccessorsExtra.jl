@@ -1,10 +1,12 @@
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
+AccessorsExtra = "33016aad-b69d-45be-9359-82a41f556fd4"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
 ColorTypes = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 CompatHelperLocal = "5224ae11-6099-4aaa-941d-3aab004bd678"
 ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+DateFormats = "44557152-fe0a-4de1-8405-416d90313ce6"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DictArrays = "e9958f2c-b184-4647-9c5a-224a61f6a14b"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
