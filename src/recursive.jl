@@ -230,9 +230,12 @@ _typelength(::Type{T}) where {T<:Array} = error("Cannot determine length of $T i
 # only for StaticArrays,
 # this hack needed because length(T) doesn't work due to worldage
 function _typelength(::Type{T}) where {T<:AbstractVector}
-    if fieldnames(T) == (:data,)
+    if nameof(T) ∈ (:SArray, :MArray, :SizedArray)
+        @assert fieldnames(T) == (:data,)
         # SVector, MVector
         return fieldcount(only(fieldtypes(T)))
+    elseif fieldnames(T) == (:data,)
+        error("Cannot determine length of $T ($(nameof(T)))")
     else
         # custom FieldVector
         fieldcount(T)
