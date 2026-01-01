@@ -89,6 +89,10 @@ end
     @test o(m) == (2, -3)
     @test set(m, o, (4, 5)) == (a=(b=3, c=2), c=-5)
     @test modify(xs -> xs ./ sum(xs), m, o) == (a=(b=-3.0, c=2), c=-3.0)
+
+    o = @o first((_.a.b, _.c))
+    @test o(m) == 1
+    @test set(m, o, 4) == (a=(b=4, c=2), c=3)
     end
     
     o = @o SVector(_.a.b, _.c)

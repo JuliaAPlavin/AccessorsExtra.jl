@@ -61,6 +61,8 @@ function _parse_obj_optics(ex::Expr)
         return obj, optics
     end
 
+    do_propertyfunction = nothing
+
     if @capture(ex, (front_ |> back_))
         @debug "Captured front_ |> back_" front back
         obj, frontoptic = _parse_obj_optics(front)
@@ -164,10 +166,12 @@ function _parse_obj_optics(ex::Expr)
                     optic = Expr(:call, fixargs, f, esc.(args)...)
                 end
             else
-                # multiple function arguments are "targets" - do nothing here, will create propertyfunction below
+                @debug "multiple function arguments are targets - do nothing here, will create propertyfunction below"
+                do_propertyfunction = true
             end
         else
-            # do nothing, see extra processing below
+            @debug "multiple function arguments, no underscore - do nothing here"
+            do_propertyfunction = true
         end
         if (@isdefined optic) && is_bcast
             optic = :(Base.BroadcastFunction($optic))
@@ -181,9 +185,9 @@ function _parse_obj_optics(ex::Expr)
         return obj, ()
     end
 
-    if !@isdefined optic
-        @debug "No full optic parsed, will create PropertyFunction"
+    if do_propertyfunction === true
         if tree_contains(ex, :_)
+            @debug "no proper optic parsed but has underscore, will create PropertyFunction"
             # placeholder in ex, but doesn't match any of the known forms
             # try creating a propertyfunction if possible
             props = foldtree_pre(Any[], ex) do acc, ex
@@ -220,7 +224,16 @@ function _parse_obj_optics(ex::Expr)
                 :($PropertyFunction($props_nt, $funcbody, $(QuoteNode(ex))))
             end
         else
-            # no placeholder in ex
+            @debug "no proper optic parsed, no underscore"
+            obj = esc(ex)
+            return obj, ()
+        end
+    elseif !@isdefined optic
+        if tree_contains(ex, :_)
+            @debug "no full optic parsed, has underscore, not creating PropertyFunction - trying parse_obj_optics() again"
+            return parse_obj_optics(ex)
+        else
+            @debug "no full optic parsed, no underscore"
             obj = esc(ex)
             return obj, ()
         end
