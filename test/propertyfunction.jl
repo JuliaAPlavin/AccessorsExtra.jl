@@ -107,6 +107,11 @@ end
     @test findall((@o isodd(_.a)), ((a=1,), (a=2,), (a=3,))) == [1, 3]
     @test findall((@o isodd(_.a)), [(a=1,), (a=2,), (a=3,)]) == [1, 3]
 
+    p = @o isodd(_.a) && _.a > 1
+    @test filter(p, ((a=1,), (a=2,), (a=3,))) == ((a=3,),)
+    @test findall(p, [(a=1,), (a=2,), (a=3,)]) == [3]
+    @test findall(!p, [(a=1,), (a=2,), (a=3,)]) == [1, 2]
+
     gr = first(group_vg(x -> isodd(x.a), [(a=1,), (a=2,), (a=3,)]))
     @test map((@o _.a), gr) == [1, 3]
     gr = first(group_vg(x -> isodd(x.a), StructArray([(a=1,), (a=2,), (a=3,)])))
@@ -165,6 +170,11 @@ end
 
     @test findall((@o _.xy.y > 100), B) == 11:100
     @test findall((@o _.xy.y > _.z.im + 100), B) == 11:100
+    p = @o _.xy.y > 100 && _.z.im > 0
+    @test findall(p, B) == 11:100
+    @test mapview(p, B) == [fill(false, 10); fill(true, 90)]
+    @test filterview(p, B).xy.y == 110:10:1000
+    @test sortperm(B, by=!p) == [11:100; 1:10]
     @test_broken filter((@o _.xy.y > 100), B).xy.y == 110:10:1000
     @test_broken filter((@o _.xy.y > _.z.im + 100), B).xy.y == 110:10:1000
     @test filterview((@o _.xy.y > _.z.im + 100), B).xy.y == 110:10:1000

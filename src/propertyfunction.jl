@@ -33,6 +33,8 @@ const PROPFUNCTYPES_ONLYEXTRA = Union{
     PropertyFunction,
     ComposedFunction{<:Any,<:PropertyFunction},
     ContainerOptic,
+    ⩓,
+    ⩔,
 }
 const PROPFUNCTYPES = Union{
     PropertyLens,
@@ -80,6 +82,7 @@ rawfunc(f::PropertyLens{P}) where {P} = x -> f(x)
 rawfunc(f::PropertyFunction) = f.func
 rawfunc(f::ComposedFunction) = @modify(rawfunc, decompose(f)[∗])
 rawfunc(f::ContainerOptic) = x -> f(x)
+rawfunc(f::Union{⩓,⩔}) = x -> f(x)
 
 propspec(f) = Placeholder()
 propspec(f::PropertyLens{P}) where {P} = NamedTuple{(P,)}((Placeholder(),))
