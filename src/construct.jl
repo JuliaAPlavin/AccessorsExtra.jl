@@ -83,7 +83,8 @@ function _construct(::Type{T}, args::Vararg{Pair{<:PropertyLens}})::T where {T}
     constructorof(T)(map(last, args)...)
 end
 
-construct(;kwargs...) = _construct(Any, values(kwargs))
+construct(;kwargs...) = values(kwargs)
+construct(::Type{Any}; kwargs...) = values(kwargs)
 construct(::Type{T}; kwargs...) where {T} = _construct(T, values(kwargs))
 _construct(::Type{T}, kwargs::NamedTuple{KS}) where {T,KS} =
     construct(T, map(KS, values(kwargs)) do k, v

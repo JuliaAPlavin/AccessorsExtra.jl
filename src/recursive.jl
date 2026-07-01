@@ -231,9 +231,7 @@ _typelength(::Type{T}) where {T<:Array} = error("Cannot determine length of $T i
 # this hack needed because length(T) doesn't work due to worldage
 function _typelength(::Type{T}) where {T<:AbstractVector}
     if nameof(T) ∈ (:SArray, :MArray, :SizedArray)
-        @assert fieldnames(T) == (:data,)
-        # SVector, MVector
-        return fieldcount(only(fieldtypes(T)))
+        return prod(T.parameters[1].parameters)
     elseif fieldnames(T) == (:data,)
         error("Cannot determine length of $T ($(nameof(T)))")
     else

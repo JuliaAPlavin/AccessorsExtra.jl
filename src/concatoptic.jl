@@ -108,8 +108,10 @@ struct ContainerOptic{O}
     optics::O
 end
 
-(os::ContainerOptic{<:Union{Tuple,NamedTuple,AbstractArray,Dict,Pair}})(obj) =
+(os::ContainerOptic{<:Union{Dict,Pair}})(obj) =
     @modify(o -> o(obj), values($(os.optics))[∗])
+(os::ContainerOptic{<:Union{Tuple,NamedTuple,AbstractArray}})(obj) =
+    map(o -> o(obj), os.optics)
 
 function set(obj, os::ContainerOptic{<:Union{Tuple,Pair,AbstractArray}}, vals::Union{Tuple,Pair,AbstractArray})
     length(os.optics) == length(vals) || throw(DimensionMismatch("length mismatch between optics ($(length(os.optics))) and values ($(length(vals)))"))
