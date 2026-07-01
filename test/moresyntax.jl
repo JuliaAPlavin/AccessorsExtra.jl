@@ -71,6 +71,11 @@ end
     Accessors.test_modify_law(x -> x + 1, lens, obj)
 end
 
+# @testitem "broadcast fix" begin
+#     julia> @macroexpand @o _ .. 10
+# :((identity)((Accessors.opticcompose)((Accessors.Base).Fix2((Accessors.Base).BroadcastFunction(var"."), 10))))
+# end
+
 @testitem "show" begin
     using AccessorsExtra: flat_concatoptic
 
