@@ -112,6 +112,12 @@ end
     @test findall(p, [(a=1,), (a=2,), (a=3,)]) == [3]
     @test findall(!p, [(a=1,), (a=2,), (a=3,)]) == [1, 2]
 
+    @test AccessorsExtra.propspec(⩓(Returns(true), p)) == AccessorsExtra.propspec(p)
+    @test filter(⩓(Returns(true), p), [(a=1,), (a=2,), (a=3,)]) == [(a=3,)]
+    @test findall(⩓(Returns(true), p), [(a=1,), (a=2,), (a=3,)]) == [3]
+    @test filter(⩓(Returns(false), p), [(a=1,), (a=2,), (a=3,)]) == []
+    @test findall(⩓(Returns(false), p), [(a=1,), (a=2,), (a=3,)]) == []
+
     gr = first(group_vg(x -> isodd(x.a), [(a=1,), (a=2,), (a=3,)]))
     @test map((@o _.a), gr) == [1, 3]
     gr = first(group_vg(x -> isodd(x.a), StructArray([(a=1,), (a=2,), (a=3,)])))

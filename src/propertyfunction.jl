@@ -85,6 +85,7 @@ rawfunc(f::ContainerOptic) = x -> f(x)
 rawfunc(f::Union{⩓,⩔}) = x -> f(x)
 
 propspec(f) = Placeholder()
+propspec(f::Returns) = (;)
 propspec(f::PropertyLens{P}) where {P} = NamedTuple{(P,)}((Placeholder(),))
 propspec(f::PropertyFunction) = f.props_nt
 propspec(f::ComposedFunction) = propspec(f.inner)
