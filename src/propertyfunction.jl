@@ -90,9 +90,8 @@ propspec(f::PropertyLens{P}) where {P} = NamedTuple{(P,)}((Placeholder(),))
 propspec(f::PropertyFunction) = f.props_nt
 propspec(f::ComposedFunction) = propspec(f.inner)
 propspec(f::ComposedFunction{<:Any,PropertyLens{P}}) where {P} = NamedTuple{(P,)}((propspec(f.outer),))
-propspec(f::ContainerOptic) = rmerge(map(f.optics) do o
-    propspec(o)
-end...)
+# an empty container accesses no properties
+propspec(f::ContainerOptic) = foldl(rmerge, map(propspec, f.optics); init=(;))
 propspec(f::Union{⩓,⩔}) = rmerge(propspec(f.f), propspec(f.g))
 
 

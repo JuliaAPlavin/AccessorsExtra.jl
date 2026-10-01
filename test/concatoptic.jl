@@ -149,6 +149,41 @@ end
     @test A.a.b !== map((@o (_.a.b, _.c)), A).:1 == A.a.b
 end
 
+@testitem "empty concat container" begin
+    using AccessorsExtra: ContainerOptic
+    using StructArrays
+    using FlexiMaps
+    using FlexiGroups
+    using Dictionaries
+
+    m = (a=1, b=2)
+    @test (@inferred ContainerOptic((;))(m)) === (;)
+    @test (@inferred ContainerOptic(())(m)) === ()
+    @test set(m, ContainerOptic((;)), (;)) === m
+    @test AccessorsExtra.propspec(ContainerOptic((;))) === (;)
+
+    V = [(a=1, b=2), (a=3, b=4), (a=1, b=5)]
+    S = StructArray(V)
+    # undefined column: no element access
+    U = StructArray(a=[1, 3, 1], x=Vector{Any}(undef, 3))
+    @testset for (o, e) in ((ContainerOptic((;)), (;)), (ContainerOptic(()), ()))
+        @testset for X in (V, S, U)
+            @test (@inferred map(o, X)) == fill(e, 3)
+            @test (@inferred mapview(o, X)) == fill(e, 3)
+            @test (@inferred groupfind(o, X)) == dictionary([e => [1, 2, 3]])
+        end
+        @testset for X in (V, S)
+            G = @inferred group_vg(o, X)
+            @test key.(G) == [e]
+            @test collect(only(G)) == V
+        end
+    end
+
+    o = ContainerOptic((; k=(@o _.a)))
+    @test mapview(o, S) === StructArray(k=S.a)
+    @test groupfind(o, S) == dictionary([(k=1,) => [1, 3], (k=3,) => [2]])
+end
+
 @testitem "flatten to concatoptic" begin
     using AccessorsExtra: tree_concatoptic, flat_concatoptic
 
