@@ -118,6 +118,17 @@ end
     @test filter(⩓(Returns(false), p), [(a=1,), (a=2,), (a=3,)]) == []
     @test findall(⩓(Returns(false), p), [(a=1,), (a=2,), (a=3,)]) == []
 
+    always = ⩓(Returns(true), Returns(true))
+    @test AccessorsExtra.propspec(always) == (;)
+    @test findall(always, [(a=1,), (a=2,), (a=3,)]) == [1, 2, 3]
+    @test findall(!always, [(a=1,), (a=2,), (a=3,)]) == []
+    @test filter(always, [(a=1,), (a=2,), (a=3,)]) == [(a=1,), (a=2,), (a=3,)]
+    # an empty projection accesses no element, so the undefined column stays untouched
+    U = StructArray(x=Vector{Any}(undef, 3), a=[1, 2, 3])
+    @test map(always, U) == [true, true, true]
+    @test findall(always, U) == [1, 2, 3]
+    @test findall(!always, U) == []
+
     gr = first(group_vg(x -> isodd(x.a), [(a=1,), (a=2,), (a=3,)]))
     @test map((@o _.a), gr) == [1, 3]
     gr = first(group_vg(x -> isodd(x.a), StructArray([(a=1,), (a=2,), (a=3,)])))

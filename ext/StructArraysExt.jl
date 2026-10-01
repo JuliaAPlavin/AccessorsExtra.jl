@@ -9,6 +9,7 @@ extract_properties_recursive(x::StructArray, props_nt::NamedTuple) =
     StructArray(extract_properties_recursive(StructArrays.components(x), props_nt))
 # should work equally well, but hits inference recursion limit:
 # extract_properties_recursive(x::StructArray, props_nt::NamedTuple) = @modify(cs -> extract_properties_recursive(cs, props_nt), StructArrays.components(x))
+extract_properties_recursive(x::StructArray, ::NamedTuple{()}) = fill((;), axes(x))  # disambiguation
 
 # XXX: piracy, should upstream
 Accessors.set(sa::StructArray, ::typeof(Tables.columns), cols) = set(sa, StructArrays.components, cols)

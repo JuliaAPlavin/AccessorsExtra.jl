@@ -101,6 +101,8 @@ extract_properties_recursive(x, ::Placeholder) = x
 extract_properties_recursive(x::NamedTuple, props_nt::NamedTuple{KS}) where {KS} = NamedTuple{KS}(map(extract_properties_recursive, values(x[KS]), values(props_nt)))
 # should work equally well, but hits inference recursion limit:
 # extract_properties_recursive(x::NamedTuple, props_nt::NamedTuple{KS}) where {KS} = map(extract_properties_recursive, x[KS], props_nt)
+# an empty spec names no properties: the function is constant over the array, so no element is accessed
+extract_properties_recursive(x::AbstractArray, ::NamedTuple{()}) = fill((;), axes(x))
 
 
 rmerge(a, objs...) = foldl(rmerge, objs; init=a)
