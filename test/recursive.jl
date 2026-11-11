@@ -68,6 +68,29 @@ end
     @test tree_concatoptic(obj, RecursiveOfType(Number)) === @o _[2]
 end
 
+@testitem "GPU arrays are leaves" begin
+    using JLArrays
+
+    x = JLArray([1.0, 2.0])
+    obj = (a=x, b=1.0, c=(d=2.0, e="s"))
+    @test getall(obj, RecursiveOfType(Float64)) === (1.0, 2.0)
+    @test getall(obj, RecursivePred(v -> v isa Float64)) === (1.0, 2.0)
+    @test getall(obj, RecursiveOfType(AbstractArray)) === (x,)
+    @test getall(obj, RecursiveOfType(Any, order=:post)) === (x, 1.0, 2.0, "s", obj.c, obj)
+    @test modify(v -> v + 10, obj, RecursiveOfType(Float64)) === (a=x, b=11.0, c=(d=12.0, e="s"))
+    # generated setall doesn't see methods defined in extensions
+    @test_broken setall(obj, RecursiveOfType(Float64), (5.0, 6.0)) === (a=x, b=5.0, c=(d=6.0, e="s"))
+
+    obj = (x=123, y=x)
+    @test getall(obj, RecursiveOfType(Number)) === (123,)
+    @test modify(v -> v + 1, obj, RecursiveOfType(Number)) === (x=124, y=x)
+
+    # regular arrays are still descended into
+    obj = (a=[1.0, 2.0], b=1.0)
+    @test getall(obj, RecursiveOfType(Float64)) == [1.0, 2.0, 1.0]
+    @test modify(v -> v + 10, obj, RecursiveOfType(Float64)) == (a=[11.0, 12.0], b=11.0)
+end
+
 @testitem "walk types" begin
     AccessorsExtra.@allinferred set modify getall setall begin
 
