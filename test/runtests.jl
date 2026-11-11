@@ -173,9 +173,10 @@ end
         (o = (@o _.a), g = 1),
         (o = @o(_ + 1), g = 2)
     ]
+    err_b = try (a=1,).b catch e; e end
     @test get_steps([(a=1,)], @o first(_).b |> _ + 1 - 2) == [
         (o = first, g = (a = 1,)),
-        (o = (@o _.b), g = AccessorsExtra.Thrown(ErrorException("type NamedTuple has no field b"))),
+        (o = (@o _.b), g = AccessorsExtra.Thrown(err_b)),
         (o = @o(_ + 1), g = nothing),
         (o = @o(_ - 2), g = nothing)
     ]
