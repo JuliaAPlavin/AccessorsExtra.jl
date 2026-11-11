@@ -3,10 +3,9 @@
 @inline modify(f, A::NamedTuple, ::Elements, Bs...) = @modify(t -> modify(f, t, ∗, Bs...), Tuple(A))
 @inline modify(f, A::Vector, ::Elements, Bs...) = map(f, A, Bs...)
 
-@inline modify(f, A::NamedTuple{KS}, ::Properties, B::NamedTuple, Bs::Vararg{NamedTuple}) where {KS} = map(f, A, B[KS], map(B -> B[KS], Bs)...)
-@inline modify(f, A::NTuple{N,Any}, ::Properties, B::NTuple{N,Any}) where {N} = map(f, A, B)
-@inline modify(f, A::Tuple, ::Properties, B::Tuple) = error("modify not supported for different lengths: $(length(A)) vs $(length(B))")
-@inline modify(f, A, ::Properties, Bs...) = setproperties(A, modify(f, getproperties(A), Properties(), getproperties.(Bs)...))
+@inline modify(f, A, ::Properties, Bs...) = setproperties(A, modify(f, getproperties(A), Properties(), Bs...))
+@inline modify(f, A::NamedTuple{KS}, ::Properties, B, Bs...) where {KS} = map(f, A, map(B -> getproperties(B)[KS], (B, Bs...))...)
+@inline modify(f, A::Tuple, ::Properties, B, Bs...) = map(f, A, map(getproperties, (B, Bs...))...)
 
 
 export shared
