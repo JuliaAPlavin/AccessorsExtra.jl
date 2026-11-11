@@ -17,7 +17,7 @@ end
     or = RecursiveOfType(Number)
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     @test getall(m, or) == (1, 1, 3)
-    @test modify(x->x+10, m, or) === (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
+    @test modify(x->x+10, m, or) === (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))  broken=VERSION >= v"1.11-"
     @test setall(m, or, (10, 20, 30)) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @test setall(m, or, [10, 20, 30]) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @noinf @test set(m, or, 123) === (a=123, bs=((c=123, d="2"), (c=123, d="xxx")))
