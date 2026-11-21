@@ -113,6 +113,17 @@ end
     end
 end
 
+@testitem "recurse predicate on types" begin
+    AccessorsExtra.@allinferred modify getall begin
+    obj = (a=1.0, b=[2.0, 3.0], c=(d=4.0, e=[5.0]))
+    or = RecursiveOfType(Float64; recurse=T -> !(T <: AbstractArray))
+    @test getall(obj, or) === (1.0, 4.0)
+    @test modify(x -> 10x, obj, or) == (a=10.0, b=[2.0, 3.0], c=(d=40.0, e=[5.0]))
+    or = RecursiveOfType(Any; recurse=T -> !(T <: AbstractArray), order=:post)
+    @test getall(obj, or) == (1.0, obj.b, 4.0, obj.c.e, obj.c, obj)
+    end
+end
+
 @testitem "walk types" begin
     AccessorsExtra.@allinferred set modify getall setall begin
 
