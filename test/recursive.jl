@@ -17,7 +17,7 @@ end
     or = RecursiveOfType(Number)
     m = (a=1, bs=((c=1, d="2"), (c=3, d="xxx")))
     @test getall(m, or) == (1, 1, 3)
-    @test modify(x->x+10, m, or) === (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))  broken=VERSION >= v"1.11-"
+    @test modify(x->x+10, m, or) === (a=11, bs=((c=11, d="2"), (c=13, d="xxx")))
     @test setall(m, or, (10, 20, 30)) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @test setall(m, or, [10, 20, 30]) === (a=10, bs=((c=20, d="2"), (c=30, d="xxx")))
     @noinf @test set(m, or, 123) === (a=123, bs=((c=123, d="2"), (c=123, d="xxx")))
@@ -102,6 +102,15 @@ end
     @test res.d isa RotMatrix{3, Float32}
     @test res.d ≈ RotY(0.2f0)
     @test getall(obj.b, RecursiveOfType(Float64)) === (0.1, 0.2, 0.3)
+end
+
+@testitem "leaves without fields keep walks inferrable" begin
+    AccessorsExtra.@allinferred modify begin
+    obj = (a=1.0, b=2.0, c=(d=3.0,))
+    @test modify(Float32, obj, RecursiveOfType(Float64; order=:post)) === (a=1f0, b=2f0, c=(d=3f0,))
+    @test modify(x -> x isa Float64 ? Float32(x) : x, obj, RecursiveOfType(Any; order=:pre)) === (a=1f0, b=2f0, c=(d=3f0,))
+    @test modify(x -> x isa Float64 ? Float32(x) : x, obj, RecursiveOfType(Any; order=:post)) === (a=1f0, b=2f0, c=(d=3f0,))
+    end
 end
 
 @testitem "walk types" begin

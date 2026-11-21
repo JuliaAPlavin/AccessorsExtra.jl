@@ -5,7 +5,10 @@ Children() = Children(Properties())
 
 @inline OpticStyle(::Type{<:Children}) = ModifyBased()
 @inline _chooseoptic_byval(obj, c::Children) = _chooseoptic_bytype(typeof(obj), c)
-@inline _chooseoptic_bytype(::Type, c::Children) = c.fallback_optic
+# values without fields (numbers, symbols, singletons) have no children: descending into their empty
+# properties is a no-op, and it would make the same Accessors function recurse into itself, which defeats
+# inference of recursive walks
+@inline _chooseoptic_bytype(::Type{T}, c::Children) where {T} = isconcretetype(T) && fieldcount(T) == 0 ? concat() : c.fallback_optic
 @inline _chooseoptic_bytype(::Type{<:Type}, ::Children) = ConcatOptics(())
 @inline _chooseoptic_bytype(::Type{<:Tuple}, ::Children) = Elements()
 @inline _chooseoptic_bytype(::Type{<:AbstractArray}, ::Children) = Elements()
