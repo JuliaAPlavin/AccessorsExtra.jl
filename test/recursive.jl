@@ -91,6 +91,19 @@ end
     @test modify(v -> v + 10, obj, RecursiveOfType(Float64)) == (a=[11.0, 12.0], b=11.0)
 end
 
+@testitem "rotations are traversed by their parameters" begin
+    using Rotations
+
+    obj = (a=RotX(0.1), b=RotXYZ(0.1, 0.2, 0.3), c=QuatRotation(1.0, 0.0, 0.0, 0.0), d=RotMatrix(RotY(0.2)))
+    res = modify(Float32, obj, RecursiveOfType(Float64))
+    @test res.a === RotX(0.1f0)
+    @test res.b === RotXYZ(0.1f0, 0.2f0, 0.3f0)
+    @test res.c isa QuatRotation{Float32}
+    @test res.d isa RotMatrix{3, Float32}
+    @test res.d ≈ RotY(0.2f0)
+    @test getall(obj.b, RecursiveOfType(Float64)) === (0.1, 0.2, 0.3)
+end
+
 @testitem "walk types" begin
     AccessorsExtra.@allinferred set modify getall setall begin
 
